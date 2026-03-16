@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Navegación con Leaflet</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Leaflet Routing Machine CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+
+    <style>
+        body {
+            margin: 0;
+            font-family: sans-serif;
+        }
+
+        #mapa {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* Panel flotante para buscar destino */
+        #panel {
+            position: absolute;
+            top: 15px;
+            left: 60px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            max-width: 320px;
+        }
+
+        #panel h3 {
+            margin: 0 0 10px 0;
+        }
+
+        #destinoInput {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        #btnRuta {
+            width: 100%;
+            padding: 10px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #btnRuta:hover {
+            background-color: #0056b3;
+        }
+
+        #estado {
+            margin-top: 10px;
+            font-size: 13px;
+            color: #333;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Panel de búsqueda -->
+    <div id="panel">
+        <h3>¿A dónde vas?</h3>
+        <input type="text" id="destinoInput" placeholder="Ej: Museo del Prado, Madrid" />
+        <button id="btnRuta" onclick="calcularRuta()">Buscar y Calcular Ruta</button>
+        <hr style="margin: 10px 0; border-color: #ddd;">
+        <label style="font-size: 13px; cursor: pointer;">
+            <input type="checkbox" id="clickMode" /> Elegir destino haciendo clic en el mapa
+        </label>
+        <div id="estado">Obteniendo tu ubicación...</div>
+    </div>
+
+    <!-- Mapa a pantalla completa -->
+    <div id="mapa"></div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Leaflet Routing Machine JS (incluye soporte OSRM) -->
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js"></script>
+
+    <script>
+        // Inicializar el mapa centrado en una posición por defecto (se actualizará con el GPS)
+        const mapa = L.map('mapa').setView([40.4168, -3.7038], 15);
+
+        // Capa de tiles de OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(mapa);
+
+        let miLatitud = null;
+        let miLongitud = null;
+        let marcadorUsuario = null;
+        let controlRuta = null;     // Para poder eliminar rutas anteriores
+        let marcadorDestino = null; // Marcador del destino seleccionado con clic
+        let destinoClickLat = null;
+        let destinoClickLon = null;
+
+        // 1. Obtener la ubicación actual del usuario
+        if ("geolocation" in navigator) {
+            navigator.geolocation.watchPosition((pos) => {
+                miLatitud = pos.coords.latitude;
+                miLongitud = pos.coords.longitude;
+
+                // Centrar el mapa en la posición del usuario la primera vez
+                if (!marcadorUsuario) {
+                    mapa.setView([miLatitud, miLongitud], 16);
+                    marcadorUsuario = L.marker([miLatitud, miLongitud])
+                        .addTo(mapa)
+                        .bindPopup("Estás aquí")
+                        .openPopup();
+                    document.getElementById('estado').innerText = "Ubicación obtenida. Introduce un destino.";
+                } else {
+                    // Actualizar posición del marcador si el usuario se mueve
+                    marcadorUsuario.setLatLng([miLatitud, miLongitud]);
+                }
+            }, (err) => {
+                document.getElementById('estado').innerText = "No se pudo obtener el GPS. Permite el acceso a la ubicación.";
+                console.error("Error GPS:", err);
+            }, {
+                enableHighAccuracy: true,
+                maximumAge: 0,
+                timeout: 10000
+            });
+        } else {
+            document.getElementById('estado').innerText = "Tu navegador no soporta geolocalización.";
+        }
+
+        // 2. Clic en el mapa para elegir destino exacto
+        mapa.on('click', function (e) {
+            if (!document.getElementById('clickMode').checked) return; // Solo si el checkbox está activo
+
+            destinoClickLat = e.latlng.lat;
+            destinoClickLon = e.latlng.lng;
+
+            // Poner/mover un marcador rojo en el punto elegido
+            if (marcadorDestino) {
+                marcadorDestino.setLatLng(e.latlng);
+            } else {
+                marcadorDestino = L.marker(e.latlng, {
+                    icon: L.icon({
+                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+                        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+                        iconSize: [25, 41],
+                        iconAnchor: [12, 41]
+                    })
+                }).addTo(mapa);
+            }
+            marcadorDestino.bindPopup(`Destino: ${destinoClickLat.toFixed(5)}, ${destinoClickLon.toFixed(5)}`).openPopup();
+
+            document.getElementById('estado').innerText = "Destino seleccionado en el mapa. Pulsa 'Buscar y Calcular Ruta'.";
+        });
+
+        // 3. Función principal: buscar destino y trazar ruta
+        async function calcularRuta() {
+            const estado = document.getElementById('estado');
+            const destino = document.getElementById('destinoInput').value.trim();
+            const usarClic = document.getElementById('clickMode').checked;
+
+            if (miLatitud === null || miLongitud === null) {
+                estado.innerText = "Aún no se ha obtenido tu ubicación GPS. Espera unos segundos.";
+                return;
+            }
+
+            let destLat, destLon, destNombre;
+
+            if (usarClic && destinoClickLat !== null) {
+                // MODO CLIC: usar las coordenadas del punto que el usuario pinchó en el mapa
+                destLat = destinoClickLat;
+                destLon = destinoClickLon;
+                destNombre = `Punto: ${destLat.toFixed(5)}, ${destLon.toFixed(5)}`;
+            } else if (destino) {
+                // MODO TEXTO: geocodificar el texto con Nominatim
+                estado.innerText = "Buscando el lugar...";
+                try {
+                    const geoUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(destino)}&limit=1`;
+                    const geoRes = await fetch(geoUrl);
+                    const geoData = await geoRes.json();
+
+                    if (geoData.length === 0) {
+                        estado.innerText = "No se encontró ese destino. Intenta ser más específico.";
+                        return;
+                    }
+                    destLat = parseFloat(geoData[0].lat);
+                    destLon = parseFloat(geoData[0].lon);
+                    destNombre = geoData[0].display_name;
+                } catch (error) {
+                    estado.innerText = "Error de conexión con los servicios de mapas.";
+                    console.error(error);
+                    return;
+                }
+            } else {
+                estado.innerText = "Escribe un destino o haz clic en el mapa.";
+                return;
+            }
+
+            estado.innerText = "Calculando ruta a pie...";
+
+            // Si había una ruta anterior, la eliminamos del mapa
+            if (controlRuta) {
+                mapa.removeControl(controlRuta);
+            }
+
+            // Crear la ruta con Leaflet Routing Machine (usa OSRM internamente)
+            controlRuta = L.Routing.control({
+                waypoints: [
+                    L.latLng(miLatitud, miLongitud),  // Origen: tu posición GPS
+                    L.latLng(destLat, destLon)         // Destino
+                ],
+                routeWhileDragging: false,
+                router: L.Routing.osrmv1({
+                    serviceUrl: 'https://router.project-osrm.org/route/v1',
+                    profile: 'walking'
+                }),
+                lineOptions: {
+                    styles: [{ color: '#007BFF', weight: 5, opacity: 0.8 }]
+                },
+                createMarker: function (i, waypoint, n) {
+                    if (i === 0) return null;
+                    return L.marker(waypoint.latLng).bindPopup(destNombre);
+                },
+                language: 'es',
+                show: true,
+                collapsible: true,
+                fitSelectedRoutes: true
+            }).addTo(mapa);
+
+            controlRuta.on('routesfound', (e) => {
+                const resumen = e.routes[0].summary;
+                const distKm = (resumen.totalDistance / 1000).toFixed(1);
+                const tiempoMin = Math.round(resumen.totalTime / 60);
+                estado.innerText = `Ruta calculada: ${distKm} km, ~${tiempoMin} min a pie.`;
+            });
+
+            controlRuta.on('routingerror', () => {
+                estado.innerText = "No se pudo calcular la ruta. Prueba con otro destino.";
+            });
+        }
+
+        // Permitir buscar pulsando Enter
+        document.getElementById('destinoInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') calcularRuta();
+        });
+    </script>
+</body>
+
+</html>
