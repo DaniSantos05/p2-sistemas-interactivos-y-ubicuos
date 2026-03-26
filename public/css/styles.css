@@ -1,0 +1,41 @@
+/* Quitamos márgenes por defecto, definimos fuente y colores generales */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f4f4f4;
+  color: #222;
+}
+
+/* Estilo del contenedor principal */
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* Hacemos una cuadrícula adaptable para los botones */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+}
+
+/* Estilo general de los botones */
+button {
+  padding: 16px;
+  font-size: 16px;
+  border: none;
+  border-radius: 10px;
+  background: #1f6feb;
+  color: white;
+  cursor: pointer;
+}
+
+/* Estilo del bloque donde se muestran los datos de orientación */
+pre {
+  background: white;
+  padding: 16px;
+  border-radius: 10px;
+  overflow: auto;
+}

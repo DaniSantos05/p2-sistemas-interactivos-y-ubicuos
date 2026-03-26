@@ -1,21 +1,51 @@
 <!DOCTYPE html>
+<!-- Indicamos que el documento usa HTML5 -->
+
 <html lang="es">
+<!-- Comienza el documento HTML y especificamos que está en español -->
+
 <head>
+  <!-- Cabecera del documento -->
+
   <meta charset="UTF-8">
+  <!-- Indicamos que se usará codificación UTF-8 -->
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Hacemos que la página se adapte bien a pantallas móviles -->
+
   <title>Pantalla principal</title>
+  <!-- Título que aparece en la pestaña del navegador -->
+
   <link rel="stylesheet" href="/css/styles.css">
+  <!-- Enlazamos el archivo CSS principal -->
 </head>
+
 <body>
+  <!-- Cuerpo visible de la página -->
+
   <main class="container">
+    <!-- Contenedor principal -->
+
     <h1>Pantalla principal</h1>
+    <!-- Título visible -->
+
     <p id="connectionStatus">Conectando...</p>
+    <!-- Aquí se mostrará el estado de conexión con Socket.IO -->
+
     <p id="lastEvent">Último evento: ninguno</p>
+    <!-- Aquí se mostrará el último evento recibido -->
+
     <p id="modeStatus">Modo: 2D</p>
+    <!-- Aquí se mostrará si estamos en modo 2D o 3D -->
+
     <pre id="orientationBox">Sin datos de orientación</pre>
+    <!-- Aquí se mostrarán los datos de orientación si llegan -->
   </main>
 
   <script src="/socket.io/socket.io.js"></script>
+  <!-- Cargamos la librería cliente de Socket.IO -->
+
   <script src="/js/pantalla.js"></script>
+  <!-- Cargamos el JavaScript de la pantalla -->
 </body>
 </html>

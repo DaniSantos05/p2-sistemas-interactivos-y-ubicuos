@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<!-- Indicamos que el documento usa HTML5 -->
+
+<html lang="es">
+<!-- Comienza el documento HTML y especificamos que está en español -->
+
+<head>
+  <!-- Cabecera del documento -->
+
+  <meta charset="UTF-8">
+  <!-- Indicamos que se usará codificación UTF-8 -->
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Hacemos que la página se adapte bien a pantallas móviles -->
+
+  <title>Mando móvil</title>
+  <!-- Título que aparece en la pestaña del navegador -->
+
+  <link rel="stylesheet" href="/css/styles.css">
+  <!-- Enlazamos el archivo CSS principal -->
+</head>
+
+<body>
+  <!-- Cuerpo visible de la página -->
+
+  <main class="container">
+    <!-- Contenedor principal -->
+
+    <h1>Mando móvil</h1>
+    <!-- Título visible -->
+
+    <p id="connectionStatus">Conectando...</p>
+    <!-- Aquí se mostrará el estado de conexión -->
+
+    <div class="grid">
+      <!-- Rejilla donde colocamos los botones de prueba -->
+
+      <button data-event="prevStep">Paso anterior</button>
+      <!-- Botón que enviará el evento prevStep -->
+
+      <button data-event="nextStep">Paso siguiente</button>
+      <!-- Botón que enviará el evento nextStep -->
+
+      <button data-event="zoomIn">Zoom +</button>
+      <!-- Botón que enviará el evento zoomIn -->
+
+      <button data-event="zoomOut">Zoom -</button>
+      <!-- Botón que enviará el evento zoomOut -->
+
+      <button data-event="toggleMode">Cambiar 2D/3D</button>
+      <!-- Botón que enviará el evento toggleMode -->
+
+      <button data-event="recenter">Recentrar</button>
+      <!-- Botón que enviará el evento recenter -->
+
+      <button data-event="confirm">Confirmar</button>
+      <!-- Botón que enviará el evento confirm -->
+
+      <button data-event="exit">Salir</button>
+      <!-- Botón que enviará el evento exit -->
+    </div>
+  </main>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <!-- Cargamos la librería cliente de Socket.IO -->
+
+  <script src="/js/mando.js"></script>
+  <!-- Cargamos el JavaScript del mando -->
+</body>
+</html>
