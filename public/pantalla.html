@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pantalla principal</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <main class="container">
+    <h1>Pantalla principal</h1>
+    <p id="connectionStatus">Conectando...</p>
+    <p id="lastEvent">Último evento: ninguno</p>
+    <p id="modeStatus">Modo: 2D</p>
+    <pre id="orientationBox">Sin datos de orientación</pre>
+  </main>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/pantalla.js"></script>
+</body>
+</html>
