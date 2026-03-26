@@ -8,44 +8,198 @@
   <!-- Cabecera del documento -->
 
   <meta charset="UTF-8">
-  <!-- Indicamos que se usará codificación UTF-8 -->
+  <!-- Codificación UTF-8 -->
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Hacemos que la página se adapte bien a pantallas móviles -->
+  <!-- Hacemos que se adapte bien a pantallas móviles -->
 
-  <title>Pantalla principal</title>
-  <!-- Título que aparece en la pestaña del navegador -->
+  <title>Pantalla principal - Navegación</title>
+  <!-- Título de la pestaña -->
 
+  <!-- Estilos de Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- Estilos de Leaflet Routing Machine -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+
+  <!-- Nuestro CSS general -->
   <link rel="stylesheet" href="/css/styles.css">
-  <!-- Enlazamos el archivo CSS principal -->
+
+  <style>
+    /* Hacemos que el body ocupe toda la ventana y quitamos desbordes */
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+    }
+
+    /* El mapa ocupa toda la pantalla */
+    #mapa {
+      width: 100vw;
+      height: 100vh;
+    }
+
+    /* Panel principal para buscar destino */
+    #panelBusqueda {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      z-index: 1000;
+      width: 320px;
+      background: rgba(255, 255, 255, 0.96);
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+    }
+
+    /* Título del panel */
+    #panelBusqueda h2 {
+      margin: 0 0 10px 0;
+      font-size: 22px;
+    }
+
+    /* Campo de texto del destino */
+    #destinoInput {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    /* Botón de calcular ruta */
+    #btnRuta {
+      width: 100%;
+      padding: 11px;
+      border: none;
+      border-radius: 8px;
+      background: #1f6feb;
+      color: white;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    /* Estado de la ruta */
+    #estadoRuta {
+      margin-top: 10px;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    /* Panel de estado de sockets y control remoto */
+    #panelEstado {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      z-index: 1000;
+      width: 320px;
+      background: rgba(255, 255, 255, 0.96);
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+    }
+
+    /* Título del panel de estado */
+    #panelEstado h3 {
+      margin: 0 0 10px 0;
+      font-size: 20px;
+    }
+
+    /* Espaciado entre textos del panel de estado */
+    #panelEstado p {
+      margin: 8px 0;
+    }
+
+    /* Caja donde se mostrará el paso actual */
+    #stepBox {
+      margin-top: 12px;
+      background: #f7f7f7;
+      border-radius: 10px;
+      padding: 12px;
+      min-height: 70px;
+      white-space: pre-wrap;
+      line-height: 1.45;
+      border: 1px solid #e3e3e3;
+    }
+
+    /* Indicador visual del modo */
+    #modeStatus {
+      font-weight: bold;
+    }
+
+    /* Apariencia visual simulada para el modo 3D */
+    .modo-3d #mapa {
+      transform: perspective(1200px) rotateX(45deg);
+      transform-origin: center bottom;
+      transition: transform 0.4s ease;
+    }
+
+    /* Apariencia normal del modo 2D */
+    .modo-2d #mapa {
+      transform: none;
+      transition: transform 0.4s ease;
+    }
+  </style>
 </head>
 
-<body>
-  <!-- Cuerpo visible de la página -->
+<body class="modo-2d">
+  <!-- Comenzamos en modo 2D -->
 
-  <main class="container">
-    <!-- Contenedor principal -->
+  <!-- Panel izquierdo para buscar destino -->
+  <section id="panelBusqueda">
+    <h2>Navegación</h2>
 
-    <h1>Pantalla principal</h1>
-    <!-- Título visible -->
+    <input type="text" id="destinoInput" placeholder="Ej: Museo del Prado, Madrid">
+    <!-- Campo para escribir el destino -->
+
+    <button id="btnRuta">Buscar y calcular ruta</button>
+    <!-- Botón para buscar destino y calcular ruta -->
+
+    <hr>
+
+    <label style="font-size: 13px; cursor: pointer;">
+      <input type="checkbox" id="clickMode">
+      Elegir destino haciendo clic en el mapa
+    </label>
+    <!-- Opción para seleccionar el destino pinchando directamente sobre el mapa -->
+
+    <div id="estadoRuta">Obteniendo tu ubicación...</div>
+    <!-- Aquí mostraremos el estado del GPS, ruta, errores, etc. -->
+  </section>
+
+  <!-- Panel derecho para ver estados recibidos desde el mando -->
+  <section id="panelEstado">
+    <h3>Control remoto</h3>
 
     <p id="connectionStatus">Conectando...</p>
-    <!-- Aquí se mostrará el estado de conexión con Socket.IO -->
+    <!-- Estado de conexión con Socket.IO -->
 
     <p id="lastEvent">Último evento: ninguno</p>
-    <!-- Aquí se mostrará el último evento recibido -->
+    <!-- Último evento recibido desde el mando -->
 
     <p id="modeStatus">Modo: 2D</p>
-    <!-- Aquí se mostrará si estamos en modo 2D o 3D -->
+    <!-- Modo actual 2D/3D -->
 
-    <pre id="orientationBox">Sin datos de orientación</pre>
-    <!-- Aquí se mostrarán los datos de orientación si llegan -->
-  </main>
+    <div id="stepBox">Todavía no hay una ruta calculada.</div>
+    <!-- Paso actual de la ruta -->
+  </section>
 
+  <!-- Contenedor del mapa -->
+  <div id="mapa"></div>
+
+  <!-- Librería de Leaflet -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Librería de Leaflet Routing Machine -->
+  <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js"></script>
+
+  <!-- Cliente de Socket.IO -->
   <script src="/socket.io/socket.io.js"></script>
-  <!-- Cargamos la librería cliente de Socket.IO -->
 
+  <!-- Nuestro JS -->
   <script src="/js/pantalla.js"></script>
-  <!-- Cargamos el JavaScript de la pantalla -->
 </body>
 </html>
