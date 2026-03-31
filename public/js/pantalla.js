@@ -36,6 +36,8 @@ const clickMode = document.getElementById("clickMode");
 // Texto del estado de la ruta
 const estadoRuta = document.getElementById("estadoRuta");
 
+
+
 // =========================
 // INICIALIZACIÓN DEL MAPA
 // =========================
@@ -181,6 +183,8 @@ function limpiarRuta() {
 
   // Actualizamos el cuadro del paso actual
   stepBox.textContent = "No hay una ruta activa.";
+
+
 }
 
 // Función para mostrar el paso actual
@@ -364,8 +368,8 @@ async function calcularRuta() {
     ],
     routeWhileDragging: false,
     router: L.Routing.osrmv1({
-      serviceUrl: "https://router.project-osrm.org/route/v1",
-      profile: "walking"
+      serviceUrl: "https://routing.openstreetmap.de/routed-foot/route/v1",
+      profile: "foot"
     }),
     lineOptions: {
       styles: [{ color: "#1f6feb", weight: 5, opacity: 0.85 }]
@@ -401,6 +405,7 @@ async function calcularRuta() {
 
     // Mostramos el estado
     estadoRuta.textContent = `Ruta calculada: ${distKm} km, ~${tiempoMin} min a pie.`;
+
 
     // Mostramos el primer paso
     mostrarPasoActual();
@@ -484,3 +489,4 @@ socket.on("orientationData", (data) => {
   // De momento solo los mostramos por consola
   console.log("orientationData recibido en pantalla:", data);
 });
+
