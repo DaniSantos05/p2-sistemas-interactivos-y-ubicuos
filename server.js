@@ -37,10 +37,7 @@ app.get("/pantalla", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "pantalla.html"));
 });
 
-// Ruta opcional para abrir directamente el mando
-app.get("/mando", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "mando.html"));
-});
+
 
 // Escuchamos cuando un cliente se conecta por Socket.IO
 io.on("connection", (socket) => {

@@ -29,44 +29,54 @@
 </head>
 
 <body class="modo-2d">
-  <!-- Panel izquierdo para buscar destino -->
-  <section id="panelBusqueda">
-    <h2>Navegación</h2>
+  <!-- Menú lateral flotante -->
+  <button id="menuToggle" class="menu-toggle">☰</button>
 
-    <input type="text" id="destinoInput" placeholder="Ej: Museo del Prado, Madrid">
-    <!-- Campo para escribir el destino -->
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-header">
+      <h2>Opciones</h2>
+      <button id="closeSidebar" class="close-btn">&times;</button>
+    </div>
 
-    <button id="btnRuta">Buscar y calcular ruta</button>
-    <!-- Botón para buscar destino y calcular ruta -->
+    <!-- Modulo de Navegación -->
+    <div class="sidebar-section">
+      <h3>Navegación</h3>
+      <input type="text" id="destinoInput" class="input-moderno" placeholder="Ej: Museo del Prado, Madrid">
+      <button id="btnRuta" class="btn-primario">Buscar y calcular ruta</button>
+      
+      <!-- Checkbox para activar el modo de destino en mapa -->
+      <label class="click-mode-label">
+        <input type="checkbox" id="clickMode">
+        Destino en mapa con clic
+      </label>
+      
+      <!-- Estado de la ruta -->
+      <div id="estadoRuta" class="status-box">Obteniendo tu ubicación...</div>
+      
+      <!-- Paso actual de la ruta -->
+      <div id="stepBox" class="step-box">Todavía no hay una ruta calculada.</div>
+    </div>
 
-    <hr>
-
-    <label style="font-size: 13px; cursor: pointer;">
-      <input type="checkbox" id="clickMode">
-      Elegir destino haciendo clic en el mapa
-    </label>
-    <!-- Opción para seleccionar el destino pinchando directamente sobre el mapa -->
-
-    <div id="estadoRuta">Obteniendo tu ubicación...</div>
-    <!-- Aquí mostraremos el estado del GPS, ruta, errores, etc. -->
-  </section>
-
-  <!-- Panel derecho para ver estados recibidos desde el mando -->
-  <section id="panelEstado">
-    <h3>Control remoto</h3>
-
-    <p id="connectionStatus">Conectando...</p>
-    <!-- Estado de conexión con Socket.IO -->
-
-    <p id="lastEvent">Último evento: ninguno</p>
-    <!-- Último evento recibido desde el mando -->
-
-    <p id="modeStatus">Modo: 2D</p>
-    <!-- Modo actual 2D/3D -->
-
-    <div id="stepBox">Todavía no hay una ruta calculada.</div>
-    <!-- Paso actual de la ruta -->
-  </section>
+    <!-- Modulo de Controles (Botones visuales no funcionales) -->
+    <div class="sidebar-section">
+      <h3>Controles</h3>
+      <div class="grid-controls">
+        <button class="btn-control" data-event="prevStep">Paso anterior</button>
+        <button class="btn-control" data-event="nextStep">Siguiente</button>
+        <button class="btn-control" data-event="zoomIn">Zoom +</button>
+        <button class="btn-control" data-event="zoomOut">Zoom -</button>
+        <button class="btn-control" data-event="toggleMode">2D/3D</button>
+        <button class="btn-control" data-event="recenter">Recentrar</button>
+      </div>
+    </div>
+    
+    <!-- Elementos ocultos para que el JS no lance error -->
+    <div style="display:none;">
+      <p id="connectionStatus"></p>
+      <p id="lastEvent"></p>
+      <p id="modeStatus"></p>
+    </div>
+  </aside>
 
   <!-- Contenedor del mapa -->
   <div id="mapa"></div>

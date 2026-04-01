@@ -36,11 +36,18 @@ const clickMode = document.getElementById("clickMode");
 // Texto del estado de la ruta
 const estadoRuta = document.getElementById("estadoRuta");
 
+// Elementos del DOM del Sidebar
+const sidebar = document.getElementById("sidebar");
+const menuToggle = document.getElementById("menuToggle");
+const closeSidebar = document.getElementById("closeSidebar");
 
-
-// =========================
-// INICIALIZACIÓN DEL MAPA
-// =========================
+// Eventos para abrir y cerrar el sidebar
+menuToggle.addEventListener("click", () => {
+  sidebar.classList.add("visible");
+});
+closeSidebar.addEventListener("click", () => {
+  sidebar.classList.remove("visible");
+});
 
 // Creamos el mapa con una vista inicial en Madrid
 const mapa = L.map("mapa").setView([40.4168, -3.7038], 15);

@@ -14,92 +14,195 @@ body {
   height: 100vh;
 }
 
-/* Panel principal para buscar destino */
-#panelBusqueda {
+/* Botón hamburguesa */
+.menu-toggle {
   position: absolute;
-  top: 15px;
-  left: 50px;
-  z-index: 1000; 
-  width: 320px;
-  background: rgba(255, 255, 255, 0.96);
+  top: 20px;
+  left: 20px;
+  z-index: 2000;
+  background: white;
+  backdrop-filter: blur(10px);
+  border: 1px solid black;
+  color: black;
+  font-size: 24px;
+  padding: 10px 15px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;  /* Transición suave */
+}
+
+/* Hover al pasar el ratón */
+.menu-toggle:hover {
+  background: whitesmoke;
+  transform: scale(1.05);     /* Transición suave */
+}
+
+/* Barra lateral */
+.sidebar {
+  position: absolute;
+  top: 0;
+  left: -380px;   /* Oculto por defecto */
+  z-index: 2500;  /* Capa superior */
+  width: 340px;
+  height: 100vh;
+  background: white;
+  backdrop-filter: blur(16px);              /* Oculta lo que hay detrás*/    
+  border-right: 1px solid rgba(255, 255, 255, 0.4);
+  padding: 25px;
+  box-sizing: border-box;
+  transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);  /* Transición suave */
+  overflow-y: auto;                                           
+}
+
+/* Mostrar barra lateral */
+.sidebar.visible {
+  transform: translateX(380px); /* 380 porque left estaba en -380 */
+}
+
+/* Cabecera de la barra lateral */
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  border-bottom: 2px solid black;
+  padding-bottom: 15px;
+}
+
+/* Título de la barra lateral */
+.sidebar-header h2 {
+  margin: 0;
+  font-size: 24px;
+  color: #3498db;
+}
+
+/* Botón de cerrar */
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: gray;
+  cursor: pointer;
+  line-height: 1;           /* Centra el botón */
+  transition: color 0.3s;
+}
+
+/* Hover al pasar el ratón */
+.close-btn:hover {
+  color: red;
+}
+
+/* Secciones de la barra lateral */
+.sidebar-section {
+  margin-bottom: 25px;
+  background: rgba(255, 255, 255, 0.5);
   padding: 15px;
   border-radius: 12px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
-/* Título del panel */
-#panelBusqueda h2 {
+/* Título de la sección */
+.sidebar-section h3 {
   margin: 0 0 10px 0;
-  font-size: 22px;
+  text-align: center;
+  font-size: 16px;
+  color: #3498de;
+  text-transform: uppercase;
 }
 
-/* Campo de texto del destino */
-#destinoInput {
+/* Inputs y botones modernos */
+.input-moderno {
   width: 100%;
-  padding: 10px;
-  margin-bottom: 10px;
+  padding: 12px;
+  margin-bottom: 12px;
   box-sizing: border-box;
-  border: 1px solid #ccc;
+  border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 8px;
+  background: rgba(255, 255, 255, 0.8);
   font-size: 14px;
+  transition: border-color 0.3s;
 }
 
-/* Botón de calcular ruta */
-#btnRuta {
+/* Cuando se hace click en el input */
+.input-moderno:focus {
+  outline: none;
+  border-color: #3498db;
+}
+
+/* Botón principal */
+.btn-primario {
   width: 100%;
-  padding: 11px;
+  padding: 12px;
   border: none;
   border-radius: 8px;
-  background: #1f6feb;
+  background: linear-gradient(135deg, #3498db, #2980b9);  /* Gradiente de color */
   color: white;
   font-size: 15px;
+  font-weight: 600;
   cursor: pointer;
+  transition: transform 0.2s;        /* Transición suave */
 }
 
-/* Estado de la ruta */
-#estadoRuta {
-  margin-top: 10px;
-  font-size: 13px;
-  line-height: 1.4;
+.btn-primario:hover {
+  transform: translateY(-2px);       /* Sube un poco */
 }
 
-/* Panel de estado de sockets y control remoto */
-#panelEstado {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  z-index: 1000;
-  width: 320px;
-  background: rgba(255, 255, 255, 0.96);
-  padding: 15px;
-  border-radius: 12px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+/* Contenedor del checkbox */
+.click-mode-label {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  color: gray;
+  cursor: pointer;
+  margin-top: 15px;
 }
 
-/* Título del panel de estado */
-#panelEstado h3 {
-  margin: 0 0 10px 0;
-  font-size: 20px;
+/* Checkbox elegante */
+.click-mode-label input {
+  margin-right: 8px;
+  accent-color: #3498db;      /* Color del check */
+  transform: scale(1.1);        /* Un poco más grande */
 }
 
-/* Espaciado entre textos del panel de estado */
-#panelEstado p {
-  margin: 8px 0;
-}
-
-/* Caja donde se mostrará el paso actual */
-#stepBox {
-  margin-top: 12px;
-  background: #f7f7f7;
-  border-radius: 10px;
+/* Cajas de estado */
+.status-box, .step-box {
+  margin-top: 15px;
   padding: 12px;
-  min-height: 70px;
-  white-space: pre-wrap;
-  line-height: 1.45;
-  border: 1px solid #e3e3e3;
+  background: rgba(241, 242, 246, 0.7);
+  border-radius: 8px;
+  font-size: 14px;
+  color: #2c3e50;
+  line-height: 1.5;
+  border-left: 4px solid #3498db;   /* Borde lateral */
 }
 
-/* Indicador visual del modo */
+/* Grilla de controles (botones inactivos visuales) */
+.grid-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;     /* Dos columnas */
+  gap: 10px;
+}
+
+/* Botones de control */
+.btn-control {
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background: #ecf0f1;
+  color: black;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+/* Hover al pasar el ratón */
+.btn-control:hover {
+  background: #bdc3c7;
+  transform: translateY(-2px);       /* Sube un poco */
+}
+
+/* Indicador visual del modo (oculto en HTML pero útil dejarlo si se necesita luego) */
 #modeStatus {
   font-weight: bold;
 }
