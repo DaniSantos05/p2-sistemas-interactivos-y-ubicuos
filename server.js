@@ -39,6 +39,9 @@ app.get("/pantalla", (req, res) => {
 
 
 
+// Actualmente el mando no se usa, se ha sustituido por el boton hamburguesa
+// Pero se deja el codigo por si se quiere volver a usar en el futuro
+
 // Escuchamos cuando un cliente se conecta por Socket.IO
 io.on("connection", (socket) => {
   // Mostramos en consola el id del cliente que se ha conectado

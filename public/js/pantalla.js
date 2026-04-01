@@ -24,24 +24,17 @@ socket.on("connect", () => {
 // ELEMENTOS DEL DOM
 // =========================
 
-// Campo de texto del destino
-const destinoInput = document.getElementById("destinoInput");
+const destinoInput = document.getElementById("destinoInput");   // Campo de texto del destino
+const btnRuta = document.getElementById("btnRuta");             // Botón de calcular ruta
+const clickMode = document.getElementById("clickMode");         // Checkbox para elegir destino haciendo clic
+const estadoRuta = document.getElementById("estadoRuta");       // Texto del estado de la ruta
 
-// Botón de calcular ruta
-const btnRuta = document.getElementById("btnRuta");
-
-// Checkbox para elegir destino haciendo clic
-const clickMode = document.getElementById("clickMode");
-
-// Texto del estado de la ruta
-const estadoRuta = document.getElementById("estadoRuta");
-
-// Elementos del DOM del Sidebar
+// Elementos del DOM de la barra lateral
 const sidebar = document.getElementById("sidebar");
 const menuToggle = document.getElementById("menuToggle");
 const closeSidebar = document.getElementById("closeSidebar");
 
-// Eventos para abrir y cerrar el sidebar
+// Eventos para abrir y cerrar la barra lateral
 menuToggle.addEventListener("click", () => {
   sidebar.classList.add("visible");
 });
@@ -65,23 +58,16 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 let miLatitud = null;
 let miLongitud = null;
 
-// Marcador del usuario
-let marcadorUsuario = null;
+let marcadorUsuario = null;   // Marcador del usuario
+let controlRuta = null;       // Control de la ruta actual
+let marcadorDestino = null;   // Marcador del destino elegido al hacer clic
 
-// Control de la ruta actual
-let controlRuta = null;
+let destinoClickLat = null;   // Coordenadas de la latitud del destino seleccionado con clic
+let destinoClickLon = null;   // Coordenadas de la longitud del destino seleccionado con clic
 
-// Marcador del destino elegido al hacer clic
-let marcadorDestino = null;
-
-// Coordenadas del destino seleccionado con clic
-let destinoClickLat = null;
-let destinoClickLon = null;
-
-// Ruta e instrucciones actuales
-let instruccionesRuta = [];
-let coordenadasRuta = [];
-let indicePasoActual = -1;
+let instruccionesRuta = [];   // Ruta e instrucciones actuales
+let coordenadasRuta = [];     // Coordenadas de la ruta actual
+let indicePasoActual = -1;    // Índice del paso actual
 
 // Modo actual visual
 let currentMode = "2D";
@@ -103,12 +89,12 @@ if ("geolocation" in navigator) {
       if (!marcadorUsuario) {
         mapa.setView([miLatitud, miLongitud], 16);
 
-        marcadorUsuario = L.marker([miLatitud, miLongitud])
-          .addTo(mapa)
-          .bindPopup("Estás aquí")
-          .openPopup();
+        marcadorUsuario = L.marker([miLatitud, miLongitud])  // Creamos el marcador del usuario
+          .addTo(mapa)              // Lo añadimos al mapa
+          .bindPopup("Estás aquí")  // Le ponemos un popup
+          .openPopup();             // Lo abrimos
 
-        estadoRuta.textContent = "Ubicación obtenida. Ya puedes buscar una ruta.";
+        estadoRuta.textContent = "Ubicación obtenida. Ya puedes buscar una ruta."; // Actualizamos el texto de estado
       } else {
         // Si ya existe, solo actualizamos su posición
         marcadorUsuario.setLatLng([miLatitud, miLongitud]);
@@ -120,9 +106,10 @@ if ("geolocation" in navigator) {
       console.error("Error GPS:", err);
     },
     {
-      enableHighAccuracy: true,
-      maximumAge: 0,
-      timeout: 10000
+      // Estas opciones son para mejorar la precisión del GPS
+      enableHighAccuracy: true,  // Mejor precisión
+      maximumAge: 0,             // No usar caché
+      timeout: 10000             // Tiempo máximo de espera
     }
   );
 } else {
@@ -150,10 +137,11 @@ mapa.on("click", (e) => {
     // Si no había marcador, lo creamos
     marcadorDestino = L.marker(e.latlng, {
       icon: L.icon({
+        // Los marcadores los sacamos de internet
         iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
         shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-        iconSize: [25, 41],
-        iconAnchor: [12, 41]
+        iconSize: [25, 41],  // Tamaño del icono
+        iconAnchor: [12, 41] // Punto de anclaje del icono
       })
     }).addTo(mapa);
   }
@@ -179,19 +167,12 @@ function limpiarRuta() {
     controlRuta = null;
   }
 
-  // Reiniciamos las instrucciones
-  instruccionesRuta = [];
-
-  // Reiniciamos las coordenadas
-  coordenadasRuta = [];
-
-  // Reiniciamos el índice del paso actual
-  indicePasoActual = -1;
+  instruccionesRuta = [];  // Reiniciamos las instrucciones
+  coordenadasRuta = [];    // Reiniciamos las coordenadas
+  indicePasoActual = -1;   // Reiniciamos el índice del paso actual
 
   // Actualizamos el cuadro del paso actual
   stepBox.textContent = "No hay una ruta activa.";
-
-
 }
 
 // Función para mostrar el paso actual
@@ -201,6 +182,9 @@ function mostrarPasoActual() {
     stepBox.textContent = "No hay instrucciones disponibles para esta ruta.";
     return;
   }
+
+  /* Esto de los indices se usa para que si por ejemplo estamos en el paso 2 
+  y le damos a anterior, no se vaya al paso -1, sino que se quede en el 1*/
 
   // Si el índice se ha salido por debajo, lo corregimos
   if (indicePasoActual < 0) {
@@ -215,7 +199,7 @@ function mostrarPasoActual() {
   // Cogemos la instrucción actual
   const instruccion = instruccionesRuta[indicePasoActual];
 
-  // Construimos el texto que se mostrará
+  // Construimos el texto que se mostrará en el cuadro del paso actual
   const textoPaso =
     `Paso ${indicePasoActual + 1} de ${instruccionesRuta.length}\n\n` +
     `${instruccion.text || "Sin texto disponible"}\n\n` +
@@ -224,13 +208,26 @@ function mostrarPasoActual() {
   // Lo mostramos en pantalla
   stepBox.textContent = textoPaso;
 
-  // Si la instrucción tiene un índice de coordenada válido, movemos el mapa allí
+  /* Este fragmento es el encargado de que la cámara del mapa se deslice automáticamente hacia
+  el lugar donde ocurre la instrucción. Para entender cómo funciona internamente, hay que tener cuenta 
+  que el trazador de rutas (Leaflet Routing Machine) nos devuelve dos listas separadas:
+  - instruccionesRuta: El listado de maniobras en texto (Gira a la derecha, Sigue recto 200m, etc.)
+  - coordenadasRuta: Un listado gigante de puntos GPS (Latitud y Longitud) de toda la línea azul dibujada en el mapa, punto por punto.
+  Cada vez que da una instrucción, suele venir con una propiedad llamada 'index' que nos indica en qué punto de la lista de coordenadas 
+  se encuentra esa instrucción.*/
+
+  /* Este 'if' realiza 2 comprobaciones de seguridad:
+   - Verifica que la propiedad 'index' traiga un número asociado a la instrucción
+   - Verifica que exista un punto en la lista de coordenadas con ese índice
+   */
   if (
     typeof instruccion.index === "number" &&
     coordenadasRuta[instruccion.index]
   ) {
+    // Si ambas comprobaciones son correctas, cogemos ese punto y movemos el mapa hacia él
     const punto = coordenadasRuta[instruccion.index];
-    mapa.panTo([punto.lat, punto.lng]);
+    // panTo es una función de Leaflet que mueve el mapa a una posición determinada
+    mapa.panTo([punto.lat, punto.lng]);  
   }
 }
 
@@ -314,11 +311,8 @@ async function calcularRuta() {
     return;
   }
 
-  // Leemos el texto del destino
-  const destino = destinoInput.value.trim();
-
-  // Comprobamos si está activado el modo clic
-  const usarClic = clickMode.checked;
+  const destino = destinoInput.value.trim();  // Obtenemos el texto del destino
+  const usarClic = clickMode.checked;         // Comprobamos si está activado el modo clic
 
   // Variables donde guardaremos destino final
   let destLat;
@@ -334,29 +328,42 @@ async function calcularRuta() {
     // Si se ha escrito un texto, usamos Nominatim
     estadoRuta.textContent = "Buscando el lugar...";
 
+    /*Este fragmento es el encargado de buscar el destino en Nominatim
+    y obtener sus coordenadas. Para entender cómo funciona internamente, 
+    hay que tener cuenta que Nominatim es un servicio de geocodificación que 
+    nos devuelve un listado de coordenadas para una búsqueda dada, ya que el sistema
+    no entiende de nombres de lugares. Por lo tanto, necesitamos convertir el nombre 
+    del destino en coordenadas para poder calcular la ruta.*/
     try {
+      /*Construimos la URL para hacer la petición a Nominatim. 
+      format=json indica que queremos la respuesta en formato JSON.
+      q=${encodeURIComponent(destino)} sirve para codificar el destino y que se pueda enviar por URL.
+      limit=1 indica que queremos solo un resultado*/
       const geoUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(destino)}&limit=1`;
+      // Hacemos la petición a Nominatim y usamos await para obligar al programa a esperar la respuesta
       const geoRes = await fetch(geoUrl);
+      // Convertimos la respuesta a JSON
       const geoData = await geoRes.json();
 
-      // Si no encuentra nada
+      // Si Nominatim no encuentra nada, nos lo dice y no seguimos
       if (geoData.length === 0) {
         estadoRuta.textContent = "No se encontró ese destino. Intenta ser más específico.";
         return;
       }
 
-      // Guardamos latitud, longitud y nombre del destino
-      destLat = parseFloat(geoData[0].lat);
-      destLon = parseFloat(geoData[0].lon);
-      destNombre = geoData[0].display_name;
+      // Si Nominatim encuentra algo, guardamos latitud, longitud y nombre del destino
+      destLat = parseFloat(geoData[0].lat);    
+      destLon = parseFloat(geoData[0].lon);     // parseFloat convierte el texto en número
+      destNombre = geoData[0].display_name;     // Guardamos el nombre del destino
+
     } catch (error) {
       // Si falla la petición
       estadoRuta.textContent = "Error de conexión con los servicios de mapas.";
       console.error(error);
       return;
     }
+  // Si no hay ni clic ni texto
   } else {
-    // Si no hay ni clic ni texto
     estadoRuta.textContent = "Escribe un destino o selecciona uno en el mapa.";
     return;
   }
@@ -367,52 +374,65 @@ async function calcularRuta() {
   // Informamos de que se está calculando la ruta
   estadoRuta.textContent = "Calculando ruta a pie...";
 
-  // Creamos el control de ruta
+  /*Este fragmento es el verdadero cerebro de la nabegación. Teniendo ya las coordenadas
+  de inicio y fin, llamamos a la librería Leaflet Routing Machine para que 
+  trace la línea azul y redacte el "paso a paso".
+  */
+
+  // Llama a la herramienta principal de trazado de rutas
   controlRuta = L.Routing.control({
+    // Waypoints: Son los puntos de inicio y fin de la ruta
     waypoints: [
-      L.latLng(miLatitud, miLongitud),
-      L.latLng(destLat, destLon)
+      L.latLng(miLatitud, miLongitud),    // Coordenadas de inicio
+      L.latLng(destLat, destLon)          // Coordenadas de destino
     ],
+    // RouteWhileDragging: false: Indica que no queremos que se recalcule la ruta mientras arrastramos el control
     routeWhileDragging: false,
+    // Es el motor que calcula la ruta. En este caso, usamos OSRM (Open Source Routing Machine)
     router: L.Routing.osrmv1({
-      serviceUrl: "https://routing.openstreetmap.de/routed-foot/route/v1",
-      profile: "foot"
+      serviceUrl: "https://routing.openstreetmap.de/routed-foot/route/v1",  // URL del servidor OSRM
+      profile: "foot"                                                       // Aquí indicamos que queremos una ruta a pie
     }),
+    // LineOptions: Son las opciones de estilo de la línea de la ruta
     lineOptions: {
+      // Color azul, grosor 5 y opacidad 0.85
       styles: [{ color: "#1f6feb", weight: 5, opacity: 0.85 }]
     },
+
+    // createMarker: Función que crea clava 2 chinchetas en el mapa
     createMarker: function (i, waypoint) {
-      // No queremos duplicar el marcador de origen
+      // Borra la chincheta de inicio porque el usuario ya tiene marcadorUsuario
       if (i === 0) return null;
 
       // Creamos el marcador del destino
       return L.marker(waypoint.latLng).bindPopup(destNombre);
     },
-    language: "es",
-    show: true,
-    collapsible: true,
-    fitSelectedRoutes: true
+    language: "es",           // Idioma de las instrucciones
+    show: true,               // Muestra la ruta en el mapa
+    collapsible: true,        // Permite ocultar la ruta
+    fitSelectedRoutes: true   // Ajusta el mapa a la ruta
   }).addTo(mapa);
 
-  // Cuando se encuentra la ruta correctamente
+  /*Este fragmento se ejecuta cuando se encuentra la ruta correctamente.
+  Lo que hace es guardar las instrucciones y coordenadas de la ruta para poder 
+  navegar por ella*/
   controlRuta.on("routesfound", (e) => {
     // Cogemos la primera ruta encontrada
     const ruta = e.routes[0];
 
     // Guardamos instrucciones y coordenadas
-    instruccionesRuta = ruta.instructions || [];
-    coordenadasRuta = ruta.coordinates || [];
+    instruccionesRuta = ruta.instructions || []; // Si no hay instrucciones, guardamos un array vacío
+    coordenadasRuta = ruta.coordinates || [];    // Si no hay coordenadas, guardamos un array vacío
 
     // Reiniciamos el índice del paso actual
     indicePasoActual = 0;
 
-    // Resumen de distancia y tiempo
+    // Este fragmento calcula la distancia y el tiempo de la ruta
     const distKm = (ruta.summary.totalDistance / 1000).toFixed(1);
     const tiempoMin = Math.round(ruta.summary.totalTime / 60);
 
     // Mostramos el estado
     estadoRuta.textContent = `Ruta calculada: ${distKm} km, ~${tiempoMin} min a pie.`;
-
 
     // Mostramos el primer paso
     mostrarPasoActual();
@@ -425,7 +445,7 @@ async function calcularRuta() {
 }
 
 // =========================
-// EVENTOS DEL DOM
+// BOTON y PULSACIÓN DE ENTER PARA CALCULAR LA RUTA
 // =========================
 
 // Al pulsar el botón, calculamos la ruta
@@ -439,7 +459,7 @@ destinoInput.addEventListener("keydown", (e) => {
 });
 
 // =========================
-// EVENTOS RECIBIDOS DESDE EL MANDO
+// EVENTOS RECIBIDOS DESDE EL MANDO ACTUALMENTE DESHABILITADOS
 // =========================
 
 // Si recibimos nextStep
@@ -496,4 +516,4 @@ socket.on("orientationData", (data) => {
   // De momento solo los mostramos por consola
   console.log("orientationData recibido en pantalla:", data);
 });
-
+

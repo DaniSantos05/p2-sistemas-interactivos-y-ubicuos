@@ -5,8 +5,6 @@
 <!-- Comienza el documento HTML y especificamos que está en español -->
 
 <head>
-  <!-- Cabecera del documento -->
-
   <meta charset="UTF-8">
   <!-- Codificación UTF-8 -->
 
@@ -82,15 +80,19 @@
   <div id="mapa"></div>
 
   <!-- Librería de Leaflet -->
+  <!-- Esta librería la utilizamos para crear el mapa-->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <!-- Librería de Leaflet Routing Machine -->
+  <!-- Esta librería la utilizamos para calcular la ruta-->
   <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js"></script>
 
   <!-- Cliente de Socket.IO -->
+  <!-- Esta librería la utilizamos para comunicarnos con el servidor-->
   <script src="/socket.io/socket.io.js"></script>
 
   <!-- Nuestro JS -->
+  <!-- Este es nuestro script que contiene toda la lógica de la aplicación-->
   <script src="/js/pantalla.js"></script>
 </body>
 </html>
