@@ -27,6 +27,11 @@
 </head>
 
 <body class="modo-2d">
+  <div id="arContainer" class="oculto">
+    <video id="arVideo" autoplay playsinline></video>     <!-- Video de la cámara -->
+    <canvas id="arCanvas"></canvas>                       <!-- Canvas para dibujar sobre el video -->
+  </div>
+
   <!-- Menú lateral flotante -->
   <button id="menuToggle" class="menu-toggle">☰</button>
 
@@ -48,6 +53,9 @@
         Destino en mapa con clic
       </label>
       
+      <button id="btnAR" class="btn-ar oculto">Activar Cámara AR</button>
+      <!-- Botón para activar el modo AR (estará oculto al principio) -->
+
       <!-- Estado de la ruta -->
       <div id="estadoRuta" class="status-box">Obteniendo tu ubicación...</div>
       
@@ -58,7 +66,7 @@
     <!-- Modulo de Controles (Botones visuales no funcionales) -->
     <div class="sidebar-section">
       <h3>Controles</h3>
-      <div class="grid-controls">
+      <div class="column-controls">
         <button class="btn-control" data-event="prevStep">Paso anterior</button>
         <button class="btn-control" data-event="nextStep">Siguiente</button>
         <button class="btn-control" data-event="zoomIn">Zoom +</button>

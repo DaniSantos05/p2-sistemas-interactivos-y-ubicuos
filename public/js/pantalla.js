@@ -24,15 +24,21 @@ socket.on("connect", () => {
 // ELEMENTOS DEL DOM
 // =========================
 
+// Elementos de AR
+const btnAR = document.getElementById("btnAR");                 // Botón de activar/desactivar AR
+const arContainer = document.getElementById("arContainer");     // Contenedor de AR
+const arVideo = document.getElementById("arVideo");             // Video de la cámara
+const arCanvas = document.getElementById("arCanvas");           // Canvas para dibujar sobre el video
+
 const destinoInput = document.getElementById("destinoInput");   // Campo de texto del destino
 const btnRuta = document.getElementById("btnRuta");             // Botón de calcular ruta
 const clickMode = document.getElementById("clickMode");         // Checkbox para elegir destino haciendo clic
 const estadoRuta = document.getElementById("estadoRuta");       // Texto del estado de la ruta
 
 // Elementos del DOM de la barra lateral
-const sidebar = document.getElementById("sidebar");
-const menuToggle = document.getElementById("menuToggle");
-const closeSidebar = document.getElementById("closeSidebar");
+const sidebar = document.getElementById("sidebar");             // Barra lateral
+const menuToggle = document.getElementById("menuToggle");       // Botón de abrir barra lateral
+const closeSidebar = document.getElementById("closeSidebar");   // Botón de cerrar barra lateral
 
 // Eventos para abrir y cerrar la barra lateral
 menuToggle.addEventListener("click", () => {
@@ -165,6 +171,16 @@ function limpiarRuta() {
   if (controlRuta) {
     mapa.removeControl(controlRuta);
     controlRuta = null;
+  }
+
+  // Si estaba el AR encendido, lo quitamos
+  if (typeof ActivarDesactivarARMode === 'function' && typeof isARMode !== 'undefined' && isARMode) {
+    ActivarDesactivarARMode();
+  }
+  
+  // Ocultamos el botón de AR si existe
+  if (btnAR) {
+    btnAR.classList.add("oculto");
   }
 
   instruccionesRuta = [];  // Reiniciamos las instrucciones
@@ -434,6 +450,9 @@ async function calcularRuta() {
     // Mostramos el estado
     estadoRuta.textContent = `Ruta calculada: ${distKm} km, ~${tiempoMin} min a pie.`;
 
+    // Activamos la opción de lanzar cámara AR
+    btnAR.classList.remove("oculto");
+
     // Mostramos el primer paso
     mostrarPasoActual();
   });
@@ -516,4 +535,253 @@ socket.on("orientationData", (data) => {
   // De momento solo los mostramos por consola
   console.log("orientationData recibido en pantalla:", data);
 });
+
+// =========================
+// MODO REALIDAD AUMENTADA
+// =========================
+
+let isARMode = false;             // Indica si estamos en modo AR
+let videoStream = null;           // Stream de video de la cámara
+let arAnimation = null;           // Animación AR
+let rumboActual = 0;              // Rumbo actual del dispositivo
+
+// Precarga de imágenes direccionales para Realidad Aumentada
+const imgArriba = new Image();
+imgArriba.src = "/Imagenes/arriba.jpg";
+const imgAbajo = new Image();
+imgAbajo.src = "/Imagenes/abajo.jpg";
+const imgDerecha = new Image();
+imgDerecha.src = "/Imagenes/derecha.jpg";
+const imgIzquierda = new Image();
+imgIzquierda.src = "/Imagenes/izquierda.jpg";
+
+
+/* Función que calcula el rumbo entre dos puntos basandose en trigonometría.
+Las fórmulas no entienden de grados, por lo que convertimos a radianes.
+'x' e 'y' son los catetos del triángulo rectángulo que forman los dos puntos.
+'brng' es el rumbo que queremos calcular. Al final convertimos de nuevo a grados.*/
+function calcularRumbo(lat1, lon1, lat2, lon2) {
+  const aRadianes = p => p * Math.PI / 180;         // Convierte grados a radianes
+  const aGrados = p => p * 180 / Math.PI;           // Convierte radianes a grados
+
+  const difLon = aRadianes(lon2 - lon1);            // Diferencia de longitud en radianes
+
+  // Fórmula para calcular el rumbo
+  /* Seno de la diferencia de longitud multiplicado por el coseno de la latitud del destino */
+  const y = Math.sin(difLon) * Math.cos(aRadianes(lat2));                     
+  /* Coseno de la latitud del origen multiplicado por el seno de la latitud del destino menos 
+  el seno de la latitud del origen multiplicado por el coseno de la latitud del destino multiplicado 
+  por el coseno de la diferencia de longitud */
+  const x = Math.cos(aRadianes(lat1)) * Math.sin(aRadianes(lat2)) -
+            Math.sin(aRadianes(lat1)) * Math.cos(aRadianes(lat2)) * Math.cos(difLon);
+  
+  // Calcula el rumbo en radianes y lo convierte a grados
+  let rumbo = aGrados(Math.atan2(y, x));
+  
+  // Asegura que el rumbo esté entre 0 y 360 grados
+  return (rumbo + 360) % 360;
+}
+
+// Función que maneja los eventos de orientación del dispositivo
+/*Su funcion es capturar la orientación del dispositivo y guardarla en la variable rumboActual*/
+function handleOrientation(event) {
+  // Si el dispositivo es iOS, usamos webkitCompassHeading para capturar la orientación
+  if (event.webkitCompassHeading !== undefined && event.webkitCompassHeading !== null) {
+    rumboActual = event.webkitCompassHeading;
+  } else if (event.alpha !== null) {
+    /*Si no es Android, usamos alpha porque en Android el giro de los sensores viene invertido.
+    Si rotas el móvil a la derecha en el mundo real, los grados bajan en vez de subir. Por ello
+    se hace la resta para invertir el giro*/
+    rumboActual = 360 - event.alpha;
+  }
+}
+
+/*Ejemplo de cómo trabajan amnas funciones: Si el punto de destino está en el Este del mapa(90º)
+en el mundo real y el móvil al orientarse usando handleOrientation lee la brújula y detecta que apunta hacia el
+Noroeste(45º), la diferencia será de 45º. Por lo tanto, el triángulo se dibujará a la derecha de la pantalla*/
+
+
+
+//Función que dibuja el frame de AR
+/*Su función es dibujar en la pantalla las imágenes para que se vean fluidas sobre el video
+de la cámara*/
+function drawARFrame() {
+  //Si no estamos en modo AR, no hacemos nada
+  if (!isARMode) return;
+  
+  //Si el canvas no tiene el tamaño correcto, lo redimensionamos
+  if (arCanvas.width !== window.innerWidth || arCanvas.height !== window.innerHeight) {
+    arCanvas.width = window.innerWidth;       //Ancho del canvas
+    arCanvas.height = window.innerHeight;     //Alto del canvas  
+  }
+  // Crea el contexto 2D del canvas
+  const ctx = arCanvas.getContext("2d");
+
+  /*Limpia el canvas para dibujar el siguiente frame.
+  Los parámetros son: x(representa la posición horizontal), 
+  y(representa la posición vertical), 
+  ancho(representa el ancho del canvas), alto(representa el alto del canvas)*/
+  ctx.clearRect(0, 0, arCanvas.width, arCanvas.height); 
+
+
+  /*Si el usuario está en una ruta y tiene coordenadas, calcula el rumbo matemático y lo compara con el rumbo actual
+  para dibujar la imagen correspondiente*/
+  if (miLatitud !== null && miLongitud !== null && coordenadasRuta && coordenadasRuta.length > 0) {
+    let objetivoPaso = null;  
+    // Si el índice del paso actual es válido y las instrucciones de la ruta existen
+    if (indicePasoActual >= 0 && instruccionesRuta && instruccionesRuta[indicePasoActual]) {
+        // Obtenemos el índice de las coordenadas del paso actual
+        let idxCoord = instruccionesRuta[indicePasoActual].index;
+        // Si las coordenadas del paso actual existen
+        if (coordenadasRuta[idxCoord]) {
+            // Obtenemos las coordenadas del paso actual
+            objetivoPaso = coordenadasRuta[idxCoord];
+        }
+    } 
+    
+    // Si no se ha encontrado un objetivo, se toma el último punto de la ruta
+    if (!objetivoPaso) {
+        objetivoPaso = coordenadasRuta[coordenadasRuta.length - 1];
+    }
+    
+    // Si se ha encontrado un objetivo
+    if (objetivoPaso) {
+      // Calcula el rumbo matemático entre la posición actual y el objetivo
+      const rumboMatematico = calcularRumbo(miLatitud, miLongitud, objetivoPaso.lat, objetivoPaso.lng);
+      // Calcula la diferencia entre el rumbo matemático y el rumbo actual
+      const diffRumbo = rumboMatematico - rumboActual;
+      
+      // Calcula el centro del canvas
+      const cx = arCanvas.width / 2;
+      const cy = arCanvas.height / 2;
+      
+      // Normaliza la diferencia de rumbo a positivo 0-360 para que funcione correctamente
+      let angulo = (diffRumbo % 360 + 360) % 360;
+      
+      // Se elige la imagen dependiendo del ángulo relativo
+      let imgPintar = imgArriba;
+      
+      /*Si el ángulo está entre 315 y 45 grados, se dibuja la imagen de arriba
+      Si el ángulo está entre 45 y 135 grados, se dibuja la imagen de la derecha
+      Si el ángulo está entre 135 y 225 grados, se dibuja la imagen de abajo
+      Si el ángulo está entre 225 y 315 grados, se dibuja la imagen de la izquierda*/
+      if (angulo >= 315 || angulo < 45) {
+         imgPintar = imgArriba;
+      } else if (angulo >= 45 && angulo < 135) {
+         imgPintar = imgDerecha;
+      } else if (angulo >= 135 && angulo < 225) {
+         imgPintar = imgAbajo;
+      } else {
+         imgPintar = imgIzquierda;
+      }
+      
+      // Guarda el estado actual del canvas y lo traslada al centro
+      ctx.save();
+      ctx.translate(cx, cy);
+      
+      // Si la imagen ya se ha descargado completamente, la dibujamos en el centro
+      if (imgPintar.complete && imgPintar.naturalHeight !== 0) {
+        // Al dibujarla elegimos un tamaño, por ejemplo 250x250 píxeles
+        const tam = 250; 
+        /*Los parámetros de drawImage son: 
+        imgPintar: la imagen que queremos dibujar
+        -tam/2, -tam/2: la posición en el canvas donde queremos dibujar la imagen
+        tam, tam: el tamaño de la imagen*/
+        ctx.drawImage(imgPintar, -tam/2, -tam/2, tam, tam);
+      }
+      
+      // Restaura el estado anterior del canvas
+      ctx.restore();
+    }
+  }
+  
+  // Esto es para que cuando se acabe de dibujar un frame, se pida otro, creando un bucle infinito a 60 fps
+  arAnimation = requestAnimationFrame(drawARFrame);
+}
+
+//Función que activa o desactiva el modo AR
+async function ActivarDesactivarARMode() {
+  //Si el modo AR está activo, lo desactivamos
+  if (isARMode) {
+    isARMode = false;
+    btnAR.textContent = "Activar Cámara AR";
+    document.body.classList.remove("modo-ar");  //Quitamos el modo AR del body
+    arContainer.classList.add("oculto");        //Ocultamos el contenedor de AR
+    
+    // Si hay un stream de video, lo paramos
+    if (videoStream) {
+      videoStream.getTracks().forEach(track => track.stop());  // track.stop() detiene el stream de video
+      videoStream = null;   //Lo ponemos a null para liberar memoria
+    }
+    
+    // Si hay una animación, la cancelamos
+    if (arAnimation) {
+      cancelAnimationFrame(arAnimation);                      // cancelAnimationFrame() cancela la animación
+      arAnimation = null;   //Lo ponemos a null para liberar memoria
+    } 
+    
+    // Quitamos los event listeners de la brújula
+    // deviceorientationabsolute: apunta al Norte real del planeta como una brújula de verdad.
+    // deviceorientation: el norte es simplemente la dirección hacia la que apunta el teléfono cuando abres la página.
+    window.removeEventListener("deviceorientationabsolute", handleOrientation); 
+    window.removeEventListener("deviceorientation", handleOrientation);
+
+    // Forzamos que el mapa se redimensione correctamente. El 500 indica que se espere 500 milisegundos antes de redimensionar el mapa
+    setTimeout(() => { mapa.invalidateSize(); }, 500);
+
+  // Si el modo AR está desactivado, lo activamos
+  } else {
+    // Si el dispositivo no soporta DeviceOrientationEvent o no tiene el método requestPermission, mostramos un mensaje de error
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      try {
+        // Pedimos permiso para acceder a la brújula
+        const permissionState = await DeviceOrientationEvent.requestPermission();
+        // Si el permiso no es concedido, mostramos un mensaje de error
+        if (permissionState !== 'granted') {
+          alert("Necesitamos acceso a la brújula para que la flecha gire correctamente.");
+          return;
+        }
+      // Si hay un error al pedir permisos, mostramos un mensaje de error
+      } catch (error) {
+        console.error("Error al pedir permisos de brújula", error);
+        alert("Ocurrió un error al acceder a la brújula.");
+        return;
+      }
+    }
+    
+    // Intentamos obtener el stream de video de la cámara trasera
+    try {
+      // Obtenemos el stream de video. Con 'environment' accedemos a la cámara trasera
+      videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      // Asignamos el stream de video al elemento de video
+      arVideo.srcObject = videoStream; 
+      
+      // Una vez que tenemos el stream de video, lo ponemos en modo AR y cambiamos el texto del botón a desactivar.
+      isARMode = true;
+      btnAR.textContent = "Desactivar AR";   
+      
+      // Quitamos el contenedor de AR y añadimos el modo AR al body
+      arContainer.classList.remove("oculto");
+      document.body.classList.add("modo-ar");
+      
+      // Añadimos los event listeners de la brújula
+      window.addEventListener("deviceorientationabsolute", handleOrientation, true);
+      window.addEventListener("deviceorientation", handleOrientation, true);
+      
+      // Dibujamos el frame de AR
+      drawARFrame();
+
+      // Forzamos que el mapa se redimensione correctamente. El 500 indica que se espere 500 milisegundos antes de redimensionar el mapa
+      setTimeout(() => { mapa.invalidateSize(); }, 500);
+      
+    // Si hay un error al obtener el stream de video, mostramos un mensaje de error
+    } catch (error) {
+      console.error("No se pudo acceder a la cámara:", error);
+      alert("No podemos activar la cámara. Asegúrate de dar permisos y estar en HTTPS.");
+    }
+  }
+}
+
+// Añadimos el event listener al botón de AR
+btnAR.addEventListener("click", ActivarDesactivarARMode);
 

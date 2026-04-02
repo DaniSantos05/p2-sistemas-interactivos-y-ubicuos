@@ -50,7 +50,7 @@ body {
   border-right: 1px solid rgba(255, 255, 255, 0.4);
   padding: 25px;
   box-sizing: border-box;
-  transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);  /* Transición suave */
+  transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);  /* cubic-bezier cambia la velocidad de la transición */
   overflow-y: auto;                                           
 }
 
@@ -144,6 +144,7 @@ body {
 }
 
 .btn-primario:hover {
+  color: blue;
   transform: translateY(-2px);       /* Sube un poco */
 }
 
@@ -176,20 +177,20 @@ body {
   border-left: 4px solid #3498db;   /* Borde lateral */
 }
 
-/* Grilla de controles (botones inactivos visuales) */
-.grid-controls {
-  display: grid;
-  grid-template-columns: 1fr 1fr;     /* Dos columnas */
+/* Controles dispuestos uno debajo del otro (botones inactivos visuales) */
+.column-controls {
+  display: flex;
+  flex-direction: column;
   gap: 10px;
 }
 
 /* Botones de control */
 .btn-control {
-  padding: 10px;
+  padding: 25px;
   border: none;
   border-radius: 8px;
-  background: #ecf0f1;
-  color: black;
+  background: linear-gradient(135deg, #3498db, #2980b9);  /* Gradiente de color */
+  color: white;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -198,7 +199,7 @@ body {
 
 /* Hover al pasar el ratón */
 .btn-control:hover {
-  background: #bdc3c7;
+  color: blue;
   transform: translateY(-2px);       /* Sube un poco */
 }
 
@@ -219,3 +220,90 @@ body {
   transform: none;
   transition: transform 0.4s ease;
 }
+
+
+/*Estilos de AR (Realidad Aumentada)*/
+
+/*Oculta elementos*/
+.oculto {
+  display: none !important;
+}
+
+/*Contenedor de AR*/
+#arContainer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;  /* vw significa que el ancho es el 100% de la ventana*/
+  height: 100vh; /* vh significa que el alto es el 100% de la ventana*/
+  z-index: 100;  /* Detrás del panel de control, pero encima del mapa base */
+  background: black;
+}
+
+/*Video de la cámara*/
+#arVideo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/*Canvas para dibujar sobre el video*/
+#arCanvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  pointer-events: none;
+}
+
+/*Botón para activar la cámara AR*/
+.btn-ar {
+  width: 100%;
+  padding: 11px;
+  border: none;
+  border-radius: 8px;
+  background: #eb1f5a;
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: all 0.2s ease;
+}
+
+/* Hover al pasar el ratón */
+.btn-ar:hover {
+  color: #631616;
+  transform: translateY(-2px);
+}
+
+/* Modo AR Activo: Mini-mapa radar */
+body.modo-ar #mapa {
+  position: fixed !important;   /* !important anula cualquier otro estilo */
+  top: 20px !important;
+  right: 20px !important;
+  left: auto !important;   
+  width: 250px !important;
+  height: 250px !important;
+  border-radius: 15px;
+  border: 4px solid white;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  z-index: 1000;
+  transition: all 0.5s ease;
+}
+
+/* Ocultar las instrucciones de la ruta y los botones del minimapa en modo AR */
+body.modo-ar .leaflet-routing-container,
+body.modo-ar .leaflet-control-zoom,
+body.modo-ar .leaflet-control-attribution {
+  display: none !important;
+}
+
+/* Fondo transparente en modo AR */
+body.modo-ar {
+  background: transparent;
+}
+
+/*Dimensiones Responsive: 360 x 771 px para mi huawei p30 lite*/

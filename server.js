@@ -131,3 +131,7 @@ server.listen(PORT, () => {
   // Mostramos en consola la URL local del servidor
   console.log(`Servidor ejecutándose en http://localhost:${PORT}`);
 });
+
+/*npx localtunnel --port 3000.
+Para que funcione en el móvil hay que poner la ip del ordenador en vez de localhost
+http://localhost:3000*/
