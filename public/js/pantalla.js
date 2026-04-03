@@ -271,107 +271,102 @@ function limpiarRuta() {
 // Función para calcular la distancia en metros entre dos puntos usando la fórmula de Haversine
 function distanciaEnMetros(lat1, lon1, lat2, lon2) {
   const R = 6371000;
-  const aRadianes = (grados) => (grados * Math.PI) / 180;
+  const aRadianes = (grados) => (grados * Math.PI) / 180;  // Convierte grados a radianes
 
-  const dLat = aRadianes(lat2 - lat1);
-  const dLon = aRadianes(lon2 - lon1);
+  const dLat = aRadianes(lat2 - lat1);    // Diferencia de latitud en radianes
+  const dLon = aRadianes(lon2 - lon1);    // Diferencia de longitud en radianes
 
+  // Fórmula de Haversine
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(aRadianes(lat1)) *
-      Math.cos(aRadianes(lat2)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-
+    Math.cos(aRadianes(lat1)) * Math.cos(aRadianes(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  
+  // Distancia en metros
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
+  return R * c;    // Devuelve el producto del radio de la Tierra y el ángulo central en radianes
 }
 
-// Función que devuelve el punto GPS asociado a una instrucción concreta
+/* Función que devuelve el punto GPS asociado a una instrucción concreta.
+Sirve para traducir una instrucción de texto en un punto exacto del mapa donde
+debe ocurrir la maniobra*/
 function obtenerPuntoDeInstruccion(indiceInstruccion) {
-  if (
-    indiceInstruccion < 0 ||
-    indiceInstruccion >= instruccionesRuta.length
-  ) {
+  // Si el índice está fuera de rango, devolvemos null
+  if (indiceInstruccion < 0 || indiceInstruccion >= instruccionesRuta.length) {
     return null;
   }
 
+  // Obtenemos la instrucción
   const instruccion = instruccionesRuta[indiceInstruccion];
 
-  if (
-    !instruccion ||
-    typeof instruccion.index !== "number" ||
-    !coordenadasRuta[instruccion.index]
-  ) {
+  // Si la instrucción no es válida, devolvemos null
+  if (!instruccion || typeof instruccion.index !== "number" || !coordenadasRuta[instruccion.index]) {
     return null;
   }
 
+  // Devolvemos el punto GPS asociado a la instrucción
   return coordenadasRuta[instruccion.index];
 }
 
 // Función que cambia automáticamente al siguiente paso cuando te acercas al punto de maniobra
 function actualizarPasoAutomatico() {
-  if (
-    rutaTerminada ||
-    miLatitud === null ||
-    miLongitud === null ||
-    !instruccionesRuta.length ||
-    !coordenadasRuta.length ||
-    indicePasoActual < 0
-  ) {
+  // Si la ruta ha terminado o no hay datos, no hacemos nada
+  if (rutaTerminada || miLatitud === null || miLongitud === null || !instruccionesRuta.length || !coordenadasRuta.length || indicePasoActual < 0) {
     return;
   }
 
+  // Obtenemos el tiempo actual
   const ahora = Date.now();
 
+  // Esto es para que la instrucción no cambie cada milisegundo y evitar parpadeos por culpa del GPS
   if (ahora - ultimoCambioAutomatico < RETARDO_CAMBIO_PASO_MS) {
     return;
   }
 
+  // Obtenemos el punto final de la ruta
   const puntoFinal = coordenadasRuta[coordenadasRuta.length - 1];
 
+  // Si el punto final existe, calculamos la distancia al destino con la función distanciaEnMetros
   if (puntoFinal) {
-    const distanciaFinal = distanciaEnMetros(
-      miLatitud,
-      miLongitud,
-      puntoFinal.lat,
-      puntoFinal.lng
-    );
+    const distanciaFinal = distanciaEnMetros(miLatitud, miLongitud, puntoFinal.lat, puntoFinal.lng);
 
+    // Si estamos cerca del destino, terminamos la ruta
     if (distanciaFinal <= DISTANCIA_LLEGADA_DESTINO) {
       rutaTerminada = true;
-      indicePasoActual = instruccionesRuta.length - 1;
+      indicePasoActual = instruccionesRuta.length - 1;    // Actualizamos el índice del paso actual
       estadoRuta.textContent = "Has llegado al destino.";
       stepBox.textContent = "Has llegado al destino.";
-      ultimoCambioAutomatico = ahora;
+      ultimoCambioAutomatico = ahora;                     // Actualizamos el tiempo del último cambio automático
       return;
     }
   }
 
-  let haAvanzado = false;
+  let haAvanzado = false;                                // Variable para indicar si hemos avanzado al siguiente paso
 
+  // Mientras no hayamos llegado al final de la ruta
   while (indicePasoActual < instruccionesRuta.length - 1) {
+    // Obtenemos el siguiente índice y el punto siguiente
     const siguienteIndice = indicePasoActual + 1;
     const puntoSiguiente = obtenerPuntoDeInstruccion(siguienteIndice);
 
+    // Si el punto siguiente no existe, salimos del bucle
     if (!puntoSiguiente) break;
 
-    const distanciaSiguiente = distanciaEnMetros(
-      miLatitud,
-      miLongitud,
-      puntoSiguiente.lat,
-      puntoSiguiente.lng
-    );
+    // Calculamos la distancia al siguiente punto
+    const distanciaSiguiente = distanciaEnMetros(miLatitud, miLongitud, puntoSiguiente.lat, puntoSiguiente.lng);
 
+    // Si estamos cerca del siguiente punto, avanzamos al siguiente paso
     if (distanciaSiguiente <= DISTANCIA_CAMBIO_PASO) {
-      indicePasoActual = siguienteIndice;
-      haAvanzado = true;
-      ultimoCambioAutomatico = ahora;
+      indicePasoActual = siguienteIndice;  // Actualizamos el índice del paso actual
+      haAvanzado = true;                   // Indicamos que hemos avanzado al siguiente paso
+      ultimoCambioAutomatico = ahora;      // Actualizamos el tiempo del último cambio automático
+      // Si hemos avanzado, salimos del bucle
     } else {
-      break;
+      break;                               // Si no estamos cerca del siguiente punto, salimos del bucle
     }
   }
 
+  // Si hemos avanzado, mostramos el paso actual
   if (haAvanzado) {
     mostrarPasoActual();
     estadoRuta.textContent = "Paso actualizado automáticamente.";
@@ -763,7 +758,7 @@ let rumboSuavizado = 0;     // Rumbo suavizado del usuario
 
 
 // =========================
-// FUNCIONES DE ÁNGULOS Y RUMBO
+// FUNCIONES DE ÁNGULOS Y RUMBO (muy importantes para la cámara AR)
 // =========================
 
 /* Función que calcula el rumbo entre dos puntos basandose en trigonometría.
@@ -792,65 +787,97 @@ function calcularRumbo(lat1, lon1, lat2, lon2) {
   return (rumbo + 360) % 360;
 }
 
+
+/*Estas funciones son para normalizar y calcular diferencias de ángulos. Los ángulos
+son tramposos porque son un círculo. Si estamos mirando 359 grados y giramos 2 grados, 
+no estamos girando 357 grados, sino 1 grado. De igual manera, la distancia entre 350 grados
+y 10 grados es 20 grados, no 340 grados. Estas funcones aseguran que la flecha
+tome el camino de giro más corto en lugar de dar vuelta completa sobre sí misma.*/
+
+// Función que normaliza el ángulo para que esté entre 0 y 360 grados
 function normalizarAngulo(angulo) {
   return (angulo % 360 + 360) % 360;
+  // Ejemplo: Si el ángulo es -10, lo convierte a 350. Si es 370, lo convierte a 10.
 }
 
+// Función que calcula la diferencia angular entre dos ángulos
 function diferenciaAngular(a, b) {
+  // Calcula la diferencia entre los dos ángulos
   let diff = normalizarAngulo(a - b);
+  // Si la diferencia es mayor a 180 grados, la convierte a grados negativos
   if (diff > 180) diff -= 360;
   return diff;
+  // Ejemplo: Si a es 10 y b es 350, la diferencia es -340. Lo convierte a 20.
 }
 
+// Función que normaliza el ángulo para que esté entre 0 y 2π radianes
 function normalizarRadianes(angulo) {
-  const dosPi = Math.PI * 2;
+  const dosPi = Math.PI * 2;                // 2π es igual a 360 grados
   return (angulo % dosPi + dosPi) % dosPi;
 }
 
+// Función que calcula la diferencia angular entre dos ángulos en radianes
 function diferenciaAngularRad(a, b) {
+  // Calcula la diferencia entre los dos ángulos
   let diff = normalizarRadianes(a - b);
+  // Si la diferencia es mayor a π radianes, la convierte a radianes negativos
   if (diff > Math.PI) diff -= Math.PI * 2;
   return diff;
 }
 
+// Función que convierte grados a radianes
 function gradosARadianes(grados) {
-  return (grados * Math.PI) / 180;
+  return (grados * Math.PI) / 180;  
 }
 
+/*Función que limita un valor a un rango. Esto se emplea
+para que el ángulo no sea mayor a 360 grados ni menor a 0 grados*/
 function limitar(valor, min, max) {
   return Math.max(min, Math.min(max, valor));
 }
 
+
+/*Las funciones a continuación tiene como objetivo estabilizar la flecha. Cuando
+caminamos, el GPS nunca es 100% preciso, por lo que la flecha puede temblar.*/
+
+/*Función que obtiene el índice base de la ruta. Devuelve en qué punto de la línea 
+azul del mapa de coordenadas empieza ese paso.*/
 function obtenerIndiceBaseAR() {
-  if (
-    indicePasoActual >= 0 &&
-    instruccionesRuta &&
-    instruccionesRuta[indicePasoActual] &&
-    typeof instruccionesRuta[indicePasoActual].index === "number"
-  ) {
+  // Si el índice del paso actual es válido y las instrucciones de la ruta son válidas
+  if (indicePasoActual >= 0 && instruccionesRuta && instruccionesRuta[indicePasoActual] && typeof instruccionesRuta[indicePasoActual].index === "number") {
+    // Devuelve el índice base
     return instruccionesRuta[indicePasoActual].index;
   }
 
+  // Si no se encuentra el índice base, devuelve 0
   return 0;
 }
 
+/*El usuario no siempre está en el punto exacto de la línea azul, por lo que
+esta función busca en el mapa el trocito de línea azul que esté más cerca 
+del usuario. Para no equivocarse, solo busca en una pequeña ventana de puntos(6 antes y 35 después)*/
 function obtenerIndiceMasCercanoEnVentana(indiceBase) {
+  // Si no hay coordenadas de la ruta, devuelve -1
   if (!coordenadasRuta || !coordenadasRuta.length) {
     return -1;
   }
 
-  const ultimoIndice = coordenadasRuta.length - 1;
-  const inicio = Math.max(0, indiceBase - 6);
-  const fin = Math.min(ultimoIndice, indiceBase + PUNTOS_VENTANA_BUSQUEDA_AR);
+  const ultimoIndice = coordenadasRuta.length - 1;           // Último índice de la ruta
+  const inicio = Math.max(0, indiceBase - 6);                // Índice inicial de la ventana
+  const fin = Math.min(ultimoIndice, indiceBase + PUNTOS_VENTANA_BUSQUEDA_AR);  // Índice final de la ventana
 
-  let mejorIndice = inicio;
-  let mejorDistancia = Infinity;
+  let mejorIndice = inicio;         // Mejor índice
+  let mejorDistancia = Infinity;    // Mejor distancia. Infinity porque es el valor más grande posible
 
+  // Recorremos la ventana de puntos
   for (let i = inicio; i <= fin; i++) {
     const p = coordenadasRuta[i];
+    // Si no hay coordenadas, saltamos el punto
     if (!p) continue;
 
+    // Calculamos la distancia entre el usuario y el punto
     const dist = distanciaEnMetros(miLatitud, miLongitud, p.lat, p.lng);
+    // Si la distancia es menor a la mejor distancia, actualizamos
     if (dist < mejorDistancia) {
       mejorDistancia = dist;
       mejorIndice = i;
@@ -860,53 +887,61 @@ function obtenerIndiceMasCercanoEnVentana(indiceBase) {
   return mejorIndice;
 }
 
+/*Esta es la función maestra que calcula el objetivo de la flecha. Es decir, el punto de la línea azul
+hacia el que debe apuntar la flecha. Para ello, busca en la línea azul el punto que esté
+más cerca del usuario y que esté a una distancia de al menos 5 metros. Si no encuentra
+un punto que cumpla estas condiciones, devuelve el último punto de la ruta.*/
 function obtenerObjetivoAR() {
-  if (
-    miLatitud === null ||
-    miLongitud === null ||
-    !coordenadasRuta ||
-    !coordenadasRuta.length
-  ) {
+  // Si no hay coordenadas de la ruta, devuelve null
+  if (miLatitud === null || miLongitud === null || !coordenadasRuta || !coordenadasRuta.length) {
     return null;
   }
 
+  // Obtenemos el índice base de la ruta y el índice más cercano en la ventana
   const indiceBase = obtenerIndiceBaseAR();
   const indiceCercano = obtenerIndiceMasCercanoEnVentana(indiceBase);
 
+  // Si no hay coordenadas de la ruta, devuelve null
   if (indiceCercano < 0) {
     return null;
   }
 
+  // Último índice de la ruta
   const ultimoIndice = coordenadasRuta.length - 1;
 
+  // Distancia acumulada e índice objetivo
   let distanciaAcumulada = 0;
   let indiceObjetivo = indiceCercano;
 
+  // Recorremos la ruta desde el índice más cercano
   for (let i = indiceCercano; i < ultimoIndice; i++) {
     const p1 = coordenadasRuta[i];
     const p2 = coordenadasRuta[i + 1];
+    // Si no hay coordenadas, saltamos el punto
     if (!p1 || !p2) continue;
 
+    // Sumamos la distancia entre el punto actual y el siguiente
     distanciaAcumulada += distanciaEnMetros(p1.lat, p1.lng, p2.lat, p2.lng);
+    // Actualizamos el índice objetivo
     indiceObjetivo = i + 1;
 
+    // Si la distancia acumulada es mayor o igual a la distancia adelante objetivo, salimos del bucle
     if (distanciaAcumulada >= DISTANCIA_ADELANTE_OBJETIVO_AR) {
       break;
     }
   }
 
+  // Obtenemos el objetivo
   const objetivo = coordenadasRuta[indiceObjetivo];
+  // Si no hay objetivo, devolvemos el último punto de la ruta
   if (!objetivo) {
     return coordenadasRuta[ultimoIndice];
   }
 
-  const distUsuarioObjetivo = distanciaEnMetros(
-    miLatitud,
-    miLongitud,
-    objetivo.lat,
-    objetivo.lng
-  );
+  // Distancia entre el usuario y el objetivo
+  const distUsuarioObjetivo = distanciaEnMetros(miLatitud, miLongitud, objetivo.lat, objetivo.lng);
 
+  // Si la distancia entre el usuario y el objetivo es menor a la distancia mínima objetivo, devolvemos el objetivo
   if (distUsuarioObjetivo < DISTANCIA_MINIMA_OBJETIVO_AR) {
     return coordenadasRuta[Math.min(indiceObjetivo + 2, ultimoIndice)];
   }
@@ -988,71 +1023,94 @@ function drawARFrame() {
       //Calculamos el rumbo al objetivo
       const rumboObjetivoCrudo = calcularRumbo(miLatitud, miLongitud, objetivoPaso.lat, objetivoPaso.lng);
 
+      /*Para que la flecha parezca que está flotando, aplicamos un filtro paso bajo para evitar 
+      temblores excesivos y movimientos erráticos. El primer suavizado mezcla el rumbo crudo
+      del GPS con el rumbo anterior.*/
+
+      //Si no tenemos rumbo objetivo, lo establecemos
       if (rumboObjetivoSuavizado === null) {
         rumboObjetivoSuavizado = rumboObjetivoCrudo;
       } else {
+        //Calculamos la diferencia angular entre el rumbo objetivo crudo y el rumbo objetivo suavizado
         const diffObjetivo = diferenciaAngular(rumboObjetivoCrudo, rumboObjetivoSuavizado);
 
+        //Actualizamos el rumbo objetivo suavizado
         rumboObjetivoSuavizado = normalizarAngulo(rumboObjetivoSuavizado + diffObjetivo * SUAVIZADO_RUMBO_OBJETIVO);
       }
 
+      //Calculamos el ángulo relativo entre el rumbo objetivo suavizado y el rumbo actual
       let anguloRelativo = diferenciaAngular(rumboObjetivoSuavizado, rumboActual);
 
+      /*Calculamos el ángulo relativo entre el rumbo objetivo suavizado y el rumbo actual
+      Si la diferencia de ángulo es muy pequeña, la dejamos en 0 para que la flecha no se mueva
+      si estamos apuntando al objetivo. Sin esta zona muerta, la flecha temblaría mucho
+      al intentar apuntar al objetivo*/
       if (Math.abs(anguloRelativo) < ZONA_MUERTA_RECTO_GRADOS) {
         anguloRelativo = 0;
       }
 
+      //Convertimos el ángulo relativo a radianes
       const anguloObjetivoRad = gradosARadianes(limitar(anguloRelativo, -170, 170));
 
+      /* El segundo suavizado obliga a la flecha a balancearse suavemennte hasta
+      alcanzar la nueva posición, dándole ese efecto de flotación */
+
+      //Si no tenemos ángulo de flecha, lo establecemos
       if (anguloFlechaRenderizado === null) {
         anguloFlechaRenderizado = anguloObjetivoRad;
       } else {
+        //Calculamos la diferencia angular entre el ángulo objetivo y el ángulo de la flecha
         const diffRot = diferenciaAngularRad(anguloObjetivoRad, anguloFlechaRenderizado);
 
+        //Actualizamos el ángulo de la flecha
         anguloFlechaRenderizado = normalizarRadianes(anguloFlechaRenderizado + diffRot * SUAVIZADO_ROTACION_FLECHA);
       }
 
+      //Obtenemos el centro del canvas
       const cx = arCanvas.width / 2;
       const cy = arCanvas.height / 2;
-      const escala = window.innerWidth < 600 ? 1.05 : 1.5;
+      const escala = window.innerWidth < 600 ? 1.05 : 1.5;   //Escala de la flecha
 
+      // Guardamos el canvas, aplicamos la rotación y escalamos
       ctx.save();
       ctx.translate(cx, cy);
       ctx.rotate(anguloFlechaRenderizado);
 
+      // Sombra de la flecha
       ctx.shadowColor = "rgba(0, 0, 0, 0.35)";
-      ctx.shadowBlur = 18;
-      ctx.shadowOffsetX = 0;
-      ctx.shadowOffsetY = 6;
+      ctx.shadowBlur = 18;                            //Difuminado de la sombra
+      ctx.shadowOffsetX = 0;                          //Desplazamiento horizontal de la sombra
+      ctx.shadowOffsetY = 6;                          //Desplazamiento vertical de la sombra
 
+      // Dibujamos la flecha
       ctx.beginPath();
-      ctx.moveTo(0, -90 * escala);
-      ctx.lineTo(60 * escala, 0);
-      ctx.lineTo(25 * escala, 0);
-      ctx.lineTo(25 * escala, 90 * escala);
-      ctx.lineTo(-25 * escala, 90 * escala);
-      ctx.lineTo(-25 * escala, 0);
-      ctx.lineTo(-60 * escala, 0);
-      ctx.closePath();
+      ctx.moveTo(0, -90 * escala);                    //Punto superior de la flecha
+      ctx.lineTo(60 * escala, 0);                     //Punto superior derecho de la flecha
+      ctx.lineTo(25 * escala, 0);                     //Punto inferior derecho de la flecha
+      ctx.lineTo(25 * escala, 90 * escala);           //Punto inferior derecho de la flecha
+      ctx.lineTo(-25 * escala, 90 * escala);          //Punto inferior izquierdo de la flecha
+      ctx.lineTo(-25 * escala, 0);                    //Punto inferior izquierdo de la flecha
+      ctx.lineTo(-60 * escala, 0);                    //Punto inferior izquierdo de la flecha
+      ctx.closePath();                                //Cierra la forma de la flecha
 
-      ctx.fillStyle = "rgba(0, 102, 255, 0.88)";
+      ctx.fillStyle = "rgba(0, 102, 255, 0.88)";      //Color de la flecha
       ctx.fill();
 
-      ctx.lineWidth = 6;
-      ctx.lineJoin = "round";
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.95)";
+      ctx.lineWidth = 6;                              //Grosor de la flecha
+      ctx.lineJoin = "round";                         //Unión de las líneas
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.95)";//Color del borde de la flecha
       ctx.stroke();
 
-      ctx.shadowColor = "transparent";
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
+      ctx.shadowColor = "transparent";                //Color de la sombra
+      ctx.lineWidth = 2;                              //Grosor de la sombra
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";//Color del borde de la sombra
       ctx.stroke();
 
-      ctx.restore();
+      ctx.restore();                                  //Restaura el canvas
     }
   }
 
-  arAnimation = requestAnimationFrame(drawARFrame);
+  arAnimation = requestAnimationFrame(drawARFrame);   //Solicita el siguiente frame
 }
 
 
