@@ -1,4 +1,4 @@
-// =========================
+﻿    // =========================
 // CONEXIÓN CON SOCKET.IO
 // =========================
 
@@ -51,9 +51,9 @@ closeSidebar.addEventListener("click", () => {
 // Creamos el mapa con una vista inicial en Madrid
 const mapa = L.map("mapa").setView([40.4168, -3.7038], 15);
 
-// Añadimos la capa base de OpenStreetMap
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  attribution: "&copy; OpenStreetMap contributors"
+// Añadimos la capa base de CartoDB (evita bloqueos de OpenStreetMap en servidores como devtunnels)
+L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>'
 }).addTo(mapa);
 
 
@@ -637,15 +637,42 @@ function calcularRumbo(lat1, lon1, lat2, lon2) {
 
 // Función que maneja los eventos de orientación del dispositivo
 /*Su funcion es capturar la orientación del dispositivo y guardarla en la variable rumboActual*/
+// Variable para suavizar la rotación (Filtro paso bajo)
+let rumboSuavizado = 0;
+
 function handleOrientation(event) {
+  // Variable temporal para el cálculo
+  let rumboCrudo = null;
+
   // Si el dispositivo es iOS, usamos webkitCompassHeading para capturar la orientación
   if (event.webkitCompassHeading !== undefined && event.webkitCompassHeading !== null) {
-    rumboActual = event.webkitCompassHeading;
+    rumboCrudo = event.webkitCompassHeading;
   } else if (event.alpha !== null) {
-    /*Si no es Android, usamos alpha porque en Android el giro de los sensores viene invertido.
-    Si rotas el móvil a la derecha en el mundo real, los grados bajan en vez de subir. Por ello
-    se hace la resta para invertir el giro*/
-    rumboActual = 360 - event.alpha;
+    // Si la orientación es absoluta usamos 360 - alpha para invertir el giro
+    if (event.absolute) {
+      rumboCrudo = 360 - event.alpha;
+    } else {
+      // Si no es un compás absoluto, simplemente guardamos alpha mitigado
+      rumboCrudo = 360 - event.alpha; 
+    }
+  }
+
+  // Aplicar un filtro paso bajo para evitar temblores excesivos y movimientos erráticos
+  if (rumboCrudo !== null) {
+    // Si la diferencia es muy grande (ej cruzando de 359 a 0), evitamos el salto brusco
+    let diff = rumboCrudo - rumboSuavizado;
+    if (diff > 180) diff -= 360;
+    if (diff < -180) diff += 360;
+
+    // Ajusta este valor (0.1) si quieres que sea más lento o rápido el movimiento. 
+    // 0.1 es muy suave (lento), 0.5 es más rápido pero con algo de temblor
+    rumboSuavizado += diff * 0.08; 
+    
+    // Normalizamos para no mantener valores gigantescos
+    if (rumboSuavizado < 0) rumboSuavizado += 360;
+    if (rumboSuavizado >= 360) rumboSuavizado -= 360;
+
+    rumboActual = rumboSuavizado;
   }
 }
 
@@ -711,38 +738,69 @@ function drawARFrame() {
       // Normaliza la diferencia de rumbo a positivo 0-360 para que funcione correctamente
       let angulo = (diffRumbo % 360 + 360) % 360;
       
-      // Se elige la imagen dependiendo del ángulo relativo
-      let imgPintar = imgArriba;
+      // Variable global para evitar que la flecha tiemble en las fronteras (Histéresis)
+      if (typeof window.ultimoAnguloPintado === 'undefined') {
+         window.ultimoAnguloPintado = 0; // Guardamos el estado anterior
+      }
+
+      // Solo cambiaremos de flecha si cruzamos el límite por más de 15 grados.
+      // Esto evita el típico "tiemblor" o salto locura si te quedas apoyado en la frontera (ej: 45º, que salta entre Arriba y Derecha sin parar)
+      let diferenciaAngulo = Math.abs(angulo - window.ultimoAnguloPintado);
+      if (diferenciaAngulo > 180) diferenciaAngulo = 360 - diferenciaAngulo;
       
-      /*Si el ángulo está entre 315 y 45 grados, se dibuja la imagen de arriba
-      Si el ángulo está entre 45 y 135 grados, se dibuja la imagen de la derecha
-      Si el ángulo está entre 135 y 225 grados, se dibuja la imagen de abajo
-      Si el ángulo está entre 225 y 315 grados, se dibuja la imagen de la izquierda*/
-      if (angulo >= 315 || angulo < 45) {
-         imgPintar = imgArriba;
-      } else if (angulo >= 45 && angulo < 135) {
-         imgPintar = imgDerecha;
-      } else if (angulo >= 135 && angulo < 225) {
-         imgPintar = imgAbajo;
+      if (diferenciaAngulo > 15) { // Un colchón de 15 grados de seguridad
+         window.ultimoAnguloPintado = angulo;
       } else {
-         imgPintar = imgIzquierda;
+         angulo = window.ultimoAnguloPintado; // Mantenemos el estado anterior
       }
       
+      // Se elige la dirección dependiendo del ángulo relativo
+      let anguloRotacion = 0;
+
+      /*Si el ángulo está entre 315 y 45 grados, apunta arriba (0 rad)
+      Si el ángulo está entre 45 y 135 grados, apunta derecha (PI/2 rad)
+      Si el ángulo está entre 135 y 225 grados, apunta abajo (PI rad)
+      Si el ángulo está entre 225 y 315 grados, apunta izquierda (3*PI/2 rad)*/
+      if (angulo >= 315 || angulo < 45) {
+         anguloRotacion = 0;
+      } else if (angulo >= 45 && angulo < 135) {
+         anguloRotacion = Math.PI / 2;
+      } else if (angulo >= 135 && angulo < 225) {
+         anguloRotacion = Math.PI;
+      } else {
+         anguloRotacion = Math.PI * 1.5;
+      }
+
       // Guarda el estado actual del canvas y lo traslada al centro
       ctx.save();
       ctx.translate(cx, cy);
       
-      // Si la imagen ya se ha descargado completamente, la dibujamos en el centro
-      if (imgPintar.complete && imgPintar.naturalHeight !== 0) {
-        // Al dibujarla elegimos un tamaño, por ejemplo 250x250 píxeles
-        const tam = 250; 
-        /*Los parámetros de drawImage son: 
-        imgPintar: la imagen que queremos dibujar
-        -tam/2, -tam/2: la posición en el canvas donde queremos dibujar la imagen
-        tam, tam: el tamaño de la imagen*/
-        ctx.drawImage(imgPintar, -tam/2, -tam/2, tam, tam);
-      }
+      // Rotamos el contexto hacia donde tiene que apuntar la flecha
+      ctx.rotate(anguloRotacion);
+
+      // Dibujamos una FLECHA VECTORIAL transparente y limpia en lugar de usar imágenes JPG
+      // Tamaño general de la flecha dependiendo de si es móvil o PC
+        const escala = window.innerWidth < 600 ? 1.05 : 1.5;
+
+      ctx.beginPath();
+      // Empezamos por la punta de la flecha (mirando hacia arriba)
+      ctx.moveTo(0, -90 * escala); 
+      ctx.lineTo(60 * escala, 0);       // Ala derecha
+      ctx.lineTo(25 * escala, 0);       // Esquina interior derecha
+      ctx.lineTo(25 * escala, 90 * escala); // Base derecha
+      ctx.lineTo(-25 * escala, 90 * escala); // Base izquierda
+      ctx.lineTo(-25 * escala, 0);      // Esquina interior izquierda
+      ctx.lineTo(-60 * escala, 0);      // Ala izquierda
+      ctx.closePath();
+
+      // Damos estilo a la flecha
+      ctx.fillStyle = "rgba(0, 80, 255, 0.85)"; // Azul corporativo pero un poco transparente para ver el fondo
+      ctx.fill(); // Rellenamos de color
       
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = "white"; // Borde blanco
+      ctx.stroke(); // Dibujamos el borde
+
       // Restaura el estado anterior del canvas
       ctx.restore();
     }
@@ -807,7 +865,8 @@ async function ActivarDesactivarARMode() {
       // Obtenemos el stream de video. Con 'environment' accedemos a la cámara trasera
       videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
       // Asignamos el stream de video al elemento de video
-      arVideo.srcObject = videoStream; 
+      arVideo.srcObject = videoStream;
+        arVideo.play().catch(e => console.warn('Autoplay evitado por el navegador', e)); 
       
       // Una vez que tenemos el stream de video, lo ponemos en modo AR y cambiamos el texto del botón a desactivar.
       isARMode = true;
@@ -830,11 +889,40 @@ async function ActivarDesactivarARMode() {
     // Si hay un error al obtener el stream de video, mostramos un mensaje de error
     } catch (error) {
       console.error("No se pudo acceder a la cámara:", error);
-      alert("No podemos activar la cámara. Asegúrate de dar permisos y estar en HTTPS.");
+      alert("Error cámara: " + error.name + " - " + error.message);
     }
   }
 }
 
 // Añadimos el event listener al botón de AR
 btnAR.addEventListener("click", ActivarDesactivarARMode);
+
+
+
+
+
+
+
+
+
+// Evita que la cámara se quede bloqueada en negro al salir y volver de la pestaña en el móvil
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden && isARMode) {
+        // Al salir de la app apagamos la cámara de forma agresiva para que el sistema operativo no la bloquee
+        if (videoStream) {
+            videoStream.getTracks().forEach(track => track.stop());
+            videoStream = null;
+        }
+        arVideo.pause();
+        arVideo.srcObject = null;
+        
+        arAnimation && cancelAnimationFrame(arAnimation);
+        
+        isARMode = false;
+        btnAR.textContent = 'Activar Cámara AR';
+        document.body.classList.remove('modo-ar');
+        arContainer.classList.add('oculto');
+    }
+});
+
 
