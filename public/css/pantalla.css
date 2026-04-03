@@ -294,8 +294,19 @@ body.modo-ar #mapa {
   transition: all 0.5s ease;
 }
 
-  /* Hacemos el Mini-mapa AR más pequeño en móviles para que no tape la cámara */
+  /* Estilos para móviles (pantallas pequeñas) */
   @media (max-width: 600px) {
+    /* Hacemos la barra lateral más pequeña */
+    .sidebar {
+      width: 250px;
+      left: -300px;
+      padding: 15px;
+    }
+    .sidebar.visible {
+      transform: translateX(300px);
+    }
+
+    /* Hacemos el Mini-mapa AR más pequeño en móviles para que no tape la cámara */
     body.modo-ar #mapa {
       top: 15px !important;
       right: 15px !important;

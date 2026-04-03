@@ -1,4 +1,4 @@
-﻿    // =========================
+﻿// =========================
 // CONEXIÓN CON SOCKET.IO
 // =========================
 
@@ -81,6 +81,7 @@ let destinoClickLon = null;   // Coordenadas de la longitud del destino seleccio
 let instruccionesRuta = [];   // Ruta e instrucciones actuales
 let coordenadasRuta = [];     // Coordenadas de la ruta actual
 let indicePasoActual = -1;    // Índice del paso actual
+let marcadorPasoActual = null; // Marcador visual (punto azul) del paso actual
 
 // Modo actual visual
 let currentMode = "2D";
@@ -189,7 +190,7 @@ mapa.on("click", (e) => {
 
  
 // =========================
-// FUNCIONES AUXILIARES
+// FUNCIONES AUXILIARES (navegación y controles)
 // =========================
 
 // Función para limpiar la ruta actual
@@ -198,6 +199,12 @@ function limpiarRuta() {
   if (controlRuta) {
     mapa.removeControl(controlRuta);
     controlRuta = null;
+  }
+
+  // Si tenemos un marcador de punto azul del paso, lo quitamos
+  if (marcadorPasoActual) {
+    mapa.removeLayer(marcadorPasoActual);
+    marcadorPasoActual = null;
   }
 
   // Si estaba el AR encendido, lo quitamos
@@ -242,14 +249,14 @@ function mostrarPasoActual() {
   // Cogemos la instrucción actual
   const instruccion = instruccionesRuta[indicePasoActual];
 
-  // Construimos el texto que se mostrará en el cuadro del paso actual
+  // Construimos el texto que se mostrará en el cuadro del paso actual usando HTML
   const textoPaso =
-    `Paso ${indicePasoActual + 1} de ${instruccionesRuta.length}\n\n` +
-    `${instruccion.text || "Sin texto disponible"}\n\n` +
+    `Paso ${indicePasoActual + 1} de ${instruccionesRuta.length}:<br><br>` +
+    `<strong>${instruccion.text || "Sin texto disponible"}</strong><br><br>` +
     `Distancia aproximada: ${Math.round((instruccion.distance || 0))} m`;
 
-  // Lo mostramos en pantalla
-  stepBox.textContent = textoPaso;
+  // Lo mostramos en pantalla insertando el HTML
+  stepBox.innerHTML = textoPaso;
 
   /* Este fragmento es el encargado de que la cámara del mapa se deslice automáticamente hacia
   el lugar donde ocurre la instrucción. Para entender cómo funciona internamente, hay que tener cuenta 
@@ -271,6 +278,19 @@ function mostrarPasoActual() {
     const punto = coordenadasRuta[instruccion.index];
     // panTo es una función de Leaflet que mueve el mapa a una posición determinada
     mapa.panTo([punto.lat, punto.lng]);  
+
+    // Ponemos un puntito rojo para que se vea donde está la instrucción
+    if (marcadorPasoActual) {
+      marcadorPasoActual.setLatLng([punto.lat, punto.lng]);
+    } else {
+      marcadorPasoActual = L.circleMarker([punto.lat, punto.lng], {
+        color: 'white',           // Borde blanco
+        weight: 5,                // Grosor del borde
+        fillColor: 'red',         // Color rojo
+        fillOpacity: 1,           // Opacidad total
+        radius: 9                 // Tamaño del punto
+      }).addTo(mapa);
+    }
   }
 }
 
@@ -308,6 +328,16 @@ function pasoAnterior() {
   mostrarPasoActual();
 }
 
+// Función para hacer zoom in
+function zoomIn() {
+  mapa.zoomIn();
+}
+
+// Función para hacer zoom out
+function zoomOut() {
+  mapa.zoomOut();
+}
+
 // Función para cambiar visualmente entre modo 2D y 3D
 function toggleModeVisual() {
   // Si el modo actual es 2D, pasamos a 3D
@@ -342,6 +372,33 @@ function recentrarMapa() {
   }
 }
 
+// Asignamos la funcionalidad a cada botón del panel lateral usando su atributo data-event
+document.querySelectorAll(".btn-control").forEach(boton => {
+  boton.addEventListener("click", () => {
+    const evento = boton.getAttribute("data-event");
+    
+    switch(evento) {
+      case "zoomIn":
+        zoomIn();
+        break;
+      case "zoomOut":
+        zoomOut();
+        break;
+      case "prevStep":
+        pasoAnterior();
+        break;
+      case "nextStep":
+        siguientePaso();
+        break;
+      case "toggleMode":
+        toggleModeVisual();
+        break;
+      case "recenter":
+        recentrarMapa();
+        break;
+    }
+  });
+});
 
 
 
@@ -522,72 +579,6 @@ destinoInput.addEventListener("keydown", (e) => {
 
 
 
-// =========================
-// EVENTOS RECIBIDOS DESDE EL MANDO ACTUALMENTE DESHABILITADOS
-// =========================
-
-// Si recibimos nextStep
-socket.on("nextStep", () => {
-  lastEvent.textContent = "Último evento: nextStep";
-  siguientePaso();
-});
-
-// Si recibimos prevStep
-socket.on("prevStep", () => {
-  lastEvent.textContent = "Último evento: prevStep";
-  pasoAnterior();
-});
-
-// Si recibimos zoomIn
-socket.on("zoomIn", () => {
-  lastEvent.textContent = "Último evento: zoomIn";
-  mapa.zoomIn();
-});
-
-// Si recibimos zoomOut
-socket.on("zoomOut", () => {
-  lastEvent.textContent = "Último evento: zoomOut";
-  mapa.zoomOut();
-});
-
-// Si recibimos toggleMode
-socket.on("toggleMode", () => {
-  lastEvent.textContent = "Último evento: toggleMode";
-  toggleModeVisual();
-});
-
-// Si recibimos recenter
-socket.on("recenter", () => {
-  lastEvent.textContent = "Último evento: recenter";
-  recentrarMapa();
-});
-
-// Si recibimos confirm
-socket.on("confirm", () => {
-  lastEvent.textContent = "Último evento: confirm";
-  estadoRuta.textContent = "Acción confirmada desde el mando.";
-});
-
-// Si recibimos exit
-socket.on("exit", () => {
-  lastEvent.textContent = "Último evento: exit";
-  limpiarRuta();
-  estadoRuta.textContent = "Ruta cancelada desde el mando.";
-});
-
-// Si llegan datos más detallados de orientación
-socket.on("orientationData", (data) => {
-  // De momento solo los mostramos por consola
-  console.log("orientationData recibido en pantalla:", data);
-});
-
-
-
-
-
-
-
-
 
 // =========================
 // MODO REALIDAD AUMENTADA
@@ -744,7 +735,7 @@ function drawARFrame() {
       }
 
       // Solo cambiaremos de flecha si cruzamos el límite por más de 15 grados.
-      // Esto evita el típico "tiemblor" o salto locura si te quedas apoyado en la frontera (ej: 45º, que salta entre Arriba y Derecha sin parar)
+      // Esto evita el típico "temblor" o salto locura si te quedas apoyado en la frontera (ej: 45º, que salta entre Arriba y Derecha sin parar)
       let diferenciaAngulo = Math.abs(angulo - window.ultimoAnguloPintado);
       if (diferenciaAngulo > 180) diferenciaAngulo = 360 - diferenciaAngulo;
       
@@ -785,12 +776,12 @@ function drawARFrame() {
       ctx.beginPath();
       // Empezamos por la punta de la flecha (mirando hacia arriba)
       ctx.moveTo(0, -90 * escala); 
-      ctx.lineTo(60 * escala, 0);       // Ala derecha
-      ctx.lineTo(25 * escala, 0);       // Esquina interior derecha
-      ctx.lineTo(25 * escala, 90 * escala); // Base derecha
+      ctx.lineTo(60 * escala, 0);            // A la derecha
+      ctx.lineTo(25 * escala, 0);            // Esquina interior derecha
+      ctx.lineTo(25 * escala, 90 * escala);  // Base derecha
       ctx.lineTo(-25 * escala, 90 * escala); // Base izquierda
-      ctx.lineTo(-25 * escala, 0);      // Esquina interior izquierda
-      ctx.lineTo(-60 * escala, 0);      // Ala izquierda
+      ctx.lineTo(-25 * escala, 0);           // Esquina interior izquierda
+      ctx.lineTo(-60 * escala, 0);           // A la izquierda 
       ctx.closePath();
 
       // Damos estilo a la flecha
@@ -897,14 +888,6 @@ async function ActivarDesactivarARMode() {
 // Añadimos el event listener al botón de AR
 btnAR.addEventListener("click", ActivarDesactivarARMode);
 
-
-
-
-
-
-
-
-
 // Evita que la cámara se quede bloqueada en negro al salir y volver de la pestaña en el móvil
 document.addEventListener('visibilitychange', () => {
     if (document.hidden && isARMode) {
@@ -924,5 +907,3 @@ document.addEventListener('visibilitychange', () => {
         arContainer.classList.add('oculto');
     }
 });
-
-
