@@ -56,6 +56,13 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   attribution: "&copy; OpenStreetMap contributors"
 }).addTo(mapa);
 
+
+
+
+
+
+
+
 // =========================
 // VARIABLES DE ESTADO
 // =========================
@@ -123,6 +130,15 @@ if ("geolocation" in navigator) {
   estadoRuta.textContent = "Tu navegador no soporta geolocalización.";
 }
 
+
+
+
+
+
+
+
+
+
 // =========================
 // SELECCIÓN DE DESTINO CON CLIC
 // =========================
@@ -161,6 +177,17 @@ mapa.on("click", (e) => {
   estadoRuta.textContent = "Destino seleccionado en el mapa. Pulsa 'Buscar y calcular ruta'.";
 });
 
+
+
+
+
+
+
+
+
+
+
+ 
 // =========================
 // FUNCIONES AUXILIARES
 // =========================
@@ -315,6 +342,13 @@ function recentrarMapa() {
   }
 }
 
+
+
+
+
+
+
+
 // =========================
 // CÁLCULO DE RUTA
 // =========================
@@ -463,6 +497,10 @@ async function calcularRuta() {
   });
 }
 
+
+
+
+
 // =========================
 // BOTON y PULSACIÓN DE ENTER PARA CALCULAR LA RUTA
 // =========================
@@ -476,6 +514,13 @@ destinoInput.addEventListener("keydown", (e) => {
     calcularRuta();
   }
 });
+
+
+
+
+
+
+
 
 // =========================
 // EVENTOS RECIBIDOS DESDE EL MANDO ACTUALMENTE DESHABILITADOS
@@ -535,6 +580,14 @@ socket.on("orientationData", (data) => {
   // De momento solo los mostramos por consola
   console.log("orientationData recibido en pantalla:", data);
 });
+
+
+
+
+
+
+
+
 
 // =========================
 // MODO REALIDAD AUMENTADA
