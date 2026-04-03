@@ -81,6 +81,18 @@ let destinoClickLon = null;   // Coordenadas de la longitud del destino seleccio
 let instruccionesRuta = [];   // Ruta e instrucciones actuales
 let coordenadasRuta = [];     // Coordenadas de la ruta actual
 let indicePasoActual = -1;    // Índice del paso actual
+let marcadorPasoActual = null; // Marcador visual (punto azul) del paso actual
+
+// =========================
+// AUTOAVANCE DE PASOS
+// =========================
+
+const DISTANCIA_CAMBIO_PASO = 18;      // Metros para pasar al siguiente paso
+const DISTANCIA_LLEGADA_DESTINO = 12;  // Metros para considerar que hemos llegado
+const RETARDO_CAMBIO_PASO_MS = 2500;   // Evita saltos demasiado seguidos
+
+let ultimoCambioAutomatico = 0;
+let rutaTerminada = false;
 
 // Modo actual visual
 let currentMode = "2D";
@@ -1011,14 +1023,6 @@ async function ActivarDesactivarARMode() {
 
 // Añadimos el event listener al botón de AR
 btnAR.addEventListener("click", ActivarDesactivarARMode);
-
-
-
-
-
-
-
-
 
 // Evita que la cámara se quede bloqueada en negro al salir y volver de la pestaña en el móvil
 document.addEventListener('visibilitychange', () => {
