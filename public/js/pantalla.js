@@ -1,5 +1,6 @@
-﻿// =========================
+// =========================
 // CONEXIÓN CON SOCKET.IO
+// =========================
 
 
 // Creamos la conexión con el servidor Socket.IO
@@ -19,6 +20,14 @@ socket.on("connect", () => {
   // Avisamos al servidor de que este cliente es la pantalla principal
   socket.emit("clientReady", { role: "pantalla" });
 });
+
+
+
+
+
+
+
+
 
 // =========================
 // ELEMENTOS DEL DOM
@@ -96,6 +105,18 @@ let rutaTerminada = false;
 
 // Modo actual visual
 let currentMode = "2D";
+
+
+
+
+
+
+
+
+
+
+
+
 
 // =========================
 // OBTENER UBICACIÓN DEL USUARIO
@@ -503,6 +524,29 @@ function recentrarMapa() {
   }
 }
 
+function eliminarRuta() {
+  // Si no hay ruta que se esté mostrando, avisamos
+  if (!controlRuta) {
+    stepBox.innerHTML = "No puedes eliminar la ruta porque todavía no hay una activa.";
+    return;
+  }
+
+  // Usamos limpiarRuta() que quita la línea azul del mapa, el punto de paso y resetea las listas
+  limpiarRuta();
+
+  // Quitamos también la chincheta del destino si fue seleccionada con el ratón
+  if (marcadorDestino) {
+    mapa.removeLayer(marcadorDestino);
+    marcadorDestino = null;
+    destinoClickLat = null;
+    destinoClickLon = null;
+  }
+
+  // Actualizamos el texto de la caja de información
+  stepBox.innerHTML = "Ruta eliminada.";
+  estadoRuta.textContent = "Ruta eliminada. Elige un nuevo destino.";
+}
+
 // Asignamos la funcionalidad a cada botón del panel lateral usando su atributo data-event
 document.querySelectorAll(".btn-control").forEach(boton => {
   boton.addEventListener("click", () => {
@@ -526,6 +570,9 @@ document.querySelectorAll(".btn-control").forEach(boton => {
         break;
       case "recenter":
         recentrarMapa();
+        break;
+      case "deleteRoute":
+        eliminarRuta();
         break;
     }
   });
