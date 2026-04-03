@@ -294,16 +294,40 @@ body.modo-ar #mapa {
   transition: all 0.5s ease;
 }
 
+  /* Hacemos el Mini-mapa AR más pequeño en móviles para que no tape la cámara */
+  @media (max-width: 600px) {
+    body.modo-ar #mapa {
+      top: 15px !important;
+      right: 15px !important;
+      width: 140px !important;
+      height: 140px !important;
+      border-radius: 10px !important; /* Lo volvemos a dejar cuadradito a petición de Dani */
+      border: 3px solid white;
+    }
+  }
+
+
 /* Ocultar las instrucciones de la ruta y los botones del minimapa en modo AR */
 body.modo-ar .leaflet-routing-container,
 body.modo-ar .leaflet-control-zoom,
-body.modo-ar .leaflet-control-attribution {
+body.modo-ar .leaflet-top.leaflet-right,
+body.modo-ar .leaflet-control-attribution,
+body.modo-ar .leaflet-routing-alternatives-container {
   display: none !important;
+}
+
+/* Modo AR Activo: Mini-mapa radar */
+body.modo-ar #mapa {
+  background: transparent !important;
 }
 
 /* Fondo transparente en modo AR */
 body.modo-ar {
-  background: transparent;
+  background: transparent !important;
 }
 
-/*Dimensiones Responsive: 360 x 771 px para mi huawei p30 lite*/
+
+body.modo-ar #mapa .leaflet-control-container {
+  display: none !important;
+}
+

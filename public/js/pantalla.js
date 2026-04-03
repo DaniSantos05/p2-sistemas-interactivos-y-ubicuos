@@ -1,4 +1,4 @@
-    // =========================
+﻿    // =========================
 // CONEXIÓN CON SOCKET.IO
 // =========================
 
@@ -701,38 +701,53 @@ function drawARFrame() {
          angulo = window.ultimoAnguloPintado; // Mantenemos el estado anterior
       }
       
-      // Se elige la imagen dependiendo del ángulo relativo
-      let imgPintar = imgArriba;
-      
-      /*Si el ángulo está entre 315 y 45 grados, se dibuja la imagen de arriba
-      Si el ángulo está entre 45 y 135 grados, se dibuja la imagen de la derecha
-      Si el ángulo está entre 135 y 225 grados, se dibuja la imagen de abajo
-      Si el ángulo está entre 225 y 315 grados, se dibuja la imagen de la izquierda*/
+      // Se elige la dirección dependiendo del ángulo relativo
+      let anguloRotacion = 0;
+
+      /*Si el ángulo está entre 315 y 45 grados, apunta arriba (0 rad)
+      Si el ángulo está entre 45 y 135 grados, apunta derecha (PI/2 rad)
+      Si el ángulo está entre 135 y 225 grados, apunta abajo (PI rad)
+      Si el ángulo está entre 225 y 315 grados, apunta izquierda (3*PI/2 rad)*/
       if (angulo >= 315 || angulo < 45) {
-         imgPintar = imgArriba;
+         anguloRotacion = 0;
       } else if (angulo >= 45 && angulo < 135) {
-         imgPintar = imgDerecha;
+         anguloRotacion = Math.PI / 2;
       } else if (angulo >= 135 && angulo < 225) {
-         imgPintar = imgAbajo;
+         anguloRotacion = Math.PI;
       } else {
-         imgPintar = imgIzquierda;
+         anguloRotacion = Math.PI * 1.5;
       }
-      
+
       // Guarda el estado actual del canvas y lo traslada al centro
       ctx.save();
       ctx.translate(cx, cy);
       
-      // Si la imagen ya se ha descargado completamente, la dibujamos en el centro
-      if (imgPintar.complete && imgPintar.naturalHeight !== 0) {
-        // Al dibujarla elegimos un tamaño, por ejemplo 250x250 píxeles
-        const tam = 250; 
-        /*Los parámetros de drawImage son: 
-        imgPintar: la imagen que queremos dibujar
-        -tam/2, -tam/2: la posición en el canvas donde queremos dibujar la imagen
-        tam, tam: el tamaño de la imagen*/
-        ctx.drawImage(imgPintar, -tam/2, -tam/2, tam, tam);
-      }
+      // Rotamos el contexto hacia donde tiene que apuntar la flecha
+      ctx.rotate(anguloRotacion);
+
+      // Dibujamos una FLECHA VECTORIAL transparente y limpia en lugar de usar imágenes JPG
+      // Tamaño general de la flecha dependiendo de si es móvil o PC
+        const escala = window.innerWidth < 600 ? 1.05 : 1.5;
+
+      ctx.beginPath();
+      // Empezamos por la punta de la flecha (mirando hacia arriba)
+      ctx.moveTo(0, -90 * escala); 
+      ctx.lineTo(60 * escala, 0);       // Ala derecha
+      ctx.lineTo(25 * escala, 0);       // Esquina interior derecha
+      ctx.lineTo(25 * escala, 90 * escala); // Base derecha
+      ctx.lineTo(-25 * escala, 90 * escala); // Base izquierda
+      ctx.lineTo(-25 * escala, 0);      // Esquina interior izquierda
+      ctx.lineTo(-60 * escala, 0);      // Ala izquierda
+      ctx.closePath();
+
+      // Damos estilo a la flecha
+      ctx.fillStyle = "rgba(0, 80, 255, 0.85)"; // Azul corporativo pero un poco transparente para ver el fondo
+      ctx.fill(); // Rellenamos de color
       
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = "white"; // Borde blanco
+      ctx.stroke(); // Dibujamos el borde
+
       // Restaura el estado anterior del canvas
       ctx.restore();
     }
@@ -797,7 +812,8 @@ async function ActivarDesactivarARMode() {
       // Obtenemos el stream de video. Con 'environment' accedemos a la cámara trasera
       videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
       // Asignamos el stream de video al elemento de video
-      arVideo.srcObject = videoStream; 
+      arVideo.srcObject = videoStream;
+        arVideo.play().catch(e => console.warn('Autoplay evitado por el navegador', e)); 
       
       // Una vez que tenemos el stream de video, lo ponemos en modo AR y cambiamos el texto del botón a desactivar.
       isARMode = true;
@@ -820,11 +836,40 @@ async function ActivarDesactivarARMode() {
     // Si hay un error al obtener el stream de video, mostramos un mensaje de error
     } catch (error) {
       console.error("No se pudo acceder a la cámara:", error);
-      alert("No podemos activar la cámara. Asegúrate de dar permisos y estar en HTTPS.");
+      alert("Error cámara: " + error.name + " - " + error.message);
     }
   }
 }
 
 // Añadimos el event listener al botón de AR
 btnAR.addEventListener("click", ActivarDesactivarARMode);
+
+
+
+
+
+
+
+
+
+// Evita que la cámara se quede bloqueada en negro al salir y volver de la pestaña en el móvil
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden && isARMode) {
+        // Al salir de la app apagamos la cámara de forma agresiva para que el sistema operativo no la bloquee
+        if (videoStream) {
+            videoStream.getTracks().forEach(track => track.stop());
+            videoStream = null;
+        }
+        arVideo.pause();
+        arVideo.srcObject = null;
+        
+        arAnimation && cancelAnimationFrame(arAnimation);
+        
+        isARMode = false;
+        btnAR.textContent = 'Activar Cámara AR';
+        document.body.classList.remove('modo-ar');
+        arContainer.classList.add('oculto');
+    }
+});
+
 
