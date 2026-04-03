@@ -1,6 +1,6 @@
 ﻿// =========================
 // CONEXIÓN CON SOCKET.IO
-// =========================
+
 
 // Creamos la conexión con el servidor Socket.IO
 const socket = io();
@@ -81,7 +81,6 @@ let destinoClickLon = null;   // Coordenadas de la longitud del destino seleccio
 let instruccionesRuta = [];   // Ruta e instrucciones actuales
 let coordenadasRuta = [];     // Coordenadas de la ruta actual
 let indicePasoActual = -1;    // Índice del paso actual
-let marcadorPasoActual = null; // Marcador visual (punto azul) del paso actual
 
 // Modo actual visual
 let currentMode = "2D";
@@ -113,6 +112,9 @@ if ("geolocation" in navigator) {
         // Si ya existe, solo actualizamos su posición
         marcadorUsuario.setLatLng([miLatitud, miLongitud]);
       }
+
+      // Intentamos avanzar automáticamente al siguiente paso
+      actualizarPasoAutomatico();
     },
     (err) => {
       // Si falla el GPS, mostramos error
@@ -220,9 +222,126 @@ function limpiarRuta() {
   instruccionesRuta = [];  // Reiniciamos las instrucciones
   coordenadasRuta = [];    // Reiniciamos las coordenadas
   indicePasoActual = -1;   // Reiniciamos el índice del paso actual
+  ultimoCambioAutomatico = 0;
+  rutaTerminada = false;
 
   // Actualizamos el cuadro del paso actual
   stepBox.textContent = "No hay una ruta activa.";
+}
+
+// Calcula la distancia entre dos puntos GPS en metros usando Haversine
+function distanciaEnMetros(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const aRadianes = (grados) => grados * Math.PI / 180;
+
+  const dLat = aRadianes(lat2 - lat1);
+  const dLon = aRadianes(lon2 - lon1);
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(aRadianes(lat1)) *
+      Math.cos(aRadianes(lat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+// Devuelve el punto GPS asociado a una instrucción concreta
+function obtenerPuntoDeInstruccion(indiceInstruccion) {
+  if (
+    indiceInstruccion < 0 ||
+    indiceInstruccion >= instruccionesRuta.length
+  ) {
+    return null;
+  }
+
+  const instruccion = instruccionesRuta[indiceInstruccion];
+
+  if (
+    !instruccion ||
+    typeof instruccion.index !== "number" ||
+    !coordenadasRuta[instruccion.index]
+  ) {
+    return null;
+  }
+
+  return coordenadasRuta[instruccion.index];
+}
+
+// Cambia automáticamente al siguiente paso cuando te acercas al punto de maniobra
+function actualizarPasoAutomatico() {
+  if (
+    rutaTerminada ||
+    miLatitud === null ||
+    miLongitud === null ||
+    !instruccionesRuta.length ||
+    !coordenadasRuta.length ||
+    indicePasoActual < 0
+  ) {
+    return;
+  }
+
+  const ahora = Date.now();
+
+  // Evita que cambie varias veces casi seguidas
+  if (ahora - ultimoCambioAutomatico < RETARDO_CAMBIO_PASO_MS) {
+    return;
+  }
+
+  // 1) Comprobamos si ya hemos llegado al destino final
+  const puntoFinal = coordenadasRuta[coordenadasRuta.length - 1];
+
+  if (puntoFinal) {
+    const distanciaFinal = distanciaEnMetros(
+      miLatitud,
+      miLongitud,
+      puntoFinal.lat,
+      puntoFinal.lng
+    );
+
+    if (distanciaFinal <= DISTANCIA_LLEGADA_DESTINO) {
+      rutaTerminada = true;
+      indicePasoActual = instruccionesRuta.length - 1;
+      estadoRuta.textContent = "Has llegado al destino.";
+      stepBox.textContent = "Has llegado al destino.";
+      ultimoCambioAutomatico = ahora;
+      return;
+    }
+  }
+
+  // 2) Avanzamos automáticamente si estamos cerca del siguiente punto de maniobra
+  let haAvanzado = false;
+
+  while (indicePasoActual < instruccionesRuta.length - 1) {
+    const siguienteIndice = indicePasoActual + 1;
+    const puntoSiguiente = obtenerPuntoDeInstruccion(siguienteIndice);
+
+    if (!puntoSiguiente) {
+      break;
+    }
+
+    const distanciaSiguiente = distanciaEnMetros(
+      miLatitud,
+      miLongitud,
+      puntoSiguiente.lat,
+      puntoSiguiente.lng
+    );
+
+    if (distanciaSiguiente <= DISTANCIA_CAMBIO_PASO) {
+      indicePasoActual = siguienteIndice;
+      haAvanzado = true;
+      ultimoCambioAutomatico = ahora;
+    } else {
+      break;
+    }
+  }
+
+  if (haAvanzado) {
+    mostrarPasoActual();
+    estadoRuta.textContent = "Paso actualizado automáticamente.";
+  }
 }
 
 // Función para mostrar el paso actual
@@ -405,7 +524,10 @@ document.querySelectorAll(".btn-control").forEach(boton => {
 
 
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> bc23459 (pasos automáticos)
 // =========================
 // CÁLCULO DE RUTA
 // =========================
@@ -533,6 +655,8 @@ async function calcularRuta() {
 
     // Reiniciamos el índice del paso actual
     indicePasoActual = 0;
+    ultimoCambioAutomatico = 0;
+    rutaTerminada = false;
 
     // Este fragmento calcula la distancia y el tiempo de la ruta
     const distKm = (ruta.summary.totalDistance / 1000).toFixed(1);
@@ -887,6 +1011,14 @@ async function ActivarDesactivarARMode() {
 
 // Añadimos el event listener al botón de AR
 btnAR.addEventListener("click", ActivarDesactivarARMode);
+
+
+
+
+
+
+
+
 
 // Evita que la cámara se quede bloqueada en negro al salir y volver de la pestaña en el móvil
 document.addEventListener('visibilitychange', () => {
