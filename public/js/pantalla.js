@@ -536,10 +536,6 @@ document.querySelectorAll(".btn-control").forEach(boton => {
 
 
 
-<<<<<<< HEAD
-
-=======
->>>>>>> bc23459 (pasos automáticos)
 // =========================
 // CÁLCULO DE RUTA
 // =========================
