@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acceso - App Ubicua</title>
+  <link rel="stylesheet" href="/css/login.css">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  
+  <div class="login-wrapper">
+    <!-- Contenedor general -->
+    <div class="login-container">
+      
+      <!-- Formulario de Iniciar Sesión -->
+      <div id="login-section" class="form-section">
+        <h2 class="title">Iniciar Sesión</h2>
+        <p class="subtitle">Introduce tus credenciales para acceder</p>
+        
+        <form id="login-form">
+          <div class="input-group">
+            <label for="log-username">Usuario</label>
+            <input type="text" id="log-username" required autocomplete="off">
+          </div>
+          <div class="input-group">
+            <label for="log-password">Contraseña</label>
+            <input type="password" id="log-password" required>
+          </div>
+          
+          <div id="log-error-msg" class="error-msg"></div>
+          
+          <button type="submit" class="btn-submit">Entrar</button>
+        </form>
+        
+        <p class="toggle-text">¿No tienes cuenta? <a href="#" id="link-to-register">Regístrate aquí</a></p>
+      </div>
+
+      <!-- Formulario de Registro -->
+      <div id="register-section" class="form-section" style="display: none;">
+        <h2 class="title" style="margin-bottom: 20px;">Crear Cuenta</h2>
+        
+        <form id="register-form">
+          <div class="input-group">
+            <label for="reg-username">Nuevo Usuario</label>
+            <input type="text" id="reg-username" required autocomplete="off" maxlength="20">
+          </div>
+          <div class="input-group">
+            <label for="reg-password">Contraseña</label>
+            <input type="password" id="reg-password" required>
+          </div>
+          
+          <div id="reg-error-msg" class="error-msg"></div>
+          <div id="reg-success-msg" class="success-msg"></div>
+          
+          <button type="submit" class="btn-submit">Registrarse</button>
+        </form>
+        
+        <p class="toggle-text">¿Ya tienes cuenta? <a href="#" id="link-to-login">Inicia sesión</a></p>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="/js/login.js"></script>
+</body>
+</html>

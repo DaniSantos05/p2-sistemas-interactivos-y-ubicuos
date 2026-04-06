@@ -1,0 +1,16 @@
+[
+  {
+    "username": "paco",
+    "password": "paco",
+    "avatar": "https://ui-avatars.com/api/?name=p&background=random&color=fff&rounded=true&size=128",
+    "friends": [
+      "Manolo"
+    ]
+  },
+  {
+    "username": "Manolo",
+    "password": "manolo",
+    "avatar": "https://ui-avatars.com/api/?name=M&background=random&color=fff&rounded=true&size=128",
+    "friends": []
+  }
+]

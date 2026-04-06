@@ -1,5 +1,9 @@
 // Importamos el módulo 'path' para trabajar con rutas de archivos y carpetas
 const path = require("path");
+// Const fs para el manejo del fichero JSON de usuarios
+const fs = require("fs");
+// Multer para subir archivos (fotos de perfil)
+const multer = require("multer");
 
 // Importamos Express para crear el servidor web
 const express = require("express");
@@ -12,6 +16,8 @@ const { Server } = require("socket.io");
 
 // Creamos la aplicación Express
 const app = express();
+// Middleware para parsear JSON en el req.body
+app.use(express.json());
 
 // Creamos un servidor HTTP usando la app de Express
 const server = http.createServer(app);
@@ -24,8 +30,21 @@ const io = new Server(server);
 const PORT = process.env.PORT || 3000;
 
 // Le decimos a Express que sirva todos los archivos estáticos de la carpeta 'public'
-// Así podrá abrir HTML, CSS y JS desde esa carpeta
 app.use(express.static(path.join(__dirname, "public")));
+
+// Configuramos multer para guardar las fotos subidas en public/uploads
+const uploadDir = path.join(__dirname, "public", "uploads");
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadDir),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const name = req.body.username || "user";
+    cb(null, name + "_" + Date.now() + ext);
+  }
+});
+const upload = multer({ storage });
 
 // Cuando alguien entre en la raíz "/", lo redirigimos a pantalla.html
 app.get("/", (req, res) => {
@@ -37,13 +56,109 @@ app.get("/pantalla", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "pantalla.html"));
 });
 
+// --- NUEVOS ENDPOINTS: USUARIOS Y AUTENTICACIÓN ---
+const usersFile = path.join(__dirname, "users.json");
+
+function loadUsers() {
+  if (!fs.existsSync(usersFile)) {
+    return [];
+  }
+  return JSON.parse(fs.readFileSync(usersFile, "utf-8"));
+}
+
+function saveUsers(users) {
+  fs.writeFileSync(usersFile, JSON.stringify(users, null, 2));
+}
+
+app.post("/api/register", (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) return res.status(400).json({ error: "Faltan datos" });
+  
+  const users = loadUsers();
+  if (users.find(u => u.username.toLowerCase() === username.toLowerCase())) {
+    return res.status(400).json({ error: "El usuario ya existe" });
+  }
+
+  const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(username.charAt(0))}&background=random&color=fff&rounded=true&size=128`;
+  const newUser = { username, password, avatar, friends: [] };
+  users.push(newUser);
+  saveUsers(users);
+
+  res.json({ success: true, user: { username: newUser.username, avatar: newUser.avatar, friends: [] } });
+});
+
+app.post("/api/login", (req, res) => {
+  const { username, password } = req.body;
+  const users = loadUsers();
+  const user = users.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
+  if (!user) {
+    return res.status(401).json({ error: "Credenciales incorrectas" });
+  }
+  res.json({ success: true, user: { username: user.username, avatar: user.avatar, friends: user.friends || [] } });
+});
+
+app.get("/api/users", (req, res) => {
+  const { q, current_user } = req.query;
+  const users = loadUsers();
+  let results = users;
+  if (q) {
+    results = users.filter(u => u.username.toLowerCase().includes(q.toLowerCase()));
+  }
+  if (current_user) {
+     results = results.filter(u => u.username.toLowerCase() !== current_user.toLowerCase());
+  }
+  // Return without passwords
+  res.json(results.map(u => ({ username: u.username, avatar: u.avatar })));
+});
+
+// Subir foto de perfil desde el dispositivo
+app.post("/api/user/avatar", upload.single("avatar"), (req, res) => {
+  const username = req.body.username;
+  if (!req.file) return res.status(400).json({ error: "No se ha subido ningún archivo" });
+
+  const users = loadUsers();
+  const user = users.find(u => u.username === username);
+  if (!user) return res.status(404).json({ error: "Usuario no encontrado" });
+
+  // Guardamos la ruta pública de la imagen
+  user.avatar = "/uploads/" + req.file.filename;
+  saveUsers(users);
+
+  res.json({ success: true, avatar: user.avatar });
+});
+
+app.post("/api/friend", (req, res) => {
+  const { username, friend_username } = req.body;
+  const users = loadUsers();
+  const user = users.find(u => u.username === username);
+  const friendExists = users.find(u => u.username === friend_username);
+  
+  if (!user || !friendExists) {
+    return res.status(404).json({ error: "Usuario o amigo no encontrado" });
+  }
+
+  if (!user.friends) user.friends = [];
+  if (!user.friends.includes(friend_username) && username !== friend_username) {
+    user.friends.push(friend_username);
+    saveUsers(users);
+  }
+
+  res.json({ success: true, friends: user.friends });
+});
+
 
 
 // Actualmente el mando no se usa, se ha sustituido por el boton hamburguesa
 // Pero se deja el codigo por si se quiere volver a usar en el futuro
 
+// Variable para almacenar el estado de las ubicaciones y rutas compartidas
+const sharedData = {};
+
 // Escuchamos cuando un cliente se conecta por Socket.IO
 io.on("connection", (socket) => {
+  // Cuando alguien se conecta, le pasamos los datos que ya estén compartidos
+  socket.emit("existingSharedData", sharedData);
+
   // Mostramos en consola el id del cliente que se ha conectado
   console.log(`Cliente conectado: ${socket.id}`);
 
@@ -113,8 +228,41 @@ io.on("connection", (socket) => {
     io.emit("orientationData", data);
   });
 
+  // --- NUEVOS EVENTOS: UBICACIÓN Y RUTA COMPARTIDA ---
+  
+  socket.on("shareLocation", (data) => {
+    // Inicializamos si no existía
+    if (!sharedData[socket.id]) {
+      sharedData[socket.id] = {};
+    }
+    sharedData[socket.id].location = data;
+    // Retransmitimos a los demás
+    socket.broadcast.emit("updateContactLocation", { id: socket.id, ...data });
+  });
+
+  socket.on("shareRoute", (data) => {
+    if (!sharedData[socket.id]) {
+      sharedData[socket.id] = {};
+    }
+    sharedData[socket.id].route = data;
+    socket.broadcast.emit("updateContactRoute", { id: socket.id, route: data });
+  });
+
+  socket.on("stopSharing", () => {
+    // Un cliente decidió dejar de compartir explícitamente
+    delete sharedData[socket.id];
+    socket.broadcast.emit("removeContact", { id: socket.id });
+  });
+
   // Escuchamos cuándo un cliente se desconecta
   socket.on("disconnect", () => {
+    // Si estaba compartiendo datos, limpiamos el diccionario
+    if (sharedData[socket.id]) {
+      delete sharedData[socket.id];
+      // Le decimos al resto que le borren del mapa
+      socket.broadcast.emit("removeContact", { id: socket.id });
+    }
+
     // Mostramos en consola el id del cliente que se ha desconectado
     console.log(`Cliente desconectado: ${socket.id}`);
 

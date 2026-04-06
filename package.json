@@ -4,8 +4,8 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-  "start": "node server.js",
-  "dev": "nodemon server.js"
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   },
   "repository": {
     "type": "git",
@@ -21,6 +21,7 @@
   "homepage": "https://github.com/DaniSantos05/p2-sistemas-interactivos-y-ubicuos#readme",
   "dependencies": {
     "express": "^5.2.1",
+    "multer": "^2.1.1",
     "socket.io": "^4.8.3"
   },
   "devDependencies": {
