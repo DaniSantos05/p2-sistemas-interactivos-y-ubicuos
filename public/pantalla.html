@@ -40,6 +40,9 @@
       <h2>Opciones</h2>
       <button id="closeSidebar" class="close-btn">&times;</button>
     </div>
+    <div style="padding: 0 20px;">
+      <button id="btnProfile" class="btn-primario" style="width: 100%; margin-top: 0; margin-bottom: 20px;">Mi Perfil</button>
+    </div>
 
     <!-- Modulo de Navegación -->
     <div class="sidebar-section">
@@ -49,8 +52,7 @@
       
       <!-- Checkbox para activar el modo de destino en mapa -->
       <label class="click-mode-label">
-        <input type="checkbox" id="clickMode">
-        Destino en mapa con clic
+        <input type="checkbox" id="clickMode"> Destino en mapa con clic
       </label>
       
       <button id="btnAR" class="btn-ar oculto">Activar Cámara AR</button>
@@ -61,6 +63,18 @@
       
       <!-- Paso actual de la ruta -->
       <div id="stepBox" class="step-box">Todavía no hay una ruta calculada.</div>
+    </div>
+
+    <!-- Modulo Multidispositivo -->
+    <div class="sidebar-section">
+      <h3>Mis Contactos</h3>
+      <label class="click-mode-label" style="margin-top: 5px;">
+        <input type="checkbox" id="shareLocationMode">
+        Mostrar y compartir con amigos
+      </label>
+      <div id="contactosList" class="contactos-list">
+        <p class="no-contacts-msg">Activa compartir para ver contactos.</p>
+      </div>
     </div>
 
     <!-- Modulo de Controles (Botones visuales no funcionales) -->
@@ -88,22 +102,50 @@
   <!-- Contenedor del mapa -->
   <div id="mapa"></div>
 
+  <!-- Modal Mi Perfil -->
+  <div id="profileModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal" id="closeProfileModal">&times;</span>
+      <h2 style="margin-top: 0; color: #2c3e50;">Mi Perfil</h2>
+      
+      <div class="profile-header">
+        <img id="myProfileAvatar" src="" alt="Mi Avatar" class="profile-avatar">
+        <div style="flex: 1;">
+          <h3 id="myProfileName" style="margin:0 0 10px 0; color:#34495e;"></h3>
+          <input type="file" id="avatarFileInput" accept="image/*" style="font-size: 12px; margin-bottom: 5px;">
+          <button id="btnChangeAvatar" class="btn-primario" style="font-size: 12px; padding: 8px;">Guardar Foto</button>
+        </div>
+      </div>
+      
+      <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+      
+      <h3 style="color: #34495e; font-size: 16px;">Buscar Amigos</h3>
+      <div style="display: flex; gap: 5px; margin-bottom: 10px; align-items: center;">
+        <input type="text" id="searchFriendInput" class="input-moderno" placeholder="Nombre de usuario..." style="flex:1; margin-bottom:0;">
+        <button id="btnSearchFriend" class="btn-primario" style="padding: 10px 15px; width: auto; white-space: nowrap;">Buscar</button>
+      </div>
+      <div id="searchResults" class="contactos-list" style="max-height: 120px; overflow-y: auto;"></div>
+      
+      <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+      
+      <h3 style="color: #34495e; font-size: 16px;">Mis Amigos (<span id="friendsCount">0</span>)</h3>
+      <div id="myFriendsList" class="contactos-list" style="max-height: 150px; overflow-y: auto;">
+      </div>
+
+    </div>
+  </div>
+
   <!-- Librería de Leaflet -->
-  <!-- Esta librería la utilizamos para crear el mapa-->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <!-- Librería de Leaflet Routing Machine -->
-  <!-- Esta librería la utilizamos para calcular la ruta-->
   <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js"></script>
 
   <!-- Cliente de Socket.IO -->
-  <!-- Esta librería la utilizamos para comunicarnos con el servidor-->
   <script src="/socket.io/socket.io.js"></script>
 
   <!-- Nuestros JS -->
-  <!-- Este es nuestro script que contiene la lógica general de la aplicación-->
   <script src="/js/pantalla.js"></script>
-  <!-- Este es nuestro script que contiene la lógica de Realidad Aumentada-->
   <script src="/js/ar.js"></script>
 </body>
 </html>

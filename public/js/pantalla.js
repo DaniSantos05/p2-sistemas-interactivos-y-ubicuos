@@ -21,10 +21,351 @@ socket.on("connect", () => {
     socket.emit("clientReady", { role: "pantalla" });
 });
 
+// =========================
+// MÓDULO MULTIDISPOSITIVO (COMPARTIR UBICACIÓN Y AMIGOS)
+// =========================
 
+const savedUsername = localStorage.getItem("username");
+if (!savedUsername) {
+  window.location.href = "/";
+}
 
+const contactos = {};
+
+// Usar el nombre de sesión
+let myName = savedUsername;
+let myAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(myName.charAt(0))}&background=random&color=fff&rounded=true&size=128`;
+let myETA = null;
+let myFriends = [];
+
+try {
+  const userString = localStorage.getItem("user");
+  if (userString) {
+     const userObj = JSON.parse(userString);
+     myName = userObj.username;
+     if (userObj.avatar) myAvatar = userObj.avatar;
+     if (userObj.friends) myFriends = userObj.friends;
+  }
+} catch (e) {}
+
+function getContactColor(idStr) {
+  // Genera un color consistente basado en el socket.id
+  let hash = 0;
+  for (let i = 0; i < idStr.length; i++) {
+    hash = idStr.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const color = Math.floor(Math.abs(Math.sin(hash) * 16777215)).toString(16);
+  return '#' + ('000000' + color).slice(-6);
+}
+
+// Recibir estado inicial
+socket.on("existingSharedData", (data) => {
+  for (const id in data) {
+    if (id !== socket.id) {
+       const isFriend = data[id].location ? myFriends.includes(data[id].location.name) : true;
+       if (isFriend) {
+         if (data[id].location) processContactLocation(id, data[id].location);
+         if (data[id].route) processContactRoute(id, data[id].route);
+       }
+    }
+  }
+});
+
+socket.on("updateContactLocation", (data) => {
+  if (myFriends.includes(data.name)) {
+    processContactLocation(data.id, data);
+  }
+});
+
+socket.on("updateContactRoute", (data) => {
+  if (contactos[data.id]) {
+    processContactRoute(data.id, data.route);
+  }
+});
 
 // =========================
+// MI PERFIL (MODAL) Y AMIGOS
+// =========================
+const btnProfile = document.getElementById("btnProfile");
+const profileModal = document.getElementById("profileModal");
+const closeProfileModal = document.getElementById("closeProfileModal");
+const myProfileName = document.getElementById("myProfileName");
+const myProfileAvatar = document.getElementById("myProfileAvatar");
+const avatarFileInput = document.getElementById("avatarFileInput");
+const btnChangeAvatar = document.getElementById("btnChangeAvatar");
+const myFriendsList = document.getElementById("myFriendsList");
+const friendsCount = document.getElementById("friendsCount");
+
+function renderMyFriends() {
+  if (!myFriendsList) return;
+  if (myFriends.length === 0) {
+    myFriendsList.innerHTML = "<p style='font-size:13px; color:gray;'>Aún no tienes amigos agregados.</p>";
+    if (friendsCount) friendsCount.textContent = "0";
+    return;
+  }
+  if (friendsCount) friendsCount.textContent = myFriends.length;
+  myFriendsList.innerHTML = "";
+  myFriends.forEach(f => {
+    const div = document.createElement("div");
+    div.className = "contact-item";
+    div.innerHTML = `<span style="font-size: 14px; font-weight: bold; color: #333;">${f}</span>`;
+    myFriendsList.appendChild(div);
+  });
+}
+
+if (btnProfile) {
+  btnProfile.addEventListener("click", () => {
+    profileModal.style.display = "block";
+    myProfileName.textContent = myName;
+    myProfileAvatar.src = myAvatar;
+    renderMyFriends();
+  });
+}
+
+if (closeProfileModal) {
+  closeProfileModal.addEventListener("click", () => {
+    profileModal.style.display = "none";
+  });
+}
+
+window.addEventListener("click", (e) => {
+  if (e.target == profileModal) {
+    profileModal.style.display = "none";
+  }
+});
+
+if (btnChangeAvatar) {
+  btnChangeAvatar.addEventListener("click", async () => {
+    if (!avatarFileInput || !avatarFileInput.files[0]) return;
+    
+    const formData = new FormData();
+    formData.append("username", myName);
+    formData.append("avatar", avatarFileInput.files[0]);
+    
+    try {
+      const resp = await fetch("/api/user/avatar", {
+        method: "POST",
+        body: formData
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        myAvatar = data.avatar;
+        myProfileAvatar.src = myAvatar;
+        avatarFileInput.value = "";
+        
+        const userObj = JSON.parse(localStorage.getItem("user") || "{}");
+        userObj.avatar = myAvatar;
+        localStorage.setItem("user", JSON.stringify(userObj));
+        
+        if (shareLocationMode.checked && miLatitud !== null && miLongitud !== null) {
+          socket.emit("shareLocation", { lat: miLatitud, lng: miLongitud, name: myName, avatar: myAvatar, eta: myETA });
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  });
+}
+
+const searchFriendInput = document.getElementById("searchFriendInput");
+const btnSearchFriend = document.getElementById("btnSearchFriend");
+const searchResults = document.getElementById("searchResults");
+
+if (btnSearchFriend) {
+  btnSearchFriend.addEventListener("click", async () => {
+    const q = searchFriendInput.value.trim();
+    if (!q) return;
+    
+    try {
+      const resp = await fetch(`/api/users?q=${encodeURIComponent(q)}&current_user=${encodeURIComponent(myName)}`);
+      const data = await resp.json();
+      
+      searchResults.innerHTML = "";
+      if (data.length === 0) {
+        searchResults.innerHTML = "<p style='font-size:12px; color:rgba(0,0,0,0.7)'>No se encontraron coincidencias.</p>";
+        return;
+      }
+      
+      data.forEach(u => {
+        const div = document.createElement("div");
+        div.className = "contact-item";
+        div.style.justifyContent = "space-between";
+        div.style.display = "flex";
+        div.style.alignItems = "center";
+        div.style.width = "100%";
+        
+        const infoDiv = document.createElement("div");
+        infoDiv.style.display = "flex";
+        infoDiv.style.alignItems = "center";
+        infoDiv.style.gap = "10px";
+        
+        const img = document.createElement("img");
+        img.src = u.avatar;
+        img.style.width = "30px";
+        img.style.height = "30px";
+        img.style.borderRadius = "50%";
+        
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = u.username;
+        
+        infoDiv.appendChild(img);
+        infoDiv.appendChild(nameSpan);
+        
+        const addBtn = document.createElement("button");
+        addBtn.className = "btn-primario";
+        addBtn.style.padding = "5px 10px";
+        addBtn.style.fontSize = "11px";
+        addBtn.style.marginBottom = "0";
+        addBtn.style.width = "auto";
+        
+        if (myFriends.includes(u.username)) {
+           addBtn.textContent = "Amigo";
+           addBtn.disabled = true;
+           addBtn.style.background = "#555";
+        } else {
+           addBtn.textContent = "Añadir";
+           addBtn.onclick = async () => {
+             const res = await fetch("/api/friend", {
+               method: "POST",
+               headers: {"Content-Type": "application/json"},
+               body: JSON.stringify({username: myName, friend_username: u.username})
+             });
+             if (res.ok) {
+                const updated = await res.json();
+                myFriends = updated.friends;
+                const userObj = JSON.parse(localStorage.getItem("user") || "{}");
+                userObj.friends = myFriends;
+                localStorage.setItem("user", JSON.stringify(userObj));
+                addBtn.textContent = "Amigo";
+                addBtn.disabled = true;
+                addBtn.style.background = "#555";
+                renderMyFriends();
+             }
+           };
+        }
+        
+        div.appendChild(infoDiv);
+        div.appendChild(addBtn);
+        searchResults.appendChild(div);
+      });
+    } catch (e) {
+      console.error(e);
+    }
+  });
+}
+
+function updateSidebarContacts() {
+  const container = document.getElementById("contactosList");
+  if (!container) return;
+  
+  const activeIds = Object.keys(contactos);
+  if (activeIds.length === 0) {
+    container.innerHTML = '<p class="no-contacts-msg">Activa compartir para ver contactos.</p>';
+    return;
+  }
+  
+  let html = "";
+  activeIds.forEach(id => {
+    const c = contactos[id];
+    const color = getContactColor(id);
+    const nombre = c.data && c.data.name ? c.data.name : `Contacto`;
+    const avatar = c.data && c.data.avatar ? c.data.avatar : `https://ui-avatars.com/api/?name=C&rounded=true&size=128`;
+    const etaText = c.data && c.data.eta ? `<small style="color: #27ae60; font-weight: normal; margin-top: 2px;">📍 ${c.data.eta}</small>` : '';
+    
+    html += `
+      <div class="contact-item">
+        <img src="${avatar}" style="border-color: ${color}">
+        <span style="display: flex; flex-direction: column;">
+            ${nombre}
+            ${etaText}
+        </span>
+      </div>
+    `;
+  });
+  container.innerHTML = html;
+}
+
+socket.on("removeContact", (data) => {
+  if (contactos[data.id]) {
+    if (contactos[data.id].marker) mapa.removeLayer(contactos[data.id].marker);
+    if (contactos[data.id].polyline) mapa.removeLayer(contactos[data.id].polyline);
+    if (contactos[data.id].destMarker) mapa.removeLayer(contactos[data.id].destMarker);
+    delete contactos[data.id];
+    updateSidebarContacts();
+  }
+});
+
+function processContactLocation(id, data) {
+  if (!contactos[id]) contactos[id] = {};
+  contactos[id].data = data;
+  
+  const color = getContactColor(id);
+  const nombre = data.name || "Contacto";
+  const avatar = data.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(nombre.charAt(0))}&rounded=true&size=128`;
+
+  if (!contactos[id].marker) {
+    const iconHtml = `
+      <div class="contact-marker-container">
+        <img src="${avatar}" style="border-color: ${color}">
+        <span class="contact-marker-name" style="background-color: ${color}">${nombre}</span>
+      </div>
+    `;
+    
+    const divIcon = L.divIcon({
+      className: 'contact-avatar-marker',
+      html: iconHtml,
+      iconSize: [40, 60],
+      iconAnchor: [20, 30]
+    });
+
+    contactos[id].marker = L.marker([data.lat, data.lng], { icon: divIcon }).addTo(mapa);
+    updateSidebarContacts();
+  } else {
+    contactos[id].marker.setLatLng([data.lat, data.lng]);
+  }
+}
+
+function processContactRoute(id, routeData) {
+  if (!contactos[id]) contactos[id] = {};
+  const color = getContactColor(id);
+  const nombre = (contactos[id].data && contactos[id].data.name) ? contactos[id].data.name : "Contacto";
+  
+  // Limpiar ruta anterior
+  if (contactos[id].polyline) {
+    mapa.removeLayer(contactos[id].polyline);
+  }
+  // Limpiar marcador de destino anterior
+  if (contactos[id].destMarker) {
+    mapa.removeLayer(contactos[id].destMarker);
+  }
+
+  const latLngs = routeData.map(pt => [pt.lat, pt.lng]);
+  contactos[id].polyline = L.polyline(latLngs, {
+    color: color,
+    weight: 4,
+    opacity: 0.8,
+    dashArray: '10, 10'
+  }).bindTooltip("Ruta de " + nombre, { sticky: true }).addTo(mapa);
+
+  // Marcador en el punto de destino (último punto de la ruta)
+  if (latLngs.length > 0) {
+    const destino = latLngs[latLngs.length - 1];
+    const destIcon = L.divIcon({
+      className: 'contact-avatar-marker',
+      html: `<div style="display:flex; flex-direction:column; align-items:center;">
+               <div style="background:${color}; color:white; font-size:11px; font-weight:bold; padding:3px 8px; border-radius:8px; white-space:nowrap;">
+                 📍 Destino de ${nombre}
+               </div>
+             </div>`,
+      iconSize: [100, 30],
+      iconAnchor: [50, 15]
+    });
+    contactos[id].destMarker = L.marker(destino, { icon: destIcon }).addTo(mapa);
+  }
+}
+
+// =========================
+
 // ELEMENTOS DEL DOM
 // =========================
 
@@ -37,6 +378,7 @@ const arCanvas = document.getElementById("arCanvas");           // Canvas para d
 const destinoInput = document.getElementById("destinoInput");   // Campo de texto del destino
 const btnRuta = document.getElementById("btnRuta");             // Botón de calcular ruta
 const clickMode = document.getElementById("clickMode");         // Checkbox para elegir destino haciendo clic
+const shareLocationMode = document.getElementById("shareLocationMode"); // Checkbox para compartir ubicación
 const estadoRuta = document.getElementById("estadoRuta");       // Texto del estado de la ruta
 
 // Elementos del DOM de la barra lateral
@@ -45,6 +387,21 @@ const menuToggle = document.getElementById("menuToggle");       // Botón de abr
 const closeSidebar = document.getElementById("closeSidebar");   // Botón de cerrar barra lateral
 
 // Eventos para abrir y cerrar la barra lateral
+
+
+// Al cambiar el interruptor Multidispositivo
+shareLocationMode.addEventListener("change", () => {
+  if (shareLocationMode.checked) {
+    if (miLatitud !== null && miLongitud !== null) {
+      socket.emit("shareLocation", { lat: miLatitud, lng: miLongitud, name: myName, avatar: myAvatar, eta: myETA });
+    }
+    if (coordenadasRuta.length > 0) {
+      socket.emit("shareRoute", coordenadasRuta);
+    }
+  } else {
+    socket.emit("stopSharing");
+  }
+});
 
 menuToggle.addEventListener("click", () => {
   sidebar.classList.add("visible");
@@ -177,6 +534,11 @@ if ("geolocation" in navigator) {
         marcadorUsuario.setLatLng([miLatitud, miLongitud]);
       }
 
+      // Compartir ubicación si está activado
+      if (shareLocationMode.checked) {
+        socket.emit("shareLocation", { lat: miLatitud, lng: miLongitud, name: myName, avatar: myAvatar, eta: myETA });
+      }
+
       // Actualizamos el paso automático
       actualizarPasoAutomatico();
     },
@@ -281,6 +643,11 @@ function limpiarRuta() {
 
   // Actualizamos el estado de la ruta
   stepBox.textContent = "No hay una ruta activa.";
+  myETA = null;
+  // Si estamos compartiendo posición, actualizamos que ya no tenemos ETA
+  if (shareLocationMode.checked && miLatitud !== null && miLongitud !== null) {
+    socket.emit("shareLocation", { lat: miLatitud, lng: miLongitud, name: myName, avatar: myAvatar, eta: myETA });
+  }
 }
 
 // Función para calcular la distancia en metros entre dos puntos usando la fórmula de Haversine
@@ -720,13 +1087,37 @@ async function calcularRuta() {
 
     // Este fragmento calcula la distancia y el tiempo de la ruta
     const distKm = (ruta.summary.totalDistance / 1000).toFixed(1);
-    const tiempoMin = Math.round(ruta.summary.totalTime / 60);
+    const totalMinutos = Math.round(ruta.summary.totalTime / 60);
+
+    let tiempoFormateado = "";
+    if (totalMinutos < 60) {
+      tiempoFormateado = `${totalMinutos} min`;
+    } else if (totalMinutos < 1440) {
+      const horas = Math.floor(totalMinutos / 60);
+      const minRestantes = totalMinutos % 60;
+      tiempoFormateado = `${horas} h ${minRestantes} min`;
+    } else {
+      const dias = Math.floor(totalMinutos / 1440);
+      const horasRestantes = Math.floor((totalMinutos % 1440) / 60);
+      tiempoFormateado = `${dias} d ${horasRestantes} h`;
+    }
+
+    myETA = `Llega en ${tiempoFormateado} (${distKm} km)`;
+    // Si la persona ya está compartiendo, avisamos del nuevo ETA inmediatamente
+    if (shareLocationMode.checked && miLatitud !== null && miLongitud !== null) {
+        socket.emit("shareLocation", { lat: miLatitud, lng: miLongitud, name: myName, avatar: myAvatar, eta: myETA });
+    }
 
     // Mostramos el estado
-    estadoRuta.textContent = `Ruta calculada: ${distKm} km, ~${tiempoMin} min a pie.`;
+    estadoRuta.textContent = `Ruta calculada: ${distKm} km, ~${tiempoFormateado} a pie.`;
 
     // Activamos la opción de lanzar cámara AR
     btnAR.classList.remove("oculto");
+
+    // Compartir ruta si está activado el modo multidispositivo
+    if (shareLocationMode.checked) {
+      socket.emit("shareRoute", coordenadasRuta);
+    }
 
     // Mostramos el primer paso
     mostrarPasoActual();
