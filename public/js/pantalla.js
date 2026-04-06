@@ -64,39 +64,39 @@ closeSidebar.addEventListener("click", () => {
 
 // Definición de las capas base (Temas)
 // Capa base clara
-const capaBaseClara = L.tileLayer(
+const capaClara = L.tileLayer(
   "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
   { attribution: '&copy; OpenStreetMap contributors &copy; CARTO' }
 );
 
 // Capa base oscura
-const capaBaseOscura = L.tileLayer(
+const capaOscura = L.tileLayer(
   "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
   { attribution: '&copy; OpenStreetMap contributors &copy; CARTO' }
 );
 
 // Capa base satélite
-const capaBaseSatelite = L.tileLayer(
+const capaSatelite = L.tileLayer(
   "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
   { attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community' }
 );
 
 // Agrupamos las opciones en un objeto para el selector de Leaflet
-const temasMapa = {
-  "Modo Claro": capaBaseClara,
-  "Modo Oscuro": capaBaseOscura,
-  "Satélite": capaBaseSatelite
+const temas = {
+  "Modo Claro": capaClara,
+  "Modo Oscuro": capaOscura,
+  "Satélite": capaSatelite
 };
 
 // Inicializamos el mapa y fijamos el Tema Claro por defecto
 const mapa = L.map("mapa", {
   center: [40.4168, -3.7038],
   zoom: 15,
-  layers: [capaBaseClara] 
+  layers: [capaClara] 
 });
 
 // Añadimos el botón selector tipo sándwich a nuestro mapa de Leaflet
-L.control.layers(temasMapa).addTo(mapa);
+L.control.layers(temas).addTo(mapa);
 
 
 
