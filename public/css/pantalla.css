@@ -591,8 +591,8 @@ body.modo-ar .leaflet-routing-alternatives-container {
   display: none !important;
 }
 
-body.modo-ar {\
-  background: transparent !important;\
+body.modo-ar {
+  background: transparent !important;
 }
 
 body.modo-ar #mapa .leaflet-control-container {
@@ -603,6 +603,12 @@ body.modo-ar #mapa .leaflet-control-container {
 body.modo-ar .top-floating-ui,
 body.modo-ar .route-card,
 body.modo-ar .floating-btn {
+  display: none !important;
+}
+
+/* Fallback: si la tarjeta llega a mostrarse en AR, ocultar los botones que más ocupan */
+body.modo-ar .route-card-actions,
+body.modo-ar .route-card-nav {
   display: none !important;
 }
 
