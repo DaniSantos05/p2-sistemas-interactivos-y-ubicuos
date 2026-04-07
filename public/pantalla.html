@@ -20,6 +20,9 @@
   <!-- Estilos de Leaflet Routing Machine -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
 
+  <!-- Google Material Symbols (iconos vectoriales gratuitos) -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+
   <!-- Nuestro CSS general -->
   <link rel="stylesheet" href="/css/styles.css">
   <link rel="stylesheet" href="/css/pantalla.css">
@@ -32,62 +35,77 @@
     <canvas id="arCanvas"></canvas>                       <!-- Canvas para dibujar sobre el video -->
   </div>
 
-  <!-- Menú lateral flotante -->
-  <button id="menuToggle" class="menu-toggle">☰</button>
-
-  <aside id="sidebar" class="sidebar">
-    <div class="sidebar-header">
-      <h2>Opciones</h2>
-      <button id="closeSidebar" class="close-btn">&times;</button>
+  <!-- Interfaz Flotante Superior -->
+  <div class="top-floating-ui">
+    <div class="search-container-modern">
+      <input type="text" id="destinoInput" class="search-input-modern" placeholder="Ej: Museo del Prado, Madrid" autocomplete="off">
+      <button id="btnRuta" class="btn-search-modern">
+        <span class="material-symbols-outlined">search</span>
+      </button>
     </div>
-    <div style="padding: 0 20px;">
-      <button id="btnProfile" class="btn-primario" style="width: 100%; margin-top: 0; margin-bottom: 20px;">Mi Perfil</button>
-    </div>
+    
+    <button id="btnMenuToggle" class="profile-toggle-btn">
+      <img id="btnAvatarIcon" src="https://ui-avatars.com/api/?name=U&rounded=true&size=128" alt="Perfil" class="btn-avatar-icon">
+    </button>
+  </div>
 
-    <!-- Modulo de Navegación -->
-    <div class="sidebar-section">
-      <h3>Navegación</h3>
-      <input type="text" id="destinoInput" class="input-moderno" placeholder="Ej: Museo del Prado, Madrid">
-      <button id="btnRuta" class="btn-primario">Buscar y calcular ruta</button>
-      
-      <!-- Checkbox para activar el modo de destino en mapa -->
-      <label class="click-mode-label">
-        <input type="checkbox" id="clickMode"> Destino en mapa con clic
-      </label>
-      
-      <button id="btnAR" class="btn-ar oculto">Activar Cámara AR</button>
-      <!-- Botón para activar el modo AR (estará oculto al principio) -->
-
-      <!-- Estado de la ruta -->
-      <div id="estadoRuta" class="status-box">Obteniendo tu ubicación...</div>
-      
-      <!-- Paso actual de la ruta -->
-      <div id="stepBox" class="step-box">Todavía no hay una ruta calculada.</div>
-    </div>
-
-    <!-- Modulo Multidispositivo -->
-    <div class="sidebar-section">
-      <h3>Mis Contactos</h3>
-      <label class="click-mode-label" style="margin-top: 5px;">
-        <input type="checkbox" id="shareLocationMode">
-        Mostrar y compartir con amigos
-      </label>
-      <div id="contactosList" class="contactos-list">
-        <p class="no-contacts-msg">Activa compartir para ver contactos.</p>
+  <!-- Menú de Pantalla Completa (Estilo Google Maps) -->
+  <div id="fullScreenMenu" class="fullscreen-menu oculto">
+    <div class="fsm-content">
+      <div class="fsm-header">
+        <button id="closeFullScreen" class="close-fsm-btn">&times;</button>
+        <div class="fsm-profile-banner">
+          <img id="fsmAvatar" src="" alt="Mi Avatar" class="fsm-avatar-large">
+          <div class="fsm-profile-info">
+            <h2 id="fsmName">Nombre</h2>
+            <button id="btnProfile" class="fsm-view-profile-btn">Ver perfil</button>
+          </div>
+        </div>
       </div>
-    </div>
 
-    <!-- Modulo de Controles (Botones visuales no funcionales) -->
-    <div class="sidebar-section">
-      <h3>Controles</h3>
-      <div class="column-controls">
-        <button class="btn-control" data-event="prevStep">Paso anterior</button>
-        <button class="btn-control" data-event="nextStep">Paso Siguiente</button>
-        <button class="btn-control" data-event="zoomIn">Zoom +</button>
-        <button class="btn-control" data-event="zoomOut">Zoom -</button>
-        <button class="btn-control" data-event="toggleMode">2D/3D</button>
-        <button class="btn-control" data-event="deleteRoute">Eliminar ruta</button>
-        <button class="btn-control" data-event="recenter">Recentrar</button>
+      <div class="fsm-body">
+        <!-- Navegación y Rutas -->
+        <div class="fsm-section">
+          <h3>Ruta Actual</h3>
+          <div id="estadoRuta" class="fsm-status-text">Obteniendo tu ubicación...</div>
+          <div id="stepBox" class="fsm-step-box">Todavía no hay una ruta calculada.</div>
+          
+          <label class="fsm-toggle">
+            <input type="checkbox" id="clickMode">
+            <div class="fsm-toggle-slider"></div>
+            Destino en mapa con clic
+          </label>
+
+          <button id="btnAR" class="btn-fsm-action oculto" style="margin-top: 15px; background: #eb1f5a; color: white;">Activar Cámara AR</button>
+        </div>
+
+        <!-- Mis Contactos -->
+        <div class="fsm-section">
+          <h3>Mis Contactos</h3>
+          <label class="fsm-toggle" style="margin-top: 10px;">
+            <input type="checkbox" id="shareLocationMode">
+            <div class="fsm-toggle-slider"></div>
+            Mostrar y compartir ubicación con amigos
+          </label>
+          <div id="contactosList" class="fsm-contact-list">
+            <p class="no-contacts-msg" style="color: #bbb;">Activa compartir para ver contactos.</p>
+          </div>
+        </div>
+
+        <!-- Controles -->
+        <div class="fsm-section">
+          <h3>Ajustes / Controles</h3>
+          <div class="fsm-controls-grid">
+            <button class="fsm-action-btn" data-event="prevStep">Paso anterior</button>
+            <button class="fsm-action-btn" data-event="nextStep">Paso Siguiente</button>
+            <button class="fsm-action-btn" data-event="zoomIn">Zoom +</button>
+            <button class="fsm-action-btn" data-event="zoomOut">Zoom -</button>
+            <button class="fsm-action-btn" data-event="toggleMode">2D/3D</button>
+            <button class="fsm-action-btn" data-event="deleteRoute">Eliminar ruta</button>
+            <button class="fsm-action-btn" data-event="recenter">Recentrar</button>
+          </div>
+        </div>
+        
       </div>
     </div>
     
@@ -97,10 +115,43 @@
       <p id="lastEvent"></p>
       <p id="modeStatus"></p>
     </div>
-  </aside>
+  </div>
 
   <!-- Contenedor del mapa -->
   <div id="mapa"></div>
+
+  <!-- Tarjeta inferior de ruta (aparece tras calcular ruta) -->
+  <div id="routeCard" class="route-card oculto">
+    <div class="route-card-header">
+      <div class="route-card-info">
+        <span id="routeCardTime" class="route-card-time">--</span>
+        <span id="routeCardDist" class="route-card-dist">-- km</span>
+      </div>
+      <button id="routeCardClose" class="route-card-close">&times;</button>
+    </div>
+    <div id="routeCardStep" class="route-card-step">Calculando...</div>
+    <div class="route-card-actions">
+      <button id="routeCardShare" class="route-card-btn route-card-btn-share">
+        <span class="material-symbols-outlined">share</span> Compartir
+      </button>
+      <button id="routeCardAR" class="route-card-btn route-card-btn-ar">
+        <span class="material-symbols-outlined">photo_camera</span> AR
+      </button>
+      <button id="routeCardGo" class="route-card-btn route-card-btn-go">
+        <span class="material-symbols-outlined">navigation</span> Ir
+      </button>
+    </div>
+    <!-- Navegación de pasos (visible tras pulsar Ir) -->
+    <div id="routeCardNav" class="route-card-nav oculto">
+      <button id="routeCardPrev" class="route-nav-btn"><span class="material-symbols-outlined">chevron_left</span> Anterior</button>
+      <button id="routeCardNext" class="route-nav-btn">Siguiente <span class="material-symbols-outlined">chevron_right</span></button>
+    </div>
+  </div>
+
+  <!-- Botón flotante recentrar -->
+  <button id="btnRecenter" class="floating-btn floating-btn-recenter" title="Recentrar">
+    <span class="material-symbols-outlined">my_location</span>
+  </button>
 
   <!-- Modal Mi Perfil -->
   <div id="profileModal" class="modal">

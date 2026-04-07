@@ -2,7 +2,7 @@
   {
     "username": "paco",
     "password": "paco",
-    "avatar": "https://ui-avatars.com/api/?name=p&background=random&color=fff&rounded=true&size=128",
+    "avatar": "/uploads/paco_1775557828492.png",
     "friends": [
       "Manolo"
     ]
@@ -11,6 +11,14 @@
     "username": "Manolo",
     "password": "manolo",
     "avatar": "https://ui-avatars.com/api/?name=M&background=random&color=fff&rounded=true&size=128",
+    "friends": [
+      "paco"
+    ]
+  },
+  {
+    "username": "TestUser",
+    "password": "password",
+    "avatar": "https://ui-avatars.com/api/?name=T&background=random&color=fff&rounded=true&size=128",
     "friends": []
   }
 ]

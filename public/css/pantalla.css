@@ -1,11 +1,23 @@
-/* Estilos de la pantalla principal (mapa) */
+/* ============================================= */
+/* Estilos de la pantalla principal (mapa)       */
+/* Rediseño tipo Google Maps / Waze              */
+/* ============================================= */
 
-/* Hacemos que el body ocupe toda la ventana y quitamos desbordes */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* ---- Reset base ---- */
 body {
   margin: 0;
   overflow: hidden;
-  font-family: Arial, sans-serif;
-  background: #f4f4f4;
+  font-family: 'Inter', Arial, sans-serif;
+  background: #1a1a2e;
+}
+
+/* Iconos Material Symbols alineados con texto */
+.material-symbols-outlined {
+  font-size: 20px;
+  vertical-align: middle;
+  line-height: 1;
 }
 
 /* El mapa ocupa toda la pantalla */
@@ -14,350 +26,304 @@ body {
   height: 100vh;
 }
 
-/* Botón hamburguesa */
-.menu-toggle {
-  position: absolute;
-  top: 10px;
-  left: 5px;
+/* ============================================= */
+/* BARRA FLOTANTE SUPERIOR (búsqueda + perfil)   */
+/* ============================================= */
+
+.top-floating-ui {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  right: 16px;
   z-index: 2000;
-  background: white;
-  backdrop-filter: blur(10px);
-  border: 1px solid black;
-  color: black;
-  font-size: 24px;
-  padding: 15px 15px;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.3s ease;  /* Transición suave */
-}
-
-/* Hover al pasar el ratón */
-.menu-toggle:hover {
-  background: whitesmoke;
-  transform: scale(1.05);     /* Transición suave */
-}
-
-/* Barra lateral */
-.sidebar {
-  position: absolute;
-  top: 0;
-  left: -380px;   /* Oculto por defecto */
-  z-index: 2500;  /* Capa superior */
-  width: 340px;
-  height: 100vh;
-  background: white;
-  backdrop-filter: blur(16px);              /* Oculta lo que hay detrás*/    
-  border-right: 1px solid rgba(255, 255, 255, 0.4);
-  padding: 25px;
-  box-sizing: border-box;
-  transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);  /* cubic-bezier cambia la velocidad de la transición */
-  overflow-y: auto;                                           
-}
-
-/* Mostrar barra lateral */
-.sidebar.visible {
-  transform: translateX(380px); /* 380 porque left estaba en -380 */
-}
-
-/* Cabecera de la barra lateral */
-.sidebar-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 25px;
-  border-bottom: 2px solid black;
-  padding-bottom: 15px;
+  gap: 10px;
+  pointer-events: none; /* Deja pasar clics al mapa en zonas vacías */
 }
 
-/* Título de la barra lateral */
-.sidebar-header h2 {
-  margin: 0;
-  font-size: 24px;
-  color: #3498db;
+.top-floating-ui > * {
+  pointer-events: auto; /* Los hijos sí reciben clics */
 }
 
-/* Botón de cerrar */
-.close-btn {
+/* Contenedor de búsqueda tipo píldora */
+.search-container-modern {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: 28px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+  padding: 4px 6px 4px 18px;
+  transition: box-shadow 0.3s ease;
+}
+
+.search-container-modern:focus-within {
+  box-shadow: 0 4px 20px rgba(31, 111, 235, 0.30);
+}
+
+.search-input-modern {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 15px;
+  font-family: 'Inter', Arial, sans-serif;
+  color: #222;
+  padding: 12px 8px;
+}
+
+.search-input-modern::placeholder {
+  color: #999;
+}
+
+.btn-search-modern {
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4285f4, #1a73e8);
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+  flex-shrink: 0;
+}
+
+.btn-search-modern:hover {
+  transform: scale(1.08);
+  box-shadow: 0 3px 10px rgba(26, 115, 232, 0.4);
+}
+
+.btn-search-modern:active {
+  transform: scale(0.96);
+}
+
+/* Botón circular del perfil / avatar */
+.profile-toggle-btn {
+  width: 48px;
+  height: 48px;
+  border: none;
+  border-radius: 50%;
+  padding: 0;
+  cursor: pointer;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  background: #fff;
+  transition: transform 0.2s, box-shadow 0.2s;
+  flex-shrink: 0;
+}
+
+.profile-toggle-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+
+.btn-avatar-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+/* ============================================= */
+/* MENÚ PANTALLA COMPLETA (Full Screen Menu)     */
+/* ============================================= */
+
+.fullscreen-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  background: #1a1a2e;
+  overflow-y: auto;
+  transition: transform 0.4s cubic-bezier(0.22, 0.68, 0, 1.0), opacity 0.3s ease;
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.fullscreen-menu.oculto {
+  transform: translateY(100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.fsm-content {
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 20px 20px 40px;
+}
+
+/* ---- Cabecera del menú ---- */
+.fsm-header {
+  position: relative;
+  padding: 10px 0 25px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  margin-bottom: 20px;
+}
+
+.close-fsm-btn {
+  position: absolute;
+  top: 8px;
+  right: 0;
   background: none;
   border: none;
-  font-size: 28px;
-  color: gray;
+  color: rgba(255,255,255,0.6);
+  font-size: 32px;
   cursor: pointer;
-  line-height: 1;           /* Centra el botón */
-  transition: color 0.3s;
+  padding: 0 6px;
+  line-height: 1;
+  transition: color 0.2s;
 }
 
-/* Hover al pasar el ratón */
-.close-btn:hover {
-  color: red;
+.close-fsm-btn:hover {
+  color: #ff6b6b;
 }
 
-/* Secciones de la barra lateral */
-.sidebar-section {
-  margin-bottom: 25px;
-  background: rgba(255, 255, 255, 0.5);
-  padding: 15px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.6);
-}
-
-/* Título de la sección */
-.sidebar-section h3 {
-  margin: 0 0 10px 0;
-  text-align: center;
-  font-size: 16px;
-  color: #3498de;
-  text-transform: uppercase;
-}
-
-/* Inputs y botones modernos */
-.input-moderno {
-  width: 100%;
-  padding: 12px;
-  margin-bottom: 12px;
-  box-sizing: border-box;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.8);
-  font-size: 14px;
-  transition: border-color 0.3s;
-}
-
-/* Cuando se hace click en el input */
-.input-moderno:focus {
-  outline: none;
-  border-color: #3498db;
-}
-
-/* Botón principal */
-.btn-primario {
-  width: 100%;
-  padding: 12px;
-  border: none;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #3498db, #2980b9);  /* Gradiente de color */
-  color: white;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.2s;        /* Transición suave */
-}
-
-.btn-primario:hover {
-  color: blue;
-  transform: translateY(-2px);       /* Sube un poco */
-}
-
-/* Contenedor del checkbox */
-.click-mode-label {
+.fsm-profile-banner {
   display: flex;
   align-items: center;
-  font-size: 14px;
-  color: gray;
-  cursor: pointer;
-  margin-top: 15px;
+  gap: 18px;
+  margin-top: 10px;
 }
 
-/* Checkbox elegante */
-.click-mode-label input {
-  margin-right: 8px;
-  accent-color: #3498db;      /* Color del check */
-  transform: scale(1.1);        /* Un poco más grande */
+.fsm-avatar-large {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid rgba(255,255,255,0.15);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
 }
 
-/* Cajas de estado */
-.status-box, .step-box {
-  margin-top: 15px;
-  padding: 12px;
-  background: rgba(241, 242, 246, 0.7);
-  border-radius: 8px;
-  font-size: 14px;
-  color: #2c3e50;
-  line-height: 1.5;
-  border-left: 4px solid #3498db;   /* Borde lateral */
+.fsm-profile-info h2 {
+  margin: 0 0 6px;
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
 }
 
-/* Controles dispuestos uno debajo del otro (botones inactivos visuales) */
-.column-controls {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-/* Botones de control */
-.btn-control {
-  padding: 25px;
-  border: none;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #3498db, #2980b9);  /* Gradiente de color */
-  color: white;
+.fsm-view-profile-btn {
+  background: none;
+  border: 2px solid #4285f4;
+  color: #4285f4;
   font-size: 13px;
   font-weight: 600;
+  padding: 5px 16px;
+  border-radius: 20px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
-/* Hover al pasar el ratón */
-.btn-control:hover {
-  color: blue;
-  transform: translateY(-2px);       /* Sube un poco */
+.fsm-view-profile-btn:hover {
+  background: #4285f4;
+  color: #fff;
 }
 
-/* Indicador visual del modo (oculto en HTML pero útil dejarlo si se necesita luego) */
-#modeStatus {
-  font-weight: bold;
+/* ---- Cuerpo / Secciones ---- */
+.fsm-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-/* Apariencia visual simulada para el modo 3D */
-.modo-3d #mapa {
-  transform: perspective(1200px) rotateX(45deg);
-  transform-origin: center bottom;
-  transition: transform 0.4s ease;
+.fsm-section {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 16px;
+  padding: 20px;
 }
 
-/* Apariencia normal del modo 2D */
-.modo-2d #mapa {
-  transform: none;
-  transition: transform 0.4s ease;
-}
-
-
-/*Estilos de AR (Realidad Aumentada)*/
-
-/*Oculta elementos*/
-.oculto {
-  display: none !important;
-}
-
-/*Contenedor de AR*/
-#arContainer {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;  /* vw significa que el ancho es el 100% de la ventana*/
-  height: 100vh; /* vh significa que el alto es el 100% de la ventana*/
-  z-index: 100;  /* Detrás del panel de control, pero encima del mapa base */
-  background: black;
-}
-
-/*Video de la cámara*/
-#arVideo {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/*Canvas para dibujar sobre el video*/
-#arCanvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: transparent;
-  pointer-events: none;
-}
-
-/*Botón para activar la cámara AR*/
-.btn-ar {
-  width: 100%;
-  padding: 11px;
-  border: none;
-  border-radius: 8px;
-  background: #eb1f5a;
-  color: white;
-  font-size: 15px;
+.fsm-section h3 {
+  margin: 0 0 14px;
+  color: rgba(255,255,255,0.9);
+  font-size: 14px;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+/* Estado de ruta */
+.fsm-status-text {
+  font-size: 13px;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+/* Step box */
+.fsm-step-box {
+  padding: 14px 16px;
+  background: rgba(66, 133, 244, 0.1);
+  border-left: 4px solid #4285f4;
+  border-radius: 0 10px 10px 0;
+  font-size: 14px;
+  color: rgba(255,255,255,0.85);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+/* ---- Toggle Switch Moderno ---- */
+.fsm-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: rgba(255,255,255,0.75);
   cursor: pointer;
-  margin-top: 10px;
-  transition: all 0.2s ease;
+  user-select: none;
+  margin-bottom: 8px;
 }
 
-/* Hover al pasar el ratón */
-.btn-ar:hover {
-  color: #631616;
-  transform: translateY(-2px);
+.fsm-toggle input {
+  display: none;
 }
 
-/* Modo AR Activo: Mini-mapa radar */
-body.modo-ar #mapa {
-  position: fixed !important;   /* !important anula cualquier otro estilo */
-  top: 20px !important;
-  right: 20px !important;
-  left: auto !important;   
-  width: 250px !important;
-  height: 250px !important;
-  border-radius: 15px;
-  border: 4px solid white;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-  z-index: 1000;
-  transition: all 0.5s ease;
+.fsm-toggle-slider {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 12px;
+  flex-shrink: 0;
+  transition: background 0.3s;
 }
 
-  /* Estilos para móviles (pantallas pequeñas) */
-  @media (max-width: 600px) {
-    /* Hacemos la barra lateral más pequeña */
-    .sidebar {
-      width: 250px;
-      left: -300px;
-      padding: 15px;
-    }
-    .sidebar.visible {
-      transform: translateX(300px);
-    }
-
-    /* Hacemos el Mini-mapa AR más pequeño en móviles para que no tape la cámara */
-    body.modo-ar #mapa {
-      top: 15px !important;
-      right: 15px !important;
-      width: 140px !important;
-      height: 140px !important;
-      border-radius: 10px !important; /* Lo volvemos a dejar cuadradito a petición de Dani */
-      border: 3px solid white;
-    }
-  }
-
-
-/* Ocultar las instrucciones de la ruta y los botones del minimapa en modo AR */
-body.modo-ar .leaflet-routing-container,
-body.modo-ar .leaflet-control-zoom,
-body.modo-ar .leaflet-top.leaflet-right,
-body.modo-ar .leaflet-control-attribution,
-body.modo-ar .leaflet-routing-alternatives-container {
-  display: none !important;
-}
-
-/* Modo AR Activo: Mini-mapa radar */
-body.modo-ar #mapa {
-  background: transparent !important;
-}
-
-/* Fondo transparente en modo AR */
-body.modo-ar {
-  background: transparent !important;
-}
-
-
-body.modo-ar #mapa .leaflet-control-container {
-  display: none !important;
-}
-
-/* ========================================= */
-/* ESTILOS DE CONTACTOS MULTIDISPOSITIVO     */
-/* ========================================= */
-
-.contactos-list {
-  margin-top: 15px;
+.fsm-toggle-slider::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
   background: white;
-  border-radius: 8px;
+  border-radius: 50%;
+  transition: transform 0.3s;
+}
+
+.fsm-toggle input:checked + .fsm-toggle-slider {
+  background: #4285f4;
+}
+
+.fsm-toggle input:checked + .fsm-toggle-slider::after {
+  transform: translateX(20px);
+}
+
+/* ---- Lista de contactos ---- */
+.fsm-contact-list {
+  margin-top: 12px;
   max-height: 200px;
   overflow-y: auto;
-  border: 1px solid rgba(0,0,0,0.1);
-  padding: 10px;
+  border-radius: 10px;
+  padding: 8px;
+  background: rgba(255,255,255,0.03);
 }
 
 .no-contacts-msg {
-  color: #7f8c8d;
   font-size: 13px;
   text-align: center;
   margin: 0;
@@ -369,7 +335,7 @@ body.modo-ar #mapa .leaflet-control-container {
   align-items: center;
   margin-bottom: 10px;
   padding-bottom: 10px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 
 .contact-item:last-child {
@@ -388,11 +354,262 @@ body.modo-ar #mapa .leaflet-control-container {
 
 .contact-item span {
   font-size: 14px;
-  font-weight: bold;
-  color: #333;
+  font-weight: 600;
+  color: rgba(255,255,255,0.85);
 }
 
-/* Redondel customizado para el mapa (L.divIcon) */
+/* ---- Grid de botones de controles ---- */
+.fsm-controls-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.fsm-action-btn {
+  padding: 14px 10px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.85);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Inter', Arial, sans-serif;
+}
+
+.fsm-action-btn:hover {
+  background: rgba(66, 133, 244, 0.25);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.fsm-action-btn:active {
+  transform: scale(0.97);
+}
+
+/* Botón de acción especial (AR) */
+.btn-fsm-action {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Inter', Arial, sans-serif;
+}
+
+.btn-fsm-action:hover {
+  opacity: 0.85;
+  transform: translateY(-1px);
+}
+
+/* ============================================= */
+/* MODAL MI PERFIL                               */
+/* ============================================= */
+
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 6000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  background-color: #1e1e36;
+  color: #fff;
+  margin: 8% auto;
+  padding: 28px;
+  border: 1px solid rgba(255,255,255,0.08);
+  width: 90%;
+  max-width: 420px;
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+
+.close-modal {
+  color: rgba(255,255,255,0.5);
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.close-modal:hover,
+.close-modal:focus {
+  color: #ff6b6b;
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.profile-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #4285f4;
+}
+
+/* Input dentro del modal */
+.input-moderno {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 12px;
+  box-sizing: border-box;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.07);
+  color: #fff;
+  font-size: 14px;
+  transition: border-color 0.3s;
+  font-family: 'Inter', Arial, sans-serif;
+}
+
+.input-moderno:focus {
+  outline: none;
+  border-color: #4285f4;
+}
+
+/* Botón primario (dentro del modal) */
+.btn-primario {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #4285f4, #1a73e8);
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  font-family: 'Inter', Arial, sans-serif;
+}
+
+.btn-primario:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(66, 133, 244, 0.35);
+}
+
+/* Contactos list (dentro del modal) */
+.contactos-list {
+  margin-top: 12px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 10px;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 10px;
+}
+
+/* ============================================= */
+/* ESTILOS AR (Realidad Aumentada)               */
+/* ============================================= */
+
+.oculto {
+  display: none !important;
+}
+
+#arContainer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 100;
+  background: black;
+}
+
+#arVideo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+#arCanvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  pointer-events: none;
+}
+
+/* ============================================= */
+/* MODO 2D / 3D                                  */
+/* ============================================= */
+
+.modo-3d #mapa {
+  transform: perspective(1200px) rotateX(45deg);
+  transform-origin: center bottom;
+  transition: transform 0.4s ease;
+}
+
+.modo-2d #mapa {
+  transform: none;
+  transition: transform 0.4s ease;
+}
+
+/* ============================================= */
+/* MODO AR (mini-mapa radar)                     */
+/* ============================================= */
+
+body.modo-ar #mapa {
+  position: fixed !important;
+  top: 20px !important;
+  right: 20px !important;
+  left: auto !important;
+  width: 250px !important;
+  height: 250px !important;
+  border-radius: 15px;
+  border: 4px solid white;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  z-index: 1000;
+  transition: all 0.5s ease;
+  background: transparent !important;
+}
+
+body.modo-ar .leaflet-routing-container,
+body.modo-ar .leaflet-control-zoom,
+body.modo-ar .leaflet-top.leaflet-right,
+body.modo-ar .leaflet-control-attribution,
+body.modo-ar .leaflet-routing-alternatives-container {
+  display: none !important;
+}
+
+body.modo-ar {\
+  background: transparent !important;\
+}
+
+body.modo-ar #mapa .leaflet-control-container {
+  display: none !important;
+}
+
+/* En modo AR: ocultar barra de búsqueda, tarjeta de ruta, botón recentrar */
+body.modo-ar .top-floating-ui,
+body.modo-ar .route-card,
+body.modo-ar .floating-btn {
+  display: none !important;
+}
+
+/* ============================================= */
+/* MARCADORES DE CONTACTO EN EL MAPA             */
+/* ============================================= */
+
 .contact-avatar-marker {
   background: transparent;
   border: none;
@@ -403,7 +620,7 @@ body.modo-ar #mapa .leaflet-control-container {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  margin-top: -15px; /* Ajuste visual al centro */
+  margin-top: -15px;
 }
 
 .contact-marker-container img {
@@ -426,55 +643,319 @@ body.modo-ar #mapa .leaflet-control-container {
   font-weight: bold;
 }
 
-/* Modal Styles */
-.modal {
-  display: none; 
-  position: fixed; 
-  z-index: 3000; 
+/* ============================================= */
+/* MOVER CONTROLES DE LEAFLET ABAJO              */
+/* ============================================= */
+
+/* Zoom controls → esquina inferior izquierda */
+.leaflet-top.leaflet-left {
+  top: auto !important;
+  bottom: 24px !important;
+}
+
+/* Layer switcher → esquina inferior derecha */
+.leaflet-top.leaflet-right {
+  top: auto !important;
+  bottom: 24px !important;
+}
+
+/* Ocultar panel de instrucciones de Leaflet Routing Machine
+   (ya tenemos nuestra propia tarjeta inferior) */
+.leaflet-routing-container {
+  display: none !important;
+}
+
+/* Cuando hay tarjeta de ruta, subir los controles de leaflet */
+body.route-card-visible .leaflet-top.leaflet-left,
+body.route-card-visible .leaflet-top.leaflet-right {
+  bottom: 220px !important;
+}
+
+/* ============================================= */
+/* TARJETA INFERIOR DE RUTA                      */
+/* ============================================= */
+
+.route-card {
+  position: fixed;
+  bottom: 0;
   left: 0;
-  top: 0;
-  width: 100%; 
-  height: 100%; 
-  overflow: auto; 
-  background-color: rgba(0,0,0,0.5); 
+  right: 0;
+  z-index: 3000;
+  background: #1e1e36;
+  border-radius: 20px 20px 0 0;
+  padding: 20px 20px 24px;
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.4);
+  transition: transform 0.4s cubic-bezier(0.22, 0.68, 0, 1.0), opacity 0.3s ease;
+  transform: translateY(0);
+  opacity: 1;
+  max-width: 600px;
+  margin: 0 auto;
 }
 
-.modal-content {
-  background-color: #fefefe;
-  margin: 10% auto; 
-  padding: 20px;
-  border: 1px solid #888;
-  width: 90%;
-  max-width: 400px;
-  border-radius: 10px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+.route-card.oculto {
+  transform: translateY(100%);
+  opacity: 0;
+  pointer-events: none;
 }
 
-.close-modal {
-  color: #aaa;
-  float: right;
-  font-size: 28px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-.close-modal:hover,
-.close-modal:focus {
-  color: black;
-  text-decoration: none;
-}
-
-.profile-header {
+.route-card-header {
   display: flex;
   align-items: center;
-  gap: 15px;
-  margin-bottom: 15px;
+  justify-content: space-between;
+  margin-bottom: 12px;
 }
 
-.profile-avatar {
-  width: 80px;
-  height: 80px;
+.route-card-info {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.route-card-time {
+  font-size: 28px;
+  font-weight: 700;
+  color: #4caf50;
+  font-family: 'Inter', Arial, sans-serif;
+}
+
+.route-card-dist {
+  font-size: 15px;
+  color: rgba(255,255,255,0.5);
+  font-weight: 500;
+}
+
+.route-card-close {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.4);
+  font-size: 28px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.route-card-close:hover {
+  color: #ff6b6b;
+}
+
+.route-card-step {
+  font-size: 14px;
+  color: rgba(255,255,255,0.75);
+  background: rgba(255,255,255,0.05);
+  border-left: 3px solid #4285f4;
+  border-radius: 0 8px 8px 0;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.route-card-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.route-card-btn {
+  flex: 1;
+  padding: 14px 8px;
+  border: none;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Inter', Arial, sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.route-card-btn:active {
+  transform: scale(0.96);
+}
+
+.route-card-btn-share {
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.85);
+}
+
+.route-card-btn-share.active {
+  background: #4285f4;
+  color: #fff;
+}
+
+.route-card-btn-share:hover {
+  background: rgba(66, 133, 244, 0.3);
+}
+
+.route-card-btn-ar {
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.85);
+}
+
+.route-card-btn-ar:hover {
+  background: rgba(235, 31, 90, 0.3);
+}
+
+.route-card-btn-go {
+  background: #4caf50;
+  color: #fff;
+  flex: 1.3;
+}
+
+.route-card-btn-go:hover {
+  background: #43a047;
+}
+
+/* Navegación de pasos */
+.route-card-nav {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.route-nav-btn {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.8);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Inter', Arial, sans-serif;
+}
+
+.route-nav-btn:hover {
+  background: rgba(66, 133, 244, 0.25);
+  color: #fff;
+}
+
+/* ============================================= */
+/* BOTÓN FLOTANTE RECENTRAR                      */
+/* ============================================= */
+
+.floating-btn {
+  position: fixed;
+  z-index: 2000;
+  width: 48px;
+  height: 48px;
+  border: none;
   border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid #3498db;
+  background: rgba(255,255,255,0.95);
+  color: #333;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.floating-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+
+.floating-btn-recenter {
+  bottom: 100px;
+  right: 16px;
+}
+
+/* Cuando la route-card está visible, subir el botón */
+body.route-card-visible .floating-btn-recenter {
+  bottom: 280px;
+}
+
+/* ============================================= */
+/* RESPONSIVE                                    */
+/* ============================================= */
+
+@media (max-width: 600px) {
+  .top-floating-ui {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    gap: 8px;
+  }
+
+  .search-container-modern {
+    border-radius: 24px;
+    padding: 2px 4px 2px 14px;
+  }
+
+  .search-input-modern {
+    font-size: 14px;
+    padding: 10px 6px;
+  }
+
+  .btn-search-modern {
+    width: 38px;
+    height: 38px;
+    font-size: 16px;
+  }
+
+  .profile-toggle-btn {
+    width: 42px;
+    height: 42px;
+  }
+
+  .fsm-content {
+    padding: 16px 16px 30px;
+  }
+
+  .fsm-avatar-large {
+    width: 60px;
+    height: 60px;
+  }
+
+  .fsm-profile-info h2 {
+    font-size: 18px;
+  }
+
+  .fsm-controls-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .fsm-action-btn {
+    padding: 12px 8px;
+    font-size: 12px;
+  }
+
+  .route-card {
+    padding: 16px 16px 20px;
+  }
+
+  .route-card-time {
+    font-size: 22px;
+  }
+
+  .route-card-btn {
+    padding: 12px 6px;
+    font-size: 13px;
+  }
+
+  .floating-btn-recenter {
+    bottom: 90px;
+    right: 12px;
+  }
+
+  body.route-card-visible .floating-btn-recenter {
+    bottom: 260px;
+  }
+
+  /* Mini-mapa AR más pequeño en móviles */
+  body.modo-ar #mapa {
+    top: 15px !important;
+    right: 15px !important;
+    width: 140px !important;
+    height: 140px !important;
+    border-radius: 10px !important;
+    border: 3px solid white;
+  }
 }

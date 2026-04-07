@@ -153,6 +153,12 @@ if (btnChangeAvatar) {
         myProfileAvatar.src = myAvatar;
         avatarFileInput.value = "";
         
+        // Actualizar avatares en la UI flotante y el menú
+        const avatarBtn = document.getElementById("btnAvatarIcon");
+        const fsmAv = document.getElementById("fsmAvatar");
+        if (avatarBtn) avatarBtn.src = myAvatar;
+        if (fsmAv) fsmAv.src = myAvatar;
+        
         const userObj = JSON.parse(localStorage.getItem("user") || "{}");
         userObj.avatar = myAvatar;
         localStorage.setItem("user", JSON.stringify(userObj));
@@ -381,13 +387,18 @@ const clickMode = document.getElementById("clickMode");         // Checkbox para
 const shareLocationMode = document.getElementById("shareLocationMode"); // Checkbox para compartir ubicación
 const estadoRuta = document.getElementById("estadoRuta");       // Texto del estado de la ruta
 
-// Elementos del DOM de la barra lateral
-const sidebar = document.getElementById("sidebar");             // Barra lateral
-const menuToggle = document.getElementById("menuToggle");       // Botón de abrir barra lateral
-const closeSidebar = document.getElementById("closeSidebar");   // Botón de cerrar barra lateral
+// Elementos del DOM del menú de pantalla completa
+const fullScreenMenu = document.getElementById("fullScreenMenu");     // Menú de pantalla completa
+const btnMenuToggle = document.getElementById("btnMenuToggle");       // Botón avatar para abrir menú
+const closeFullScreen = document.getElementById("closeFullScreen");   // Botón de cerrar menú
+const fsmAvatar = document.getElementById("fsmAvatar");               // Avatar grande del menú
+const fsmName = document.getElementById("fsmName");                   // Nombre en el menú
+const btnAvatarIcon = document.getElementById("btnAvatarIcon");       // Avatar pequeño en la barra flotante
 
-// Eventos para abrir y cerrar la barra lateral
-
+// Actualizar el avatar del botón flotante con el del usuario
+if (btnAvatarIcon) {
+  btnAvatarIcon.src = myAvatar;
+}
 
 // Al cambiar el interruptor Multidispositivo
 shareLocationMode.addEventListener("change", () => {
@@ -403,17 +414,112 @@ shareLocationMode.addEventListener("change", () => {
   }
 });
 
-menuToggle.addEventListener("click", () => {
-  sidebar.classList.add("visible");
+// Abrir menú de pantalla completa
+btnMenuToggle.addEventListener("click", () => {
+  fsmAvatar.src = myAvatar;
+  fsmName.textContent = myName;
+  btnAvatarIcon.src = myAvatar;
+  fullScreenMenu.classList.remove("oculto");
 });
 
-closeSidebar.addEventListener("click", () => {
-  sidebar.classList.remove("visible");
+// Cerrar menú de pantalla completa
+closeFullScreen.addEventListener("click", () => {
+  fullScreenMenu.classList.add("oculto");
 });
 
+// =========================
+// TARJETA INFERIOR DE RUTA
+// =========================
 
+const routeCard = document.getElementById("routeCard");
+const routeCardTime = document.getElementById("routeCardTime");
+const routeCardDist = document.getElementById("routeCardDist");
+const routeCardStep = document.getElementById("routeCardStep");
+const routeCardClose = document.getElementById("routeCardClose");
+const routeCardShare = document.getElementById("routeCardShare");
+const routeCardAR = document.getElementById("routeCardAR");
+const routeCardGo = document.getElementById("routeCardGo");
+const routeCardNav = document.getElementById("routeCardNav");
+const routeCardPrev = document.getElementById("routeCardPrev");
+const routeCardNext = document.getElementById("routeCardNext");
+const btnRecenter = document.getElementById("btnRecenter");
 
+function showRouteCard(distKm, tiempoFormateado) {
+  routeCardTime.textContent = tiempoFormateado;
+  routeCardDist.textContent = `${distKm} km`;
+  routeCardStep.textContent = "Ruta lista. Pulsa Ir para empezar la navegación.";
+  routeCardNav.classList.add("oculto");
+  routeCard.classList.remove("oculto");
+  document.body.classList.add("route-card-visible");
+}
 
+function hideRouteCard() {
+  routeCard.classList.add("oculto");
+  document.body.classList.remove("route-card-visible");
+  routeCardNav.classList.add("oculto");
+  routeCardShare.classList.remove("active");
+}
+
+// Cerrar tarjeta de ruta → elimina la ruta
+routeCardClose.addEventListener("click", () => {
+  eliminarRuta();
+});
+
+// Compartir desde la tarjeta
+routeCardShare.addEventListener("click", () => {
+  if (!shareLocationMode.checked) {
+    shareLocationMode.checked = true;
+    shareLocationMode.dispatchEvent(new Event("change"));
+    routeCardShare.classList.add("active");
+    routeCardShare.innerHTML = '<span class="material-symbols-outlined">share</span> Compartiendo';
+  } else {
+    shareLocationMode.checked = false;
+    shareLocationMode.dispatchEvent(new Event("change"));
+    routeCardShare.classList.remove("active");
+    routeCardShare.innerHTML = '<span class="material-symbols-outlined">share</span> Compartir';
+  }
+});
+
+// AR desde la tarjeta
+routeCardAR.addEventListener("click", () => {
+  if (typeof ActivarDesactivarARMode === "function") {
+    ActivarDesactivarARMode();
+  }
+});
+
+// Botón Ir → iniciar navegación paso a paso
+routeCardGo.addEventListener("click", () => {
+  if (!instruccionesRuta.length) return;
+  indicePasoActual = 0;
+  mostrarPasoActual();
+  routeCardNav.classList.remove("oculto");
+  actualizarRouteCardStep();
+});
+
+// Navegación de pasos desde la tarjeta
+routeCardPrev.addEventListener("click", () => {
+  pasoAnterior();
+  actualizarRouteCardStep();
+});
+
+routeCardNext.addEventListener("click", () => {
+  siguientePaso();
+  actualizarRouteCardStep();
+});
+
+// Sincronizar el step en la tarjeta inferior
+function actualizarRouteCardStep() {
+  if (!instruccionesRuta.length || indicePasoActual < 0) return;
+  const inst = instruccionesRuta[indicePasoActual];
+  routeCardStep.innerHTML = `<strong>Paso ${indicePasoActual + 1}/${instruccionesRuta.length}</strong>: ${inst.text || ""} (~${Math.round(inst.distance || 0)} m)`;
+}
+
+// Botón flotante recentrar
+if (btnRecenter) {
+  btnRecenter.addEventListener("click", () => {
+    recentrarMapa();
+  });
+}
 
 // =========================
 // MAPA
@@ -630,6 +736,9 @@ function limpiarRuta() {
   if (btnAR) {
     btnAR.classList.add("oculto");
   }
+
+  // Ocultamos la tarjeta de ruta
+  hideRouteCard();
 
   // Reseteamos las variables de la ruta
   instruccionesRuta = [];       // Array de instrucciones
@@ -921,8 +1030,8 @@ function eliminarRuta() {
     estadoRuta.textContent = "Ruta eliminada. Elige un nuevo destino.";
 }
 
-// Asignamos la funcionalidad a cada botón del panel lateral usando su atributo data-event
-document.querySelectorAll(".btn-control").forEach(boton => {
+// Asignamos la funcionalidad a cada botón del menú usando su atributo data-event
+document.querySelectorAll(".fsm-action-btn").forEach(boton => {
     boton.addEventListener("click", () => {
         const evento = boton.getAttribute("data-event");
 
@@ -949,6 +1058,8 @@ document.querySelectorAll(".btn-control").forEach(boton => {
                 eliminarRuta();
                 break;
         }
+        // Cerrar el menú tras la acción para volver al mapa
+        fullScreenMenu.classList.add("oculto");
     });
 });
 
@@ -1077,15 +1188,15 @@ async function calcularRuta() {
     const ruta = e.routes[0];
 
     // Guardamos instrucciones y coordenadas
-    instruccionesRuta = ruta.instructions || []; // Si no hay instrucciones, guardamos un array vacío
-    coordenadasRuta = ruta.coordinates || [];    // Si no hay coordenadas, guardamos un array vacío
+    instruccionesRuta = ruta.instructions || [];
+    coordenadasRuta = ruta.coordinates || [];
 
     // Reiniciamos el índice del paso actual
     indicePasoActual = 0;
     ultimoCambioAutomatico = 0;
     rutaTerminada = false;
 
-    // Este fragmento calcula la distancia y el tiempo de la ruta
+    // Calculamos distancia y tiempo
     const distKm = (ruta.summary.totalDistance / 1000).toFixed(1);
     const totalMinutos = Math.round(ruta.summary.totalTime / 60);
 
@@ -1103,21 +1214,22 @@ async function calcularRuta() {
     }
 
     myETA = `Llega en ${tiempoFormateado} (${distKm} km)`;
-    // Si la persona ya está compartiendo, avisamos del nuevo ETA inmediatamente
     if (shareLocationMode.checked && miLatitud !== null && miLongitud !== null) {
         socket.emit("shareLocation", { lat: miLatitud, lng: miLongitud, name: myName, avatar: myAvatar, eta: myETA });
     }
 
-    // Mostramos el estado
     estadoRuta.textContent = `Ruta calculada: ${distKm} km, ~${tiempoFormateado} a pie.`;
 
-    // Activamos la opción de lanzar cámara AR
+    // Activamos la opción de AR en el menú full-screen
     btnAR.classList.remove("oculto");
 
-    // Compartir ruta si está activado el modo multidispositivo
+    // Compartir ruta si está activado
     if (shareLocationMode.checked) {
       socket.emit("shareRoute", coordenadasRuta);
     }
+
+    // Mostramos la tarjeta inferior de ruta con Compartir / AR / Ir
+    showRouteCard(distKm, tiempoFormateado);
 
     // Mostramos el primer paso
     mostrarPasoActual();
