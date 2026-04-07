@@ -1,4 +1,4 @@
-// =========================
+﻿// =========================
 // MODO REALIDAD AUMENTADA
 // =========================
 
@@ -27,10 +27,7 @@ const ZONA_MUERTA_RECTO_GRADOS = 12;
 // FUNCIONES DE ÁNGULOS Y RUMBO (muy importantes para la cámara AR)
 // =========================
 
-/* Función que calcula el rumbo entre dos puntos basandose en trigonometría.
-Las fórmulas no entienden de grados, por lo que convertimos a radianes.
-'x' e 'y' son los catetos del triángulo rectángulo que forman los dos puntos.
-'brng' es el rumbo que queremos calcular. Al final convertimos de nuevo a grados.*/
+// Calcular el angulo entre tu posicion y la del punto al que vas
 function calcularRumbo(lat1, lon1, lat2, lon2) {
   const aRadianes = p => p * Math.PI / 180;         // Convierte grados a radianes
   const aGrados = p => p * 180 / Math.PI;           // Convierte radianes a grados
@@ -38,7 +35,7 @@ function calcularRumbo(lat1, lon1, lat2, lon2) {
   const difLon = aRadianes(lon2 - lon1);            // Diferencia de longitud en radianes
 
   // Fórmula para calcular el rumbo
-  /* Seno de la diferencia de longitud multiplicado por el coseno de la latitud del destino */
+  // Calc seno * cos
   const y = Math.sin(difLon) * Math.cos(aRadianes(lat2));
   /* Coseno de la latitud del origen multiplicado por el seno de la latitud del destino menos 
   el seno de la latitud del origen multiplicado por el coseno de la latitud del destino multiplicado 
@@ -54,20 +51,16 @@ function calcularRumbo(lat1, lon1, lat2, lon2) {
 }
 
 
-/*Estas funciones son para normalizar y calcular diferencias de ángulos. Los ángulos
-son tramposos porque son un círculo. Si estamos mirando 359 grados y giramos 2 grados, 
-no estamos girando 357 grados, sino 1 grado. De igual manera, la distancia entre 350 grados
-y 10 grados es 20 grados, no 340 grados. Estas funcones aseguran que la flecha
-tome el camino de giro más corto en lugar de dar vuelta completa sobre sí misma.*/
+// Matemáticas para no liarse con los 360 grados
 
-// Función que normaliza el ángulo para que esté entre 0 y 360 grados
+// Que el ángulo no sea negativo ni pase de 360
 function normalizarAngulo(angulo) {
   return (angulo % 360 + 360) % 360;
   // Ejemplo: Si el ángulo es -10, lo convierte a 350. Si es 370, lo convierte a 10.
 }
 
-// Función que calcula la diferencia angular entre dos ángulos
-function diferenciaAngular(a, b) {
+// Calcular la diferencia de grados
+function restaAngulos(a, b) {
   // Calcula la diferencia entre los dos ángulos
   let diff = normalizarAngulo(a - b);
   // Si la diferencia es mayor a 180 grados, la convierte a grados negativos
@@ -76,14 +69,14 @@ function diferenciaAngular(a, b) {
   // Ejemplo: Si a es 10 y b es 350, la diferencia es -340. Lo convierte a 20.
 }
 
-// Función que normaliza el ángulo para que esté entre 0 y 2π radianes
+// Que el ángulo en radianes esté dentro del círculo
 function normalizarRadianes(angulo) {
   const dosPi = Math.PI * 2;                // 2π es igual a 360 grados
   return (angulo % dosPi + dosPi) % dosPi;
 }
 
-// Función que calcula la diferencia angular entre dos ángulos en radianes
-function diferenciaAngularRad(a, b) {
+// Calcular la diferencia de grados en radianes
+function restaAngulosRad(a, b) {
   // Calcula la diferencia entre los dos ángulos
   let diff = normalizarRadianes(a - b);
   // Si la diferencia es mayor a π radianes, la convierte a radianes negativos
@@ -91,13 +84,12 @@ function diferenciaAngularRad(a, b) {
   return diff;
 }
 
-// Función que convierte grados a radianes
+// Pasar de grados a radianes
 function gradosARadianes(grados) {
   return (grados * Math.PI) / 180;  
 }
 
-/*Función que limita un valor a un rango. Esto se emplea
-para que el ángulo no sea mayor a 360 grados ni menor a 0 grados*/
+// Asegura que un valor no se pase de ciertos limites
 function limitar(valor, min, max) {
   return Math.max(min, Math.min(max, valor));
 }
@@ -106,9 +98,8 @@ function limitar(valor, min, max) {
 /*Las funciones a continuación tiene como objetivo estabilizar la flecha. Cuando
 caminamos, el GPS nunca es 100% preciso, por lo que la flecha puede temblar.*/
 
-/*Función que obtiene el índice base de la ruta. Devuelve en qué punto de la línea 
-azul del mapa de coordenadas empieza ese paso.*/
-function obtenerIndiceBaseAR() {
+// Saca donde empieza el tramo
+function getPuntoBase() {
   // Si el índice del paso actual es válido y las instrucciones de la ruta son válidas
   if (indicePasoActual >= 0 && instruccionesRuta && instruccionesRuta[indicePasoActual] && typeof instruccionesRuta[indicePasoActual].index === "number") {
     // Devuelve el índice base
@@ -119,10 +110,8 @@ function obtenerIndiceBaseAR() {
   return 0;
 }
 
-/*El usuario no siempre está en el punto exacto de la línea azul, por lo que
-esta función busca en el mapa el trocito de línea azul que esté más cerca 
-del usuario. Para no equivocarse, solo busca en una pequeña ventana de puntos(6 antes y 35 después)*/
-function obtenerIndiceMasCercanoEnVentana(indiceBase) {
+// Encuentra el punto más cercano de la ruta
+function buscarPuntoCercano(indiceBase) {
   // Si no hay coordenadas de la ruta, devuelve -1
   if (!coordenadasRuta || !coordenadasRuta.length) {
     return -1;
@@ -153,10 +142,7 @@ function obtenerIndiceMasCercanoEnVentana(indiceBase) {
   return mejorIndice;
 }
 
-/*Esta es la función maestra que calcula el objetivo de la flecha. Es decir, el punto de la línea azul
-hacia el que debe apuntar la flecha. Para ello, busca en la línea azul el punto que esté
-más cerca del usuario y que esté a una distancia de al menos 5 metros. Si no encuentra
-un punto que cumpla estas condiciones, devuelve el último punto de la ruta.*/
+// Busca el siguiente punto de la ruta que esté a 5 metros o más
 function obtenerObjetivoAR() {
   // Si no hay coordenadas de la ruta, devuelve null
   if (miLatitud === null || miLongitud === null || !coordenadasRuta || !coordenadasRuta.length) {
@@ -164,8 +150,8 @@ function obtenerObjetivoAR() {
   }
 
   // Obtenemos el índice base de la ruta y el índice más cercano en la ventana
-  const indiceBase = obtenerIndiceBaseAR();
-  const indiceCercano = obtenerIndiceMasCercanoEnVentana(indiceBase);
+  const indiceBase = getPuntoBase();
+  const indiceCercano = buscarPuntoCercano(indiceBase);
 
   // Si no hay coordenadas de la ruta, devuelve null
   if (indiceCercano < 0) {
@@ -216,9 +202,9 @@ function obtenerObjetivoAR() {
 }
  
 // Función que maneja los eventos de orientación del dispositivo
-/*Su funcion es capturar la orientación del dispositivo y guardarla en la variable rumboActual*/
+// Guarda hacia donde está apuntando el móvil
 // Variable para suavizar la rotación (Filtro paso bajo)
-function handleOrientation(event) {
+function leerGravedadYBrujula(event) {
   // Variable temporal para el cálculo
   let rumboCrudo = null;
 
@@ -235,18 +221,18 @@ function handleOrientation(event) {
     }
   }
 
-  // Aplicar un filtro paso bajo para evitar temblores excesivos y movimientos erráticos
+  // Aplicar un filtro paso bajo para evitar temblorespuestauesta excesivos y movimientos erráticos
   if (rumboCrudo !== null) {
     // Si la diferencia es muy grande (ej cruzando de 359 a 0), evitamos el salto brusco
     let diff = rumboCrudo - rumboSuavizado;
     if (diff > 180) diff -= 360;
     if (diff < -180) diff += 360;
 
-    // Ajusta este valor (0.1) si quieres que sea más lento o rápido el movimiento. 
+    // Ajusta este valor (0.1) si quierespuestauesta que sea más lento o rápido el movimiento. 
     // 0.1 es muy suave (lento), 0.5 es más rápido pero con algo de temblor
     rumboSuavizado += diff * 0.08;
 
-    // Normalizamos para no mantener valores gigantescos
+    // Normalizamos para no mantener valorespuestauesta gigantescos
     if (rumboSuavizado < 0) rumboSuavizado += 360;
     if (rumboSuavizado >= 360) rumboSuavizado -= 360;
 
@@ -261,23 +247,23 @@ function handleOrientation(event) {
 //Función que dibuja el frame de AR
 /*Su función es dibujar en la pantalla las imágenes para que se vean fluidas sobre el video
 de la cámara*/
-function drawARFrame() {
+function pintarFlechaAR() {
   //Si no estamos en modo AR, no hacemos nada
   if (!isARMode) return;
 
   //Si el canvas no tiene el tamaño de la pantalla, lo redimensionamos
-  if (arCanvas.width !== window.innerWidth || arCanvas.height !== window.innerHeight) {
-    arCanvas.width = window.innerWidth;
-    arCanvas.height = window.innerHeight;
+  if (canvasAR.width !== window.innerWidth || canvasAR.height !== window.innerHeight) {
+    canvasAR.width = window.innerWidth;
+    canvasAR.height = window.innerHeight;
   }
 
   //Obtenemos el contexto 2D del canvas
-  const ctx = arCanvas.getContext("2d");
+  const ctx = canvasAR.getContext("2d");
   /*Limpia el canvas para dibujar el siguiente frame.
   Los parámetros son: x(representa la posición horizontal), 
   y(representa la posición vertical), 
   ancho(representa el ancho del canvas), alto(representa el alto del canvas)*/
-  ctx.clearRect(0, 0, arCanvas.width, arCanvas.height);
+  ctx.clearRect(0, 0, canvasAR.width, canvasAR.height);
 
   //Si tenemos latitud y longitud y coordenadas de la ruta
   if (miLatitud !== null && miLongitud !== null && coordenadasRuta && coordenadasRuta.length > 0) {
@@ -289,28 +275,23 @@ function drawARFrame() {
       //Calculamos el rumbo al objetivo
       const rumboObjetivoCrudo = calcularRumbo(miLatitud, miLongitud, objetivoPaso.lat, objetivoPaso.lng);
 
-      /*Para que la flecha parezca que está flotando, aplicamos un filtro paso bajo para evitar 
-      temblores excesivos y movimientos erráticos. El primer suavizado mezcla el rumbo crudo
-      del GPS con el rumbo anterior.*/
+      // Filtrito guapo para que la flecha no tiemble
 
       //Si no tenemos rumbo objetivo, lo establecemos
       if (rumboObjetivoSuavizado === null) {
         rumboObjetivoSuavizado = rumboObjetivoCrudo;
       } else {
         //Calculamos la diferencia angular entre el rumbo objetivo crudo y el rumbo objetivo suavizado
-        const diffObjetivo = diferenciaAngular(rumboObjetivoCrudo, rumboObjetivoSuavizado);
+        const diffObjetivo = restaAngulos(rumboObjetivoCrudo, rumboObjetivoSuavizado);
 
         //Actualizamos el rumbo objetivo suavizado
         rumboObjetivoSuavizado = normalizarAngulo(rumboObjetivoSuavizado + diffObjetivo * SUAVIZADO_RUMBO_OBJETIVO);
       }
 
       //Calculamos el ángulo relativo entre el rumbo objetivo suavizado y el rumbo actual
-      let anguloRelativo = diferenciaAngular(rumboObjetivoSuavizado, rumboActual);
+      let anguloRelativo = restaAngulos(rumboObjetivoSuavizado, rumboActual);
 
-      /*Calculamos el ángulo relativo entre el rumbo objetivo suavizado y el rumbo actual
-      Si la diferencia de ángulo es muy pequeña, la dejamos en 0 para que la flecha no se mueva
-      si estamos apuntando al objetivo. Sin esta zona muerta, la flecha temblaría mucho
-      al intentar apuntar al objetivo*/
+      // Evita que tiemble demasiado cuando ya estas apuntando
       if (Math.abs(anguloRelativo) < ZONA_MUERTA_RECTO_GRADOS) {
         anguloRelativo = 0;
       }
@@ -318,23 +299,22 @@ function drawARFrame() {
       //Convertimos el ángulo relativo a radianes
       const anguloObjetivoRad = gradosARadianes(limitar(anguloRelativo, -170, 170));
 
-      /* El segundo suavizado obliga a la flecha a balancearse suavemennte hasta
-      alcanzar la nueva posición, dándole ese efecto de flotación */
+      // Balanceo extra para que parezca que flota
 
       //Si no tenemos ángulo de flecha, lo establecemos
       if (anguloFlechaRenderizado === null) {
         anguloFlechaRenderizado = anguloObjetivoRad;
       } else {
         //Calculamos la diferencia angular entre el ángulo objetivo y el ángulo de la flecha
-        const diffRot = diferenciaAngularRad(anguloObjetivoRad, anguloFlechaRenderizado);
+        const diffRot = restaAngulosRad(anguloObjetivoRad, anguloFlechaRenderizado);
 
         //Actualizamos el ángulo de la flecha
         anguloFlechaRenderizado = normalizarRadianes(anguloFlechaRenderizado + diffRot * SUAVIZADO_ROTACION_FLECHA);
       }
 
       //Obtenemos el centro del canvas
-      const cx = arCanvas.width / 2;
-      const cy = arCanvas.height / 2;
+      const cx = canvasAR.width / 2;
+      const cy = canvasAR.height / 2;
       const escala = window.innerWidth < 600 ? 1.05 : 1.5;   //Escala de la flecha
 
       // Guardamos el canvas, aplicamos la rotación y escalamos
@@ -376,7 +356,7 @@ function drawARFrame() {
     }
   }
 
-  arAnimation = requestAnimationFrame(drawARFrame);   //Solicita el siguiente frame
+  arAnimation = requestAnimationFrame(pintarFlechaAR);   //Solicita el siguiente frame
 }
 
 
@@ -389,13 +369,16 @@ function drawARFrame() {
 //Función que activa o desactiva el modo AR
 /*Su función es activar o desactivar el modo AR, que permite ver la cámara del dispositivo
 con una flecha que indica la dirección de la ruta*/
-async function ActivarDesactivarARMode() {
+async function toggleAR() {
   //Si estamos en modo AR, lo desactivamos
   if (isARMode) {
     isARMode = false;
     btnAR.textContent = "Activar Cámara AR";
+    if (typeof btnARTarjetaRuta !== "undefined" && btnARTarjetaRuta) {
+      btnARTarjetaRuta.innerHTML = '<span class="material-symbols-outlined">view_in_ar</span> AR';
+    }
     document.body.classList.remove("modo-ar");   //Elimina la clase modo-ar del body
-    arContainer.classList.add("oculto");         //Oculta el contenedor AR
+    contenedorAR.classList.add("oculto");         //Oculta el contenedor AR
 
     rumboObjetivoSuavizado = null;               //Reinicia el rumbo objetivo suavizado
     anguloFlechaRenderizado = null;              //Reinicia el ángulo de la flecha
@@ -413,9 +396,9 @@ async function ActivarDesactivarARMode() {
     }
     // Quitamos los event listeners de la brújula
     // deviceorientationabsolute: apunta al Norte real del planeta como una brújula de verdad.
-    // deviceorientation: el norte es simplemente la dirección hacia la que apunta el teléfono cuando abres la página.
-    window.removeEventListener("deviceorientationabsolute", handleOrientation);
-    window.removeEventListener("deviceorientation", handleOrientation);
+    // deviceorientation: el norte es simplemente la dirección hacia la que apunta el teléfono cuando abrespuestauesta la página.
+    window.removeEventListener("deviceorientationabsolute", leerGravedadYBrujula);
+    window.removeEventListener("deviceorientation", leerGravedadYBrujula);
 
     // Forzamos que el mapa se redimensione correctamente. El 500 indica que se espere 500 milisegundos antes de redimensionar el mapa
     setTimeout(() => {mapa.invalidateSize();}, 500);
@@ -449,29 +432,32 @@ async function ActivarDesactivarARMode() {
       videoStream = await navigator.mediaDevices.getUserMedia({video: { facingMode: "environment" }});
 
       //Asignamos el flujo de video al elemento de video
-      arVideo.srcObject = videoStream;
-      arVideo.play().catch((e) => {
+      videoAR.srcObject = videoStream;
+      videoAR.play().catch((e) => {
         console.warn("Autoplay evitado por el navegador", e);
       });
 
       //Actualizamos variables y estilos
       isARMode = true;
       btnAR.textContent = "Desactivar AR";
+      if (typeof btnARTarjetaRuta !== "undefined" && btnARTarjetaRuta) {
+        btnARTarjetaRuta.innerHTML = '<span class="material-symbols-outlined">exit_to_app</span> Salir AR';
+      }
 
-      //Reiniciamos valores de rumbo y ángulo
+      //Reiniciamos valorespuestauesta de rumbo y ángulo
       rumboObjetivoSuavizado = null;
       anguloFlechaRenderizado = null;
 
       //Mostramos el contenedor AR y añadimos la clase modo-ar al body
-      arContainer.classList.remove("oculto");
+      contenedorAR.classList.remove("oculto");
       document.body.classList.add("modo-ar");
 
       //Añadimos los event listeners para la brújula
-      window.addEventListener("deviceorientationabsolute", handleOrientation, true);
-      window.addEventListener("deviceorientation", handleOrientation, true);
+      window.addEventListener("deviceorientationabsolute", leerGravedadYBrujula, true);
+      window.addEventListener("deviceorientation", leerGravedadYBrujula, true);
 
       //Dibujamos el frame AR
-      drawARFrame();
+      pintarFlechaAR();
 
       //Forzamos que el mapa se redimensione correctamente
       setTimeout(() => {mapa.invalidateSize();}, 500);
@@ -485,7 +471,7 @@ async function ActivarDesactivarARMode() {
 }
 
 //Añadimos el event listener al botón AR
-btnAR.addEventListener("click", ActivarDesactivarARMode);
+btnAR.addEventListener("click", toggleAR);
 
 
 
@@ -505,8 +491,8 @@ document.addEventListener("visibilitychange", () => {
     }
 
     //Pausamos el video
-    arVideo.pause();
-    arVideo.srcObject = null;
+    videoAR.pause();
+    videoAR.srcObject = null;
 
     //Cancelamos la animación
     if (arAnimation) {
@@ -514,14 +500,17 @@ document.addEventListener("visibilitychange", () => {
       arAnimation = null;
     }
 
-    //Reiniciamos valores de rumbo y ángulo
+    //Reiniciamos valorespuestauesta de rumbo y ángulo
     rumboObjetivoSuavizado = null;
     anguloFlechaRenderizado = null;
 
     //Reiniciamos variables y estilos
     isARMode = false;
     btnAR.textContent = "Activar Cámara AR";
+    if (typeof btnARTarjetaRuta !== "undefined" && btnARTarjetaRuta) {
+      btnARTarjetaRuta.innerHTML = '<span class="material-symbols-outlined">view_in_ar</span> AR';
+    }
     document.body.classList.remove("modo-ar");
-    arContainer.classList.add("oculto");
+    contenedorAR.classList.add("oculto");
   }
 });
