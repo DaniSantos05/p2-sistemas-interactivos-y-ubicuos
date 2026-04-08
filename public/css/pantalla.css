@@ -756,6 +756,29 @@ body.modo-ar .tarjeta-ruta-btn-ar {
   color: white !important;
 }
 
+.panel-paso-ar {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 10020;
+  max-width: min(68vw, 360px);
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(20, 22, 38, 0.78);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.2);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+}
+
+body.modo-ar .panel-paso-ar:not(.oculto) {
+  display: block !important;
+}
+
 
 /* ============================================= */
 /* MARCADORES DE CONTACTO EN EL MAPA             */
@@ -965,6 +988,14 @@ body.tarjeta-ruta-visible .leaflet-top.leaflet-right {
   background: #43a047;
 }
 
+.tarjeta-ruta-btn-go.tarjeta-ruta-btn-cancel {
+  background: #e74c3c;
+}
+
+.tarjeta-ruta-btn-go.tarjeta-ruta-btn-cancel:hover {
+  background: #c0392b;
+}
+
 /* Navegación de pasos */
 
 
@@ -1068,5 +1099,13 @@ body.tarjeta-ruta-visible .leaflet-top.leaflet-right {
     height: 140px !important;
     border-radius: 10px !important;
     border: 3px solid white;
+  }
+
+  .panel-paso-ar {
+    top: 14px;
+    left: 14px;
+    max-width: 64vw;
+    font-size: 12px;
+    padding: 8px 10px;
   }
 }

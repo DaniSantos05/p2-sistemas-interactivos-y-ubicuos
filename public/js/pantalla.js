@@ -570,6 +570,10 @@ modoCompartirUbicacion.addEventListener("change", () => {
 if (modoClic) {
   modoClic.addEventListener("change", () => {
     if (modoClic.checked) {
+      // El menú tapa el mapa: cerramos para que el toque llegue al mapa.
+      if (menuOpciones) {
+        menuOpciones.classList.add("oculto");
+      }
       estadoRuta.textContent = "Modo clic activado. Toca el mapa para seleccionar el destino.";
       return;
     }
@@ -609,10 +613,23 @@ const tarjetaRuta = document.getElementById("tarjetaRuta");
 const tiempoTarjetaRuta = document.getElementById("tiempoTarjetaRuta");
 const distanciaTarjetaRuta = document.getElementById("distanciaTarjetaRuta");
 const pasoTarjetaRuta = document.getElementById("pasoTarjetaRuta");
+const panelPasoAR = document.getElementById("panelPasoAR");
 const cerrarTarjetaRuta = document.getElementById("cerrarTarjetaRuta");
 const compartirTarjetaRuta = document.getElementById("compartirTarjetaRuta");
 const btnARTarjetaRuta = document.getElementById("btnARTarjetaRuta");
 const irTarjetaRuta = document.getElementById("irTarjetaRuta");
+
+function actualizarBotonIrCancelar() {
+  if (!irTarjetaRuta) return;
+  if (navegacionIniciada) {
+    irTarjetaRuta.classList.add("tarjeta-ruta-btn-cancel");
+    irTarjetaRuta.innerHTML = '<span class="material-symbols-outlined">close</span> Cancelar ruta';
+  } else {
+    irTarjetaRuta.classList.remove("tarjeta-ruta-btn-cancel");
+    irTarjetaRuta.innerHTML = '<span class="material-symbols-outlined">navigation</span> Ir';
+  }
+}
+
 function mostrarTarjetaRuta(distanciaKm, tiempoFormateado) {
   tiempoTarjetaRuta.textContent = tiempoFormateado;
   distanciaTarjetaRuta.textContent = `${distanciaKm} km`;
@@ -628,6 +645,7 @@ function mostrarTarjetaRuta(distanciaKm, tiempoFormateado) {
 
   tarjetaRuta.classList.remove("oculto");
   document.body.classList.add("tarjeta-ruta-visible");
+  actualizarBotonIrCancelar();
 }
 
 function ocultarTarjetaRuta() {
@@ -662,6 +680,12 @@ btnARTarjetaRuta.addEventListener("click", () => {
   reiniciando a 0 el índice */
 irTarjetaRuta.addEventListener("click", () => {
   if (!instruccionesRuta.length) return;
+  if (navegacionIniciada) {
+    eliminarRuta();
+    return;
+  }
+  navegacionIniciada = true;
+  actualizarBotonIrCancelar();
   indicePasoActual = 0;
   if (modoContadorPasos && modoContadorPasos.checked) {
     iniciarSesionContadorRuta();
@@ -671,10 +695,53 @@ irTarjetaRuta.addEventListener("click", () => {
 });
 
 // Sincronizar el step en la tarjeta inferior
+function traducirInstruccionRuta(texto) {
+  if (!texto) return "Sin texto disponible";
+  let t = texto;
+  const reemplazos = [
+    [/\bHead north\b/gi, "Dirígete al norte"],
+    [/\bHead south\b/gi, "Dirígete al sur"],
+    [/\bHead east\b/gi, "Dirígete al este"],
+    [/\bHead west\b/gi, "Dirígete al oeste"],
+    [/\bHead northeast\b/gi, "Dirígete al noreste"],
+    [/\bHead northwest\b/gi, "Dirígete al noroeste"],
+    [/\bHead southeast\b/gi, "Dirígete al sureste"],
+    [/\bHead southwest\b/gi, "Dirígete al suroeste"],
+    [/\bTurn left\b/gi, "Gira a la izquierda"],
+    [/\bTurn right\b/gi, "Gira a la derecha"],
+    [/\bContinue\b/gi, "Continúa"],
+    [/\bKeep left\b/gi, "Mantente a la izquierda"],
+    [/\bKeep right\b/gi, "Mantente a la derecha"],
+    [/\bAt the roundabout\b/gi, "En la rotonda"],
+    [/\bTake the (\d+)(st|nd|rd|th) exit\b/gi, "toma la salida $1"],
+    [/\bDestination reached\b/gi, "Has llegado al destino"],
+    [/\bYou have arrived\b/gi, "Has llegado"],
+    [/\bonto\b/gi, "hacia"],
+    [/\bon\b/gi, "en"],
+    [/\btowards\b/gi, "hacia"]
+  ];
+  reemplazos.forEach(([pattern, valor]) => {
+    t = t.replace(pattern, valor);
+  });
+  return t;
+}
+
 function actualizarPasoTarjetaRuta() {
   if (!instruccionesRuta.length || indicePasoActual < 0) return;
   const instruccion = instruccionesRuta[indicePasoActual];
-  pasoTarjetaRuta.innerHTML = `<strong>Paso ${indicePasoActual + 1}/${instruccionesRuta.length}</strong>: ${instruccion.text || ""} (~${Math.round(instruccion.distance || 0)} m)`;
+  const textoInstruccion = traducirInstruccionRuta(instruccion.text || "");
+  pasoTarjetaRuta.innerHTML = `<strong>Paso ${indicePasoActual + 1}/${instruccionesRuta.length}</strong>: ${textoInstruccion} (~${Math.round(instruccion.distance || 0)} m)`;
+  actualizarPanelPasoAR();
+}
+
+function actualizarPanelPasoAR() {
+  if (!panelPasoAR) return;
+  if (modoContadorPasos && modoContadorPasos.checked) {
+    panelPasoAR.classList.remove("oculto");
+    panelPasoAR.innerHTML = `<strong>Contador</strong><br>Pasos: ${pasosSesionActual} · ${caloriasSesionActual} kcal`;
+    return;
+  }
+  panelPasoAR.classList.add("oculto");
 }
 
 
@@ -742,6 +809,7 @@ let instruccionesRuta = [];   // Ruta e instrucciones actuales
 let coordenadasRuta = [];     // Coordenadas de la ruta actual
 let indicePasoActual = -1;    // Índice del paso actual
 let marcadorPasoActual = null; // Marcador visual (punto azul) del paso actual
+let navegacionIniciada = false; // Se activa al pulsar "Ir"
 let periodoActividadActual = "day";
 
 let sesionPasosActiva = false;
@@ -848,6 +916,11 @@ if ("geolocation" in navigator) {
 mapa.on("click", (e) => {
   // Si no está activado el modo de clic, no hacemos nada
   if (!modoClic.checked) return;
+  // Mientras estás en navegación ("Ir"), no dejamos recalcular por clic.
+  if (navegacionIniciada) {
+    estadoRuta.textContent = "Ya estás en navegación. Cancela la ruta actual para elegir otro destino.";
+    return;
+  }
 
   // Guardamos las coordenadas del clic
   destinoClickLat = e.latlng.lat;
@@ -880,7 +953,10 @@ mapa.on("click", (e) => {
 
   // Actualizamos el estado de la ruta
   estadoRuta.textContent =
-    "Destino seleccionado en el mapa. Pulsa 'Buscar y calcular ruta'.";
+    "Destino seleccionado en el mapa. Calculando ruta...";
+
+  // En modo clic, lanzar el cálculo automáticamente para mostrar la tarjeta con "Ir".
+  calcularRuta();
 });
 
 
@@ -921,6 +997,8 @@ function limpiarRuta() {
   instruccionesRuta = [];       // Array de instrucciones
   coordenadasRuta = [];         // Array de coordenadas
   indicePasoActual = -1;        // Índice del paso actual
+  navegacionIniciada = false;
+  actualizarBotonIrCancelar();
   ultimoCambioAutomatico = 0;   // Momento del último cambio automático
   rutaTerminada = false;        // Estado de la ruta
 
@@ -937,6 +1015,9 @@ function limpiarRuta() {
 
   // Actualizamos el estado de la ruta
   cajaPasos.textContent = "No hay una ruta activa.";
+  if (panelPasoAR) {
+    panelPasoAR.classList.add("oculto");
+  }
   miETA = null;
   // Si estamos compartiendo posición, actualizamos que ya no tenemos ETA
   if (modoCompartirUbicacion.checked && miLatitud !== null && miLongitud !== null) {
@@ -966,6 +1047,7 @@ function distanciaEnMetros(lat1, lon1, lat2, lon2) {
 function actualizarResumenContadorRuta() {
   if (!resumenContadorRuta) return;
   resumenContadorRuta.textContent = `Pasos: ${pasosSesionActual} · Calorías: ${caloriasSesionActual} kcal`;
+  actualizarPanelPasoAR();
 }
 
 function iniciarSesionContadorRuta() {
@@ -1180,15 +1262,17 @@ function mostrarPasoActual() {
 
   // Cogemos la instrucción actual
   const instruccion = instruccionesRuta[indicePasoActual];
+  const textoInstruccion = traducirInstruccionRuta(instruccion.text || "");
 
   // Mostramos el paso actual
   const textoPaso =
     `Paso ${indicePasoActual + 1} de ${instruccionesRuta.length}:<br><br>` +
-    `<strong>${instruccion.text || "Sin texto disponible"}</strong><br><br>` +
+    `<strong>${textoInstruccion}</strong><br><br>` +
     `Distancia aproximada: ${Math.round((instruccion.distance || 0))} m`;
 
   // Usamos innerHTML para que se interpreten los saltos de línea
   cajaPasos.innerHTML = textoPaso;
+  actualizarPanelPasoAR();
 
   /* Se encarga de que la cámara del mapa se deslice automáticamente hacia
   el lugar donde ocurre la instrucción. El trazador de rutas nos devuelve dos listas separadas:
@@ -1510,6 +1594,8 @@ async function calcularRuta() {
     coordenadasRuta = ruta.coordinates || [];
 
     // Reiniciamos el índice del paso actual
+    navegacionIniciada = false;
+    actualizarBotonIrCancelar();
     indicePasoActual = 0;
     ultimoCambioAutomatico = 0;
     rutaTerminada = false;
