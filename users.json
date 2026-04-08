@@ -20,5 +20,11 @@
     "password": "password",
     "avatar": "https://ui-avatars.com/api/?name=T&background=random&color=fff&rounded=true&size=128",
     "friends": []
+  },
+  {
+    "username": "Daniel05",
+    "password": "Daniel@05",
+    "avatar": "https://ui-avatars.com/api/?name=D&background=random&color=fff&rounded=true&size=128",
+    "friends": []
   }
 ]
