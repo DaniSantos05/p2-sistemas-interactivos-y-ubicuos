@@ -517,6 +517,7 @@ const resumenContadorRuta = document.getElementById("resumenContadorRuta");
 const actividadTotales = document.getElementById("actividadTotales");
 const actividadHistorial = document.getElementById("actividadHistorial");
 const botonesFiltroActividad = document.querySelectorAll(".btn-filtro-actividad");
+const sugerenciasDestino = document.getElementById("sugerenciasDestino");
 const estadoRuta = document.getElementById("estadoRuta");       // Texto del estado de la ruta
 
 // Elementos del DOM del menú de pantalla completa
@@ -736,7 +737,8 @@ function actualizarPasoTarjetaRuta() {
 
 function actualizarPanelPasoAR() {
   if (!panelPasoAR) return;
-  if (modoContadorPasos && modoContadorPasos.checked && navegacionIniciada && sesionPasosActiva) {
+  const enModoAR = (typeof isARMode !== "undefined" && isARMode);
+  if (enModoAR && modoContadorPasos && modoContadorPasos.checked && navegacionIniciada && sesionPasosActiva) {
     panelPasoAR.classList.remove("oculto");
     panelPasoAR.innerHTML = `<strong>Contador</strong><br>Pasos: ${pasosSesionActual} · ${caloriasSesionActual} kcal`;
     return;
@@ -789,6 +791,7 @@ let mapa3d = null;
 let marcadorUsuario3D = null;
 let marcadorDestino3D = null;
 let ultimoUpdateVista3D = 0;
+let pausaAutoCentrado3DHasta = 0;
 
 function initMapa3D() {
   if (mapa3d || typeof maplibregl === "undefined") return;
@@ -805,6 +808,16 @@ function initMapa3D() {
 
   mapa3d.on("load", () => {
     mapa3d.addControl(new maplibregl.NavigationControl(), "top-right");
+
+    // Si el usuario manipula el mapa (zoom/drag/rotación), pausamos el auto-centrado
+    // para evitar la sensación de "mapa loco" en móvil.
+    const pausarAutoCentrado = () => {
+      pausaAutoCentrado3DHasta = Date.now() + 6000;
+    };
+    mapa3d.on("movestart", pausarAutoCentrado);
+    mapa3d.on("zoomstart", pausarAutoCentrado);
+    mapa3d.on("rotatestart", pausarAutoCentrado);
+    mapa3d.on("pitchstart", pausarAutoCentrado);
 
     if (!mapa3d.getSource("terrainSource")) {
       mapa3d.addSource("terrainSource", {
@@ -943,6 +956,7 @@ function actualizarVista3D() {
   if (modoActual !== "3D") return;
   initMapa3D();
   if (!mapa3d || miLatitud === null || miLongitud === null) return;
+  if (Date.now() < pausaAutoCentrado3DHasta) return;
   const ahora = Date.now();
   if (ahora - ultimoUpdateVista3D < 900) return;
   ultimoUpdateVista3D = ahora;
@@ -1799,15 +1813,83 @@ async function calcularRuta() {
 // BOTÓN Y ENTER PARA CALCULAR LA RUTA
 // =========================
 
+let timeoutBusquedaDestino = null;
+let requestSugerenciasEnCurso = null;
+
+function ocultarSugerenciasDestino() {
+  if (!sugerenciasDestino) return;
+  sugerenciasDestino.classList.add("oculto");
+  sugerenciasDestino.innerHTML = "";
+}
+
+function mostrarSugerenciasDestino(items) {
+  if (!sugerenciasDestino) return;
+  if (!items || !items.length) {
+    ocultarSugerenciasDestino();
+    return;
+  }
+
+  sugerenciasDestino.innerHTML = items.map((item) => (
+    `<div class="sugerencia-destino-item" data-display="${item.display_name.replace(/"/g, "&quot;")}">${item.display_name}</div>`
+  )).join("");
+  sugerenciasDestino.classList.remove("oculto");
+
+  sugerenciasDestino.querySelectorAll(".sugerencia-destino-item").forEach((el) => {
+    el.addEventListener("click", () => {
+      inputDestino.value = el.getAttribute("data-display") || "";
+      ocultarSugerenciasDestino();
+    });
+  });
+}
+
+async function buscarSugerenciasDestino(texto) {
+  if (!texto || texto.length < 3) {
+    ocultarSugerenciasDestino();
+    return;
+  }
+
+  if (requestSugerenciasEnCurso) {
+    requestSugerenciasEnCurso.abort();
+  }
+  requestSugerenciasEnCurso = new AbortController();
+
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(texto)}&limit=5`;
+    const resp = await fetch(url, { signal: requestSugerenciasEnCurso.signal });
+    const data = await resp.json();
+    mostrarSugerenciasDestino(Array.isArray(data) ? data : []);
+  } catch (error) {
+    if (error.name !== "AbortError") {
+      console.error("Error al cargar sugerencias de destino:", error);
+    }
+  }
+}
+
 // Evento que se ejecuta cuando se hace clic en el botón de calcular ruta
-btnRuta.addEventListener("click", calcularRuta);
+btnRuta.addEventListener("click", () => {
+  ocultarSugerenciasDestino();
+  calcularRuta();
+});
 
 // Evento que se ejecuta cuando se presiona una tecla en el campo de destino
 inputDestino.addEventListener("keydown", (e) => {
   // Si la tecla presionada es Enter, se calcula la ruta
   if (e.key === "Enter") {
+    ocultarSugerenciasDestino();
     calcularRuta();
   }
+});
+
+inputDestino.addEventListener("input", () => {
+  const texto = inputDestino.value.trim();
+  clearTimeout(timeoutBusquedaDestino);
+  timeoutBusquedaDestino = setTimeout(() => {
+    buscarSugerenciasDestino(texto);
+  }, 250);
+});
+
+inputDestino.addEventListener("blur", () => {
+  setTimeout(ocultarSugerenciasDestino, 150);
 });
 
 
