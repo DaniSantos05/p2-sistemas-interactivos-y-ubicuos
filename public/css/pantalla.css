@@ -675,8 +675,9 @@ body.modo-ar #mapa .leaflet-control-container {
   display: none !important;
 }
 
-/* En modo AR: ocultar barra de búsqueda, tarjeta de ruta, botón recentrar */
-body.modo-ar .top-floating-ui {
+/* En modo AR: ocultar barra de búsqueda, tarjeta de ruta, menú de controles */
+body.modo-ar .top-floating-ui,
+body.modo-ar .mapa-controles {
   display: none !important;
 }
 
@@ -730,6 +731,8 @@ body.modo-ar .tarjeta-ruta-btn-ar {
   font-weight: bold;
 }
 
+
+
 /* ============================================= */
 /* MOVER CONTROLES DE LEAFLET ABAJO              */
 /* ============================================= */
@@ -759,6 +762,8 @@ body.tarjeta-ruta-visible .leaflet-top.leaflet-left,
 body.tarjeta-ruta-visible .leaflet-top.leaflet-right {
   bottom: 220px !important;
 }
+
+
 
 /* ============================================= */
 /* TARJETA INFERIOR DE RUTA                      */
@@ -919,17 +924,6 @@ body.tarjeta-ruta-visible .leaflet-top.leaflet-right {
   color: #fff;
 }
 
-/* ============================================= */
-/* BOTÓN FLOTANTE RECENTRAR                      */
-/* ============================================= */
-
-
-
-
-
-
-
-/* Cuando la tarjeta-ruta está visible, subir el botón */
 
 
 /* ============================================= */
@@ -1001,9 +995,7 @@ body.tarjeta-ruta-visible .leaflet-top.leaflet-right {
     font-size: 13px;
   }
 
- 
 
-  
 
   /* Mini-mapa AR más pequeño en móviles */
   body.modo-ar #mapa {
