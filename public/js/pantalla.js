@@ -490,7 +490,6 @@ function procesarRutaContacto(id, datosRuta) {
 }
 
 // =========================
-
 // ELEMENTOS DEL DOM
 // =========================
 
@@ -866,6 +865,12 @@ function limpiarRuta() {
   // Ocultamos la tarjeta de ruta
   ocultarTarjetaRuta();
 
+  // Si existe el marcador del paso actual, lo eliminamos
+  if (marcadorPasoActual) {
+    mapa.removeLayer(marcadorPasoActual);
+    marcadorPasoActual = null;
+  }
+
   // Reseteamos las variables de la ruta
   instruccionesRuta = [];       // Array de instrucciones
   coordenadasRuta = [];         // Array de coordenadas
@@ -1166,12 +1171,6 @@ document.querySelectorAll(".btn-control-menu").forEach(boton => {
                 break;
             case "zoomOut":
                 zoomOut();
-                break;
-            case "prevStep":
-                pasoAnterior();
-                break;
-            case "nextStep":
-                siguientePaso();
                 break;
             case "toggleMode":
                 toggleModeVisual();
