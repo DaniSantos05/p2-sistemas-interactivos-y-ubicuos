@@ -1,4 +1,4 @@
-﻿// =========================
+// =========================
 // CONEXIÓN CON SOCKET.IO
 // =========================
 
@@ -166,7 +166,7 @@ if (btnCambiarAvatar) {
         avatarMiPerfil.src = miAvatar;
         inputArchivoAvatar.value = "";
         
-        // Actualizar avatarespuestauesta en la UI flotante y el menú
+        // Actualizar avatares en la UI flotante y el menú
         const btnAvatar = document.getElementById("btnAvatarIcon");
         const fsmAv = document.getElementById("avatarMenu");
         if (btnAvatar) btnAvatar.src = miAvatar;
@@ -205,7 +205,7 @@ if (btnBuscarAmigo) {
       // Hacemos la peticion a la api pasandole nuestra busqueda y nuestro usuario actual
       const respuesta = await fetch(`/api/users?q=${encodeURIComponent(q)}&current_user=${encodeURIComponent(miNombre)}`);
       
-      // Pasamos la respuestauesta devuelta a JSON
+      // Pasamos la res devuelta a JSON
       const datos = await respuesta.json();
       
       // Limpiamos los resultados antiguos de la caja
@@ -267,7 +267,7 @@ if (btnBuscarAmigo) {
            btnAñadir.textContent = "Añadir";
            btnAñadir.onclick = async () => {
              // Enviamos de vuelta una peticion de amistad a traves de la api
-             const respuestauesta = await fetch("/api/friend", {
+             const res = await fetch("/api/friend", {
                method: "POST",
                headers: {"Content-Type": "application/json"},
                body: JSON.stringify({username: miNombre, friend_username: u.username})
@@ -275,7 +275,7 @@ if (btnBuscarAmigo) {
              
              // Si el servidor confirma todo procedemos a actualizar el equipo en local
              if (res.ok) {
-                // Volcamos su respuestauesta para guardar todos nuestros amigos resultantes
+                // Volcamos su res para guardar todos nuestros amigos resultantes
                 const datosActualizados = await res.json();
                 
                 // Actualizamos la variable de la lista de todos nuestros amigos localmente
@@ -456,7 +456,7 @@ function procesarRutaContacto(id, datosRuta) {
     mapa.removeLayer(contactos[id].destMarker);
   }
 
-  // Preparamos en parespuestauesta la latitud y longitud a través de este trazado recibido general de coordenadas
+  // Preparamos en pares la latitud y longitud a través de este trazado recibido general de coordenadas
   const coordenadasLatLng = datosRuta.map(pt => [pt.lat, pt.lng]);
   
   // Dibujamos toda la línea a lo largo de esa constelación de puntos en nuestra vista Leaflet
@@ -815,7 +815,7 @@ mapa.on("click", (e) => {
     // Si no existe, lo creamos
     marcadorDestino = L.marker(e.latlng, {
       icon: L.icon({
-        // Los marcadorespuestauesta los sacamos de internet
+        // Los marcadores los sacamos de internet
         iconUrl:
           "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
         shadowUrl:
@@ -901,7 +901,7 @@ function distanciaEnMetros(lat1, lon1, lat2, lon2) {
   
   // Distancia en metros
   const contacto = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;    // Devuelve el producto del radio de la Tierra y el ángulo central en radianes
+  return R * contacto;    // Devuelve el producto del radio de la Tierra y el ángulo central en radianes
 }
 
 /* Función que devuelve el punto GPS asociado a una instrucción concreta.
@@ -1234,17 +1234,17 @@ async function calcularRuta() {
     y obtener sus coordenadas. Para entender cómo funciona internamente, 
     hay que tener cuenta que Nominatim es un servicio de geocodificación que 
     nos devuelve un listado de coordenadas para una búsqueda dada, ya que el sistema
-    no entiende de nombrespuestauesta de lugares. Por lo tanto, necesitamos convertir el nombre 
+    no entiende de nombres de lugares. Por lo tanto, necesitamos convertir el nombre 
     del destino en coordenadas para poder calcular la ruta.*/
     try {
       /*Construimos la URL para hacer la petición a Nominatim. 
-      format=json indica que queremos la respuestauesta en formato JSON.
+      format=json indica que queremos la res en formato JSON.
       q=${encodeURIComponent(destino)} sirve para codificar el destino y que se pueda enviar por URL.
       limit=1 indica que queremos solo un resultado*/
       const urlGeo = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(destino)}&limit=1`;
-      // Hacemos la petición a Nominatim y usamos await para obligar al programa a esperar la respuestauesta
+      // Hacemos la petición a Nominatim y usamos await para obligar al programa a esperar la res
       const respuestaGeo = await fetch(urlGeo);
-      // Convertimos la respuestauesta a JSON
+      // Convertimos la res a JSON
       const datosGeo = await respuestaGeo.json();
 
       // Si Nominatim no encuentra nada, nos lo dice y no seguimos

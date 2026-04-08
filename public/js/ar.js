@@ -221,18 +221,18 @@ function leerGravedadYBrujula(event) {
     }
   }
 
-  // Aplicar un filtro paso bajo para evitar temblorespuestauesta excesivos y movimientos erráticos
+  // Aplicar un filtro paso bajo para evitar temblores excesivos y movimientos erráticos
   if (rumboCrudo !== null) {
     // Si la diferencia es muy grande (ej cruzando de 359 a 0), evitamos el salto brusco
     let diff = rumboCrudo - rumboSuavizado;
     if (diff > 180) diff -= 360;
     if (diff < -180) diff += 360;
 
-    // Ajusta este valor (0.1) si quierespuestauesta que sea más lento o rápido el movimiento. 
+    // Ajusta este valor (0.1) si quieres que sea más lento o rápido el movimiento. 
     // 0.1 es muy suave (lento), 0.5 es más rápido pero con algo de temblor
     rumboSuavizado += diff * 0.08;
 
-    // Normalizamos para no mantener valorespuestauesta gigantescos
+    // Normalizamos para no mantener valores gigantescos
     if (rumboSuavizado < 0) rumboSuavizado += 360;
     if (rumboSuavizado >= 360) rumboSuavizado -= 360;
 
@@ -396,7 +396,7 @@ async function toggleAR() {
     }
     // Quitamos los event listeners de la brújula
     // deviceorientationabsolute: apunta al Norte real del planeta como una brújula de verdad.
-    // deviceorientation: el norte es simplemente la dirección hacia la que apunta el teléfono cuando abrespuestauesta la página.
+    // deviceorientation: el norte es simplemente la dirección hacia la que apunta el teléfono cuando abres la página.
     window.removeEventListener("deviceorientationabsolute", leerGravedadYBrujula);
     window.removeEventListener("deviceorientation", leerGravedadYBrujula);
 
@@ -444,7 +444,7 @@ async function toggleAR() {
         btnARTarjetaRuta.innerHTML = '<span class="material-symbols-outlined">exit_to_app</span> Salir AR';
       }
 
-      //Reiniciamos valorespuestauesta de rumbo y ángulo
+      //Reiniciamos valores de rumbo y ángulo
       rumboObjetivoSuavizado = null;
       anguloFlechaRenderizado = null;
 
@@ -500,7 +500,7 @@ document.addEventListener("visibilitychange", () => {
       arAnimation = null;
     }
 
-    //Reiniciamos valorespuestauesta de rumbo y ángulo
+    //Reiniciamos valores de rumbo y ángulo
     rumboObjetivoSuavizado = null;
     anguloFlechaRenderizado = null;
 

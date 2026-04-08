@@ -51,13 +51,13 @@
       const datos = await respuesta.json();
       
       if (!respuesta.ok) {
-        regErrorMsg.textContent = data.error || "Error al registrar";
+        regErrorMsg.textContent = datos.error || "Error al registrar";
         regSuccessMsg.textContent = "";
       } else {
         regErrorMsg.textContent = "";
         regSuccessMsg.textContent = "Cuenta creada. Redirigiendo...";
-        localStorage.setItem("user", JSON.stringify(data.user));
-        localStorage.setItem("username", data.user.username);
+        localStorage.setItem("user", JSON.stringify(datos.user));
+        localStorage.setItem("username", datos.user.username);
         setTimeout(() => {
            window.location.href = "/pantalla.html";
         }, 1000);
@@ -82,11 +82,11 @@
       const datos = await respuesta.json();
       
       if (!respuesta.ok) {
-        logErrorMsg.textContent = data.error || "Error al iniciar sesión";
+        logErrorMsg.textContent = datos.error || "Error al iniciar sesión";
       } else {
         logErrorMsg.textContent = "";
-        localStorage.setItem("user", JSON.stringify(data.user));
-        localStorage.setItem("username", data.user.username);
+        localStorage.setItem("user", JSON.stringify(datos.user));
+        localStorage.setItem("username", datos.user.username);
         window.location.href = "/pantalla.html";
       }
     } catch (err) {
