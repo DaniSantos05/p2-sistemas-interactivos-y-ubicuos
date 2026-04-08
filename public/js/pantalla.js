@@ -736,7 +736,7 @@ function actualizarPasoTarjetaRuta() {
 
 function actualizarPanelPasoAR() {
   if (!panelPasoAR) return;
-  if (modoContadorPasos && modoContadorPasos.checked) {
+  if (modoContadorPasos && modoContadorPasos.checked && navegacionIniciada && sesionPasosActiva) {
     panelPasoAR.classList.remove("oculto");
     panelPasoAR.innerHTML = `<strong>Contador</strong><br>Pasos: ${pasosSesionActual} · ${caloriasSesionActual} kcal`;
     return;
@@ -784,6 +784,98 @@ const mapa = L.map("mapa", {
   layers: [capaClara],
   zoomControl: false
 });
+
+let mapa3d = null;
+let marcadorUsuario3D = null;
+let marcadorDestino3D = null;
+let ultimoUpdateVista3D = 0;
+
+function initMapa3D() {
+  if (mapa3d || typeof maplibregl === "undefined") return;
+  mapa3d = new maplibregl.Map({
+    container: "mapa3d",
+    style: "https://tiles.openfreemap.org/styles/liberty",
+    center: [mapa.getCenter().lng, mapa.getCenter().lat],
+    zoom: mapa.getZoom(),
+    pitch: 64,
+    bearing: 0,
+    antialias: false,
+    renderWorldCopies: false
+  });
+
+  mapa3d.on("load", () => {
+    mapa3d.addControl(new maplibregl.NavigationControl(), "top-right");
+
+    if (!mapa3d.getSource("terrainSource")) {
+      mapa3d.addSource("terrainSource", {
+        type: "raster-dem",
+        tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
+        encoding: "terrarium",
+        tileSize: 256,
+        maxzoom: 14
+      });
+    }
+    mapa3d.setTerrain({ source: "terrainSource", exaggeration: 1.6 });
+
+    mapa3d.on("click", (ev) => {
+      if (!ev || !ev.lngLat) return;
+      seleccionarDestinoEnMapa(ev.lngLat.lat, ev.lngLat.lng);
+    });
+
+    if (!mapa3d.getSource("route3d")) {
+      mapa3d.addSource("route3d", {
+        type: "geojson",
+        data: { type: "Feature", geometry: { type: "LineString", coordinates: [] } }
+      });
+      mapa3d.addLayer({
+        id: "route3d-layer",
+        type: "line",
+        source: "route3d",
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: { "line-color": "#1f6feb", "line-width": 5 }
+      });
+    }
+    syncMapa3D();
+  });
+}
+
+function syncMapa3D() {
+  if (!mapa3d || modoActual !== "3D") return;
+
+  if (miLatitud !== null && miLongitud !== null) {
+    if (!marcadorUsuario3D) {
+      marcadorUsuario3D = new maplibregl.Marker({ color: "#2563eb" })
+        .setLngLat([miLongitud, miLatitud])
+        .addTo(mapa3d);
+    } else {
+      marcadorUsuario3D.setLngLat([miLongitud, miLatitud]);
+    }
+  }
+
+  if (destinoClickLat !== null && destinoClickLon !== null) {
+    if (!marcadorDestino3D) {
+      marcadorDestino3D = new maplibregl.Marker({ color: "#ef4444" })
+        .setLngLat([destinoClickLon, destinoClickLat])
+        .addTo(mapa3d);
+    } else {
+      marcadorDestino3D.setLngLat([destinoClickLon, destinoClickLat]);
+    }
+  } else if (marcadorDestino3D) {
+    marcadorDestino3D.remove();
+    marcadorDestino3D = null;
+  }
+
+  const src = mapa3d.getSource("route3d");
+  if (src) {
+    src.setData({
+      type: "Feature",
+      geometry: {
+        type: "LineString",
+        coordinates: coordenadasRuta.map((pt) => [pt.lng, pt.lat])
+      }
+    });
+  }
+}
 
 
 
@@ -847,6 +939,31 @@ let anguloFlechaRenderizado = null;
 
 let modoActual = "2D";
 
+function actualizarVista3D() {
+  if (modoActual !== "3D") return;
+  initMapa3D();
+  if (!mapa3d || miLatitud === null || miLongitud === null) return;
+  const ahora = Date.now();
+  if (ahora - ultimoUpdateVista3D < 900) return;
+  ultimoUpdateVista3D = ahora;
+
+  let bearing = mapa3d.getBearing();
+  const puntoRef = obtenerPuntoDeInstruccion(indicePasoActual + 1) || obtenerPuntoDeInstruccion(indicePasoActual);
+  if (puntoRef) {
+    const targetBearing = calcularRumbo(miLatitud, miLongitud, puntoRef.lat, puntoRef.lng);
+    const delta = ((targetBearing - bearing + 540) % 360) - 180;
+    bearing += delta * 0.2;
+  }
+
+  mapa3d.jumpTo({
+    center: [miLongitud, miLatitud],
+    zoom: Math.max(mapa.getZoom(), 15.5),
+    pitch: 58,
+    bearing
+  });
+  syncMapa3D();
+}
+
 
 // =========================
 // GPS DEL USUARIO
@@ -883,6 +1000,8 @@ if ("geolocation" in navigator) {
       }
 
       actualizarContadorRutaConGPS();
+      syncMapa3D();
+      actualizarVista3D();
 
       // Actualizamos el paso automático
       actualizarPasoAutomatico();
@@ -912,8 +1031,7 @@ if ("geolocation" in navigator) {
 // SELECCIÓN DE DESTINO CON CLIC
 // =========================
 
-// Evento que se ejecuta cuando se hace clic en el mapa
-mapa.on("click", (e) => {
+function seleccionarDestinoEnMapa(lat, lng) {
   // Si no está activado el modo de clic, no hacemos nada
   if (!modoClic.checked) return;
   // Mientras estás en navegación ("Ir"), no dejamos recalcular por clic.
@@ -923,15 +1041,16 @@ mapa.on("click", (e) => {
   }
 
   // Guardamos las coordenadas del clic
-  destinoClickLat = e.latlng.lat;
-  destinoClickLon = e.latlng.lng;
+  destinoClickLat = lat;
+  destinoClickLon = lng;
+  const latlngLeaflet = L.latLng(destinoClickLat, destinoClickLon);
 
   // Si existe el marcador de destino, lo actualizamos
   if (marcadorDestino) {
-    marcadorDestino.setLatLng(e.latlng);
+    marcadorDestino.setLatLng(latlngLeaflet);
   } else {
     // Si no existe, lo creamos
-    marcadorDestino = L.marker(e.latlng, {
+    marcadorDestino = L.marker(latlngLeaflet, {
       icon: L.icon({
         // Los marcadores los sacamos de internet
         iconUrl:
@@ -955,8 +1074,16 @@ mapa.on("click", (e) => {
   estadoRuta.textContent =
     "Destino seleccionado en el mapa. Calculando ruta...";
 
+  syncMapa3D();
+
   // En modo clic, lanzar el cálculo automáticamente para mostrar la tarjeta con "Ir".
   calcularRuta();
+}
+
+// Evento que se ejecuta cuando se hace clic en el mapa
+mapa.on("click", (e) => {
+  if (!e || !e.latlng) return;
+  seleccionarDestinoEnMapa(e.latlng.lat, e.latlng.lng);
 });
 
 
@@ -1023,6 +1150,7 @@ function limpiarRuta() {
   if (modoCompartirUbicacion.checked && miLatitud !== null && miLongitud !== null) {
     socket.emit("shareLocation", { lat: miLatitud, lng: miLongitud, name: miNombre, avatar: miAvatar, eta: miETA });
   }
+  syncMapa3D();
 }
 
 // Función para calcular la distancia en metros entre dos puntos usando la fórmula de Haversine
@@ -1273,6 +1401,7 @@ function mostrarPasoActual() {
   // Usamos innerHTML para que se interpreten los saltos de línea
   cajaPasos.innerHTML = textoPaso;
   actualizarPanelPasoAR();
+  actualizarVista3D();
 
   /* Se encarga de que la cámara del mapa se deslice automáticamente hacia
   el lugar donde ocurre la instrucción. El trazador de rutas nos devuelve dos listas separadas:
@@ -1318,29 +1447,39 @@ function mostrarPasoActual() {
 function toggleModeVisual() {
   if (modoActual === "2D") {
     modoActual = "3D";
+    initMapa3D();
     document.body.classList.remove("modo-2d");
     document.body.classList.add("modo-3d");
+    syncMapa3D();
+    actualizarVista3D();
   } else {
     modoActual = "2D";
     document.body.classList.remove("modo-3d");
     document.body.classList.add("modo-2d");
+    if (mapa3d) {
+      const c = mapa3d.getCenter();
+      mapa.setView([c.lat, c.lng], mapa3d.getZoom(), { animate: false });
+    }
   }
 
   estadoModo.textContent = `Modo: ${modoActual}`;
 
   setTimeout(() => {
     mapa.invalidateSize();
+    if (mapa3d) mapa3d.resize();
   }, 450);
 }
 
 // Función para hacer zoom in
 function zoomIn() {
-    mapa.zoomIn();
+    if (modoActual === "3D" && mapa3d) mapa3d.zoomIn();
+    else mapa.zoomIn();
 }
 
 // Función para hacer zoom out
 function zoomOut() {
-    mapa.zoomOut();
+    if (modoActual === "3D" && mapa3d) mapa3d.zoomOut();
+    else mapa.zoomOut();
 }
 
 // Gestión personalizada de las capas de mapa
@@ -1365,7 +1504,12 @@ function cambiarCapa() {
 function recentrarMapa() {
   // Si la posición actual es conocida, movemos el mapa hacia ella
   if (miLatitud !== null && miLongitud !== null) {
-    mapa.setView([miLatitud, miLongitud], 16);
+    if (modoActual === "3D") {
+      initMapa3D();
+      if (mapa3d) mapa3d.easeTo({ center: [miLongitud, miLatitud], zoom: 16, pitch: 60, duration: 350 });
+    } else {
+      mapa.setView([miLatitud, miLongitud], 16);
+    }
     estadoRuta.textContent = "Mapa recentrado en tu posición.";
   } else {
     estadoRuta.textContent = "Todavía no se conoce tu posición actual.";
@@ -1394,6 +1538,7 @@ function eliminarRuta() {
     // Actualizamos el texto de la caja de información
     cajaPasos.innerHTML = "Ruta eliminada.";
     estadoRuta.textContent = "Ruta eliminada. Elige un nuevo destino.";
+    syncMapa3D();
 }
 
 // Asignamos la funcionalidad a cada botón del menú usando su atributo data-event
@@ -1637,6 +1782,8 @@ async function calcularRuta() {
 
     // Mostramos el primer paso
     mostrarPasoActual();
+    syncMapa3D();
+    actualizarVista3D();
   });
 
   // Si falla el cálculo de la ruta
