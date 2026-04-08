@@ -1,4 +1,4 @@
-﻿/* ============================================= */
+/* ============================================= */
 /* Estilos de la pantalla principal (mapa)       */
 /* Rediseño tipo Google Maps / Waze              */
 /* ============================================= */
@@ -24,6 +24,7 @@ body {
 #mapa {
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
 }
 
 /* ============================================= */
@@ -529,6 +530,7 @@ body {
   left: 0;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   z-index: 1000;
   background: black;
 }
@@ -662,12 +664,14 @@ body.modo-ar .tarjeta-ruta-btn-ar {
 .leaflet-top.leaflet-left {
   top: auto !important;
   bottom: 24px !important;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px)) !important;
 }
 
 /* Layer switcher → esquina inferior derecha */
 .leaflet-top.leaflet-right {
   top: auto !important;
   bottom: 24px !important;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px)) !important;
 }
 
 /* Ocultar panel de instrucciones de Leaflet Routing Machine
