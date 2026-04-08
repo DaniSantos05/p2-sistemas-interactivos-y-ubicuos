@@ -105,6 +105,80 @@ body {
   transform: scale(0.96);
 }
 
+/* Contenedor principal de los controles de mapa (debajo del perfil) */
+.mapa-controles {
+  position: fixed;
+  top: 80px; /* Debajo del botón de perfil que está en top: 16px con altura 48px */
+  right: 16px;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  pointer-events: none; /* Deja pasar clics al mapa en zonas vacías */
+}
+
+.mapa-controles > * {
+  pointer-events: auto; /* Los botones sí reciben clics */
+}
+
+/* Botón flotante individual */
+.btn-control-flotante {
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  color: #333;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.btn-control-flotante:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  background: #4285f4;
+  color: white;
+}
+
+/* Active es cuando se pulsa el botón */
+.btn-control-flotante:active {
+  transform: scale(0.95);
+}
+
+/* El botón principal que abre el menú de controles */
+.btn-control-flotante.principal {
+  background: linear-gradient(135deg, #4285f4, #1a73e8);
+  color: white;
+}
+
+.btn-control-flotante.principal:hover {
+  box-shadow: 0 3px 10px rgba(26, 115, 232, 0.4);
+}
+
+/* Opciones desplegables */
+.opciones-desplegables {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  transform-origin: top right;      /* Punto desde donde se expanden las opciones */
+}
+
+.opciones-desplegables.oculto {
+  opacity: 0;
+  transform: scale(0.8) translateY(-10px);
+  pointer-events: none;
+}
+
 /* Botón circular del perfil / avatar */
 .profile-toggle-btn {
   width: 48px;
@@ -664,8 +738,9 @@ body.modo-ar #mapa .leaflet-control-container {
   display: none !important;
 }
 
-/* En modo AR: ocultar barra de búsqueda, tarjeta de ruta, botón recentrar */
-body.modo-ar .top-floating-ui {
+/* En modo AR: ocultar barra de búsqueda, tarjeta de ruta, menú de controles */
+body.modo-ar .top-floating-ui,
+body.modo-ar .mapa-controles {
   display: none !important;
 }
 
@@ -719,6 +794,8 @@ body.modo-ar .tarjeta-ruta-btn-ar {
   font-weight: bold;
 }
 
+
+
 /* ============================================= */
 /* MOVER CONTROLES DE LEAFLET ABAJO              */
 /* ============================================= */
@@ -748,6 +825,8 @@ body.tarjeta-ruta-visible .leaflet-top.leaflet-left,
 body.tarjeta-ruta-visible .leaflet-top.leaflet-right {
   bottom: 220px !important;
 }
+
+
 
 /* ============================================= */
 /* TARJETA INFERIOR DE RUTA                      */
@@ -908,17 +987,6 @@ body.tarjeta-ruta-visible .leaflet-top.leaflet-right {
   color: #fff;
 }
 
-/* ============================================= */
-/* BOTÓN FLOTANTE RECENTRAR                      */
-/* ============================================= */
-
-
-
-
-
-
-
-/* Cuando la tarjeta-ruta está visible, subir el botón */
 
 
 /* ============================================= */
@@ -990,9 +1058,7 @@ body.tarjeta-ruta-visible .leaflet-top.leaflet-right {
     font-size: 13px;
   }
 
- 
 
-  
 
   /* Mini-mapa AR más pequeño en móviles */
   body.modo-ar #mapa {

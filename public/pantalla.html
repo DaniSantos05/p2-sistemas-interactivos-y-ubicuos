@@ -48,6 +48,32 @@
     </button>
   </div>
 
+  <!-- Desplegable en el mapa con controles -->
+   <div id="mapaControles" class="mapa-controles">
+     <button id="btnDesplegarControles" class="btn-control-flotante principal">
+       <span class="material-symbols-outlined">tune</span>
+     </button>
+     
+     <div id="opcionesDesplegables" class="opciones-desplegables oculto">
+       <!-- Zoom In -->
+       <button class="btn-control-flotante" onclick="if(typeof zoomIn === 'function') { zoomIn(); } else if(typeof mapa !== 'undefined') { mapa.zoomIn(); }" title="Zoom +">
+         <span class="material-symbols-outlined">add</span>
+       </button>
+       <!-- Zoom Out -->
+       <button class="btn-control-flotante" onclick="if(typeof zoomOut === 'function') { zoomOut(); } else if(typeof mapa !== 'undefined') { mapa.zoomOut(); }" title="Zoom -">
+         <span class="material-symbols-outlined">remove</span>
+       </button>
+       <!-- Recentrar -->
+       <button class="btn-control-flotante" onclick="if(typeof recentrarMapa === 'function') recentrarMapa()" title="Recentrar">
+         <span class="material-symbols-outlined">my_location</span>
+       </button>
+       <!-- Capas (Alterna entre Claro, Oscuro y Satélite a medida que pulsas) -->
+       <button class="btn-control-flotante" onclick="if(typeof cambiarCapa === 'function') cambiarCapa()" title="Capas">
+         <span class="material-symbols-outlined">layers</span>
+       </button>
+     </div>
+   </div>
+
   <!-- Menú de Pantalla Completa (Estilo Google Maps) -->
   <div id="menuOpciones" class="menu-pantalla-completa oculto">
     <div class="contenido-menu">
@@ -96,37 +122,6 @@
           </label>
           <div id="contactosList" class="lista-contactos-menu">
             <p class="no-contacts-msg" style="color: #bbb;">Activa compartir para ver contactos.</p>
-          </div>
-        </div>
-
-        <!-- Controles -->
-        <div class="seccion-menu">
-          <h3>Ajustes / Controles</h3>
-          <div class="cuadricula-controles">
-            <button class="btn-control-menu" data-event="prevStep">Paso anterior</button>
-            <button class="btn-control-menu" data-event="nextStep">Paso Siguiente</button>
-            <button class="btn-control-menu" data-event="zoomIn">Zoom +</button>
-            <button class="btn-control-menu" data-event="zoomOut">Zoom -</button>
-            <button class="btn-control-menu" data-event="toggleMode">2D/3D</button>
-            <button class="btn-control-menu" data-event="deleteRoute">Eliminar ruta</button>
-            <button class="btn-control-menu" data-event="recenter">Recentrar</button>
-          </div>
-        </div>
-
-        <div class="seccion-menu">
-          <h3>Actividad de rutas</h3>
-          <div class="actividad-filtros">
-            <button class="btn-control-menu btn-filtro-actividad activo" data-period="day">Día</button>
-            <button class="btn-control-menu btn-filtro-actividad" data-period="week">Semana</button>
-            <button class="btn-control-menu btn-filtro-actividad" data-period="month">Mes</button>
-          </div>
-          <div id="actividadTotales" class="actividad-totales">
-            <p>Pasos: 0</p>
-            <p>Calorías: 0 kcal</p>
-            <p>Rutas: 0</p>
-          </div>
-          <div id="actividadHistorial" class="actividad-historial">
-            <p class="no-contacts-msg">Aún no hay actividad guardada.</p>
           </div>
         </div>
         

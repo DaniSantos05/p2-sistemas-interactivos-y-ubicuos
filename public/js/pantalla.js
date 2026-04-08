@@ -21,6 +21,9 @@ socket.on("connect", () => {
     socket.emit("clientReady", { role: "pantalla" });
 });
 
+
+
+
 // =========================
 // MÓDULO MULTIDISPOSITIVO (COMPARTIR UBICACIÓN Y AMIGOS)
 // =========================
@@ -82,6 +85,9 @@ socket.on("updateContactRoute", (data) => {
     procesarRutaContacto(data.id, data.route);
   }
 });
+
+
+
 
 // =========================
 // MI PERFIL (MODAL) Y AMIGOS
@@ -489,6 +495,9 @@ function procesarRutaContacto(id, datosRuta) {
   }
 }
 
+
+
+
 // =========================
 // ELEMENTOS DEL DOM
 // =========================
@@ -589,6 +598,9 @@ cerrarMenuOpciones.addEventListener("click", () => {
   menuOpciones.classList.add("oculto");
 });
 
+
+
+
 // =========================
 // TARJETA INFERIOR DE RUTA
 // =========================
@@ -665,6 +677,9 @@ function actualizarPasoTarjetaRuta() {
   pasoTarjetaRuta.innerHTML = `<strong>Paso ${indicePasoActual + 1}/${instruccionesRuta.length}</strong>: ${instruccion.text || ""} (~${Math.round(instruccion.distance || 0)} m)`;
 }
 
+
+
+
 // =========================
 // MAPA
 // =========================
@@ -699,11 +714,11 @@ const temas = {
 const mapa = L.map("mapa", {
   center: [40.4168, -3.7038],
   zoom: 15,
-  layers: [capaClara] 
+  layers: [capaClara],
+  zoomControl: false
 });
 
-// Añadimos el botón selector tipo sándwich a nuestro mapa de Leaflet
-L.control.layers(temas).addTo(mapa);
+
 
 
 
@@ -1214,41 +1229,6 @@ function mostrarPasoActual() {
   }
 }
 
-// Función que avanza al siguiente paso
-function siguientePaso() {
-  // Si no hay instrucciones, mostramos un mensaje
-  if (!instruccionesRuta.length) {
-    cajaPasos.textContent =
-      "No puedes avanzar pasos porque todavía no hay una ruta calculada.";
-    return;
-  }
-
-  // Avanzamos al siguiente paso si no hemos llegado al final
-  if (indicePasoActual < instruccionesRuta.length - 1) {
-    indicePasoActual++;
-  }
-
-  // Mostramos el paso actual
-  mostrarPasoActual();
-}
-
-// Función que retrocede al paso anterior
-function pasoAnterior() {
-  // Si no hay instrucciones, mostramos un mensaje
-  if (!instruccionesRuta.length) {
-    cajaPasos.textContent =
-      "No puedes retroceder pasos porque todavía no hay una ruta calculada.";
-    return;
-  }
-
-  // Retrocedemos al paso anterior si no hemos llegado al principio
-  if (indicePasoActual > 0) {
-    indicePasoActual--;
-  }
-
-  // Mostramos el paso actual
-  mostrarPasoActual();
-}
 
 // Función que cambia entre modo 2D y 3D
 function toggleModeVisual() {
@@ -1278,6 +1258,24 @@ function zoomIn() {
 function zoomOut() {
     mapa.zoomOut();
 }
+
+// Gestión personalizada de las capas de mapa
+let indiceCapaActual = 0;
+// Deben coincidir con las definidas arriba (capaClara, capaOscura, capaSatelite)
+const listaCapasArray = [capaClara, capaOscura, capaSatelite]; 
+
+//Función que cambia entre capas
+function cambiarCapa() {
+  // Retira la que haya puesta
+  mapa.removeLayer(listaCapasArray[indiceCapaActual]);
+  
+  // Salta a la siguiente (0 -> 1 -> 2 -> 0)
+  indiceCapaActual = (indiceCapaActual + 1) % listaCapasArray.length;
+  
+  // Y la añade al mapa
+  mapa.addLayer(listaCapasArray[indiceCapaActual]);
+}
+
 
 // Función que recentra el mapa en la posición actual
 function recentrarMapa() {
@@ -1578,6 +1576,22 @@ inputDestino.addEventListener("keydown", (e) => {
     calcularRuta();
   }
 });
+
+
+
+// =========================
+// CONTROLES DESPLEGABLES DEL MAPA
+// =========================
+const btnDesplegarControles = document.getElementById("btnDesplegarControles");
+const opcionesDesplegables = document.getElementById("opcionesDesplegables");
+
+if (btnDesplegarControles && opcionesDesplegables) {
+  btnDesplegarControles.addEventListener("click", () => {
+    // Alterna la clase oculto para mostrar u ocultar las opciones
+    opcionesDesplegables.classList.toggle("oculto");
+  });
+}
+
 
 
 
