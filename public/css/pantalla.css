@@ -1,4 +1,4 @@
-/* ============================================= */
+﻿/* ============================================= */
 /* Estilos de la pantalla principal (mapa)       */
 /* Rediseño tipo Google Maps / Waze              */
 /* ============================================= */
@@ -135,7 +135,7 @@ body {
 /* MENÚ PANTALLA COMPLETA (Full Screen Menu)     */
 /* ============================================= */
 
-.fullscreen-menu {
+.menu-pantalla-completa {
   position: fixed;
   inset: 0;
   z-index: 5000;
@@ -146,27 +146,27 @@ body {
   opacity: 1;
 }
 
-.fullscreen-menu.oculto {
+.menu-pantalla-completa.oculto {
   transform: translateY(100%);
   opacity: 0;
   pointer-events: none;
 }
 
-.fsm-content {
+.contenido-menu {
   max-width: 500px;
   margin: 0 auto;
   padding: 20px 20px 40px;
 }
 
 /* ---- Cabecera del menú ---- */
-.fsm-header {
+.cabecera-menu {
   position: relative;
   padding: 10px 0 25px;
   border-bottom: 1px solid rgba(255,255,255,0.08);
   margin-bottom: 20px;
 }
 
-.close-fsm-btn {
+.btn-cerrar-menu {
   position: absolute;
   top: 8px;
   right: 0;
@@ -180,18 +180,18 @@ body {
   transition: color 0.2s;
 }
 
-.close-fsm-btn:hover {
+.btn-cerrar-menu:hover {
   color: #ff6b6b;
 }
 
-.fsm-profile-banner {
+.banner-perfil {
   display: flex;
   align-items: center;
   gap: 18px;
   margin-top: 10px;
 }
 
-.fsm-avatar-large {
+.avatar-grande {
   width: 72px;
   height: 72px;
   border-radius: 50%;
@@ -200,14 +200,14 @@ body {
   box-shadow: 0 4px 15px rgba(0,0,0,0.3);
 }
 
-.fsm-profile-info h2 {
+.info-perfil h2 {
   margin: 0 0 6px;
   color: #fff;
   font-size: 22px;
   font-weight: 700;
 }
 
-.fsm-view-profile-btn {
+.btn-ver-perfil {
   background: none;
   border: 2px solid #4285f4;
   color: #4285f4;
@@ -219,26 +219,26 @@ body {
   transition: all 0.2s;
 }
 
-.fsm-view-profile-btn:hover {
+.btn-ver-perfil:hover {
   background: #4285f4;
   color: #fff;
 }
 
 /* ---- Cuerpo / Secciones ---- */
-.fsm-body {
+.cuerpo-menu {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-.fsm-section {
+.seccion-menu {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255,255,255,0.07);
   border-radius: 16px;
   padding: 20px;
 }
 
-.fsm-section h3 {
+.seccion-menu h3 {
   margin: 0 0 14px;
   color: rgba(255,255,255,0.9);
   font-size: 14px;
@@ -248,7 +248,7 @@ body {
 }
 
 /* Estado de ruta */
-.fsm-status-text {
+.texto-estado {
   font-size: 13px;
   color: rgba(255,255,255,0.6);
   margin-bottom: 10px;
@@ -256,7 +256,7 @@ body {
 }
 
 /* Step box */
-.fsm-step-box {
+.caja-pasos {
   padding: 14px 16px;
   background: rgba(66, 133, 244, 0.1);
   border-left: 4px solid #4285f4;
@@ -268,7 +268,7 @@ body {
 }
 
 /* ---- Toggle Switch Moderno ---- */
-.fsm-toggle {
+.interruptor-menu {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -279,11 +279,11 @@ body {
   margin-bottom: 8px;
 }
 
-.fsm-toggle input {
+.interruptor-menu input {
   display: none;
 }
 
-.fsm-toggle-slider {
+.interruptor-menu-slider {
   position: relative;
   width: 44px;
   height: 24px;
@@ -293,7 +293,7 @@ body {
   transition: background 0.3s;
 }
 
-.fsm-toggle-slider::after {
+.interruptor-menu-slider::after {
   content: '';
   position: absolute;
   top: 3px;
@@ -305,16 +305,16 @@ body {
   transition: transform 0.3s;
 }
 
-.fsm-toggle input:checked + .fsm-toggle-slider {
+.interruptor-menu input:checked + .interruptor-menu-slider {
   background: #4285f4;
 }
 
-.fsm-toggle input:checked + .fsm-toggle-slider::after {
+.interruptor-menu input:checked + .interruptor-menu-slider::after {
   transform: translateX(20px);
 }
 
 /* ---- Lista de contactos ---- */
-.fsm-contact-list {
+.lista-contactos-menu {
   margin-top: 12px;
   max-height: 200px;
   overflow-y: auto;
@@ -359,13 +359,13 @@ body {
 }
 
 /* ---- Grid de botones de controles ---- */
-.fsm-controls-grid {
+.cuadricula-controles {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
 
-.fsm-action-btn {
+.btn-control-menu {
   padding: 14px 10px;
   border: none;
   border-radius: 12px;
@@ -378,18 +378,18 @@ body {
   font-family: 'Inter', Arial, sans-serif;
 }
 
-.fsm-action-btn:hover {
+.btn-control-menu:hover {
   background: rgba(66, 133, 244, 0.25);
   color: #fff;
   transform: translateY(-1px);
 }
 
-.fsm-action-btn:active {
+.btn-control-menu:active {
   transform: scale(0.97);
 }
 
 /* Botón de acción especial (AR) */
-.btn-fsm-action {
+.btn-accion-menu {
   width: 100%;
   padding: 14px;
   border: none;
@@ -401,7 +401,7 @@ body {
   font-family: 'Inter', Arial, sans-serif;
 }
 
-.btn-fsm-action:hover {
+.btn-accion-menu:hover {
   opacity: 0.85;
   transform: translateY(-1px);
 }
@@ -523,23 +523,23 @@ body {
   display: none !important;
 }
 
-#arContainer {
+#contenedorAR {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  z-index: 100;
+  z-index: 1000;
   background: black;
 }
 
-#arVideo {
+#videoAR {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-#arCanvas {
+#canvasAR {
   position: absolute;
   top: 0;
   left: 0;
@@ -578,7 +578,7 @@ body.modo-ar #mapa {
   border-radius: 15px;
   border: 4px solid white;
   box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-  z-index: 1000;
+  z-index: 10001;
   transition: all 0.5s ease;
   background: transparent !important;
 }
@@ -600,17 +600,22 @@ body.modo-ar #mapa .leaflet-control-container {
 }
 
 /* En modo AR: ocultar barra de búsqueda, tarjeta de ruta, botón recentrar */
-body.modo-ar .top-floating-ui,
-body.modo-ar .route-card,
-body.modo-ar .floating-btn {
+body.modo-ar .top-floating-ui {
   display: none !important;
 }
 
-/* Fallback: si la tarjeta llega a mostrarse en AR, ocultar los botones que más ocupan */
-body.modo-ar .route-card-actions,
-body.modo-ar .route-card-nav {
-  display: none !important;
+body.modo-ar .tarjeta-ruta {
+  background: rgba(30, 30, 54, 0.65) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
+
+/* El botón AR de la tarjeta en modo AR cambia a Salir de AR con un tono rojizo para que quede claro */
+body.modo-ar .tarjeta-ruta-btn-ar {
+  background: rgba(231, 76, 60, 0.8) !important;
+  color: white !important;
+}
+
 
 /* ============================================= */
 /* MARCADORES DE CONTACTO EN EL MAPA             */
@@ -672,8 +677,8 @@ body.modo-ar .route-card-nav {
 }
 
 /* Cuando hay tarjeta de ruta, subir los controles de leaflet */
-body.route-card-visible .leaflet-top.leaflet-left,
-body.route-card-visible .leaflet-top.leaflet-right {
+body.tarjeta-ruta-visible .leaflet-top.leaflet-left,
+body.tarjeta-ruta-visible .leaflet-top.leaflet-right {
   bottom: 220px !important;
 }
 
@@ -681,7 +686,7 @@ body.route-card-visible .leaflet-top.leaflet-right {
 /* TARJETA INFERIOR DE RUTA                      */
 /* ============================================= */
 
-.route-card {
+.tarjeta-ruta {
   position: fixed;
   bottom: 0;
   left: 0;
@@ -698,39 +703,39 @@ body.route-card-visible .leaflet-top.leaflet-right {
   margin: 0 auto;
 }
 
-.route-card.oculto {
+.tarjeta-ruta.oculto {
   transform: translateY(100%);
   opacity: 0;
   pointer-events: none;
 }
 
-.route-card-header {
+.tarjeta-ruta-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 12px;
 }
 
-.route-card-info {
+.tarjeta-ruta-info {
   display: flex;
   align-items: baseline;
   gap: 12px;
 }
 
-.route-card-time {
+.tarjeta-ruta-time {
   font-size: 28px;
   font-weight: 700;
   color: #4caf50;
   font-family: 'Inter', Arial, sans-serif;
 }
 
-.route-card-dist {
+.tarjeta-ruta-dist {
   font-size: 15px;
   color: rgba(255,255,255,0.5);
   font-weight: 500;
 }
 
-.route-card-close {
+.tarjeta-ruta-close {
   background: none;
   border: none;
   color: rgba(255,255,255,0.4);
@@ -741,11 +746,11 @@ body.route-card-visible .leaflet-top.leaflet-right {
   transition: color 0.2s;
 }
 
-.route-card-close:hover {
+.tarjeta-ruta-close:hover {
   color: #ff6b6b;
 }
 
-.route-card-step {
+.tarjeta-ruta-step {
   font-size: 14px;
   color: rgba(255,255,255,0.75);
   background: rgba(255,255,255,0.05);
@@ -756,12 +761,12 @@ body.route-card-visible .leaflet-top.leaflet-right {
   line-height: 1.5;
 }
 
-.route-card-actions {
+.tarjeta-ruta-actions {
   display: flex;
   gap: 10px;
 }
 
-.route-card-btn {
+.tarjeta-ruta-btn {
   flex: 1;
   padding: 14px 8px;
   border: none;
@@ -777,51 +782,47 @@ body.route-card-visible .leaflet-top.leaflet-right {
   gap: 6px;
 }
 
-.route-card-btn:active {
+.tarjeta-ruta-btn:active {
   transform: scale(0.96);
 }
 
-.route-card-btn-share {
+.tarjeta-ruta-btn-share {
   background: rgba(255,255,255,0.08);
   color: rgba(255,255,255,0.85);
 }
 
-.route-card-btn-share.active {
+.tarjeta-ruta-btn-share.active {
   background: #4285f4;
   color: #fff;
 }
 
-.route-card-btn-share:hover {
+.tarjeta-ruta-btn-share:hover {
   background: rgba(66, 133, 244, 0.3);
 }
 
-.route-card-btn-ar {
+.tarjeta-ruta-btn-ar {
   background: rgba(255,255,255,0.08);
   color: rgba(255,255,255,0.85);
 }
 
-.route-card-btn-ar:hover {
+.tarjeta-ruta-btn-ar:hover {
   background: rgba(235, 31, 90, 0.3);
 }
 
-.route-card-btn-go {
+.tarjeta-ruta-btn-go {
   background: #4caf50;
   color: #fff;
   flex: 1.3;
 }
 
-.route-card-btn-go:hover {
+.tarjeta-ruta-btn-go:hover {
   background: #43a047;
 }
 
 /* Navegación de pasos */
-.route-card-nav {
-  display: flex;
-  gap: 10px;
-  margin-top: 12px;
-}
 
-.route-nav-btn {
+
+.btn-nav-ruta {
   flex: 1;
   padding: 12px;
   border: none;
@@ -835,7 +836,7 @@ body.route-card-visible .leaflet-top.leaflet-right {
   font-family: 'Inter', Arial, sans-serif;
 }
 
-.route-nav-btn:hover {
+.btn-nav-ruta:hover {
   background: rgba(66, 133, 244, 0.25);
   color: #fff;
 }
@@ -844,38 +845,14 @@ body.route-card-visible .leaflet-top.leaflet-right {
 /* BOTÓN FLOTANTE RECENTRAR                      */
 /* ============================================= */
 
-.floating-btn {
-  position: fixed;
-  z-index: 2000;
-  width: 48px;
-  height: 48px;
-  border: none;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.95);
-  color: #333;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-  font-size: 20px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
 
-.floating-btn:hover {
-  transform: scale(1.1);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-}
 
-.floating-btn-recenter {
-  bottom: 100px;
-  right: 16px;
-}
 
-/* Cuando la route-card está visible, subir el botón */
-body.route-card-visible .floating-btn-recenter {
-  bottom: 280px;
-}
+
+
+
+/* Cuando la tarjeta-ruta está visible, subir el botón */
+
 
 /* ============================================= */
 /* RESPONSIVE                                    */
@@ -910,50 +887,45 @@ body.route-card-visible .floating-btn-recenter {
     height: 42px;
   }
 
-  .fsm-content {
+  .contenido-menu {
     padding: 16px 16px 30px;
   }
 
-  .fsm-avatar-large {
+  .avatar-grande {
     width: 60px;
     height: 60px;
   }
 
-  .fsm-profile-info h2 {
+  .info-perfil h2 {
     font-size: 18px;
   }
 
-  .fsm-controls-grid {
+  .cuadricula-controles {
     grid-template-columns: 1fr 1fr;
     gap: 8px;
   }
 
-  .fsm-action-btn {
+  .btn-control-menu {
     padding: 12px 8px;
     font-size: 12px;
   }
 
-  .route-card {
+  .tarjeta-ruta {
     padding: 16px 16px 20px;
   }
 
-  .route-card-time {
+  .tarjeta-ruta-time {
     font-size: 22px;
   }
 
-  .route-card-btn {
+  .tarjeta-ruta-btn {
     padding: 12px 6px;
     font-size: 13px;
   }
 
-  .floating-btn-recenter {
-    bottom: 90px;
-    right: 12px;
-  }
+ 
 
-  body.route-card-visible .floating-btn-recenter {
-    bottom: 260px;
-  }
+  
 
   /* Mini-mapa AR más pequeño en móviles */
   body.modo-ar #mapa {

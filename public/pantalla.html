@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <!-- Indicamos que el documento usa HTML5 -->
 
 <html lang="es">
@@ -24,21 +24,20 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 
   <!-- Nuestro CSS general -->
-  <link rel="stylesheet" href="/css/styles.css">
-  <link rel="stylesheet" href="/css/pantalla.css">
-
+    <link rel="stylesheet" href="/css/styles.css?v=4">
+    <link rel="stylesheet" href="/css/pantalla.css?v=4">
 </head>
 
 <body class="modo-2d">
-  <div id="arContainer" class="oculto">
-    <video id="arVideo" autoplay playsinline></video>     <!-- Video de la cámara -->
-    <canvas id="arCanvas"></canvas>                       <!-- Canvas para dibujar sobre el video -->
+  <div id="contenedorAR" class="oculto">
+    <video id="videoAR" autoplay playsinline></video>     <!-- Video de la cámara -->
+    <canvas id="canvasAR"></canvas>                       <!-- Canvas para dibujar sobre el video -->
   </div>
 
   <!-- Interfaz Flotante Superior -->
   <div class="top-floating-ui">
     <div class="search-container-modern">
-      <input type="text" id="destinoInput" class="search-input-modern" placeholder="Ej: Museo del Prado, Madrid" autocomplete="off">
+      <input type="text" id="inputDestino" class="search-input-modern" placeholder="Ej: Museo del Prado, Madrid" autocomplete="off">
       <button id="btnRuta" class="btn-search-modern">
         <span class="material-symbols-outlined">search</span>
       </button>
@@ -50,57 +49,59 @@
   </div>
 
   <!-- Menú de Pantalla Completa (Estilo Google Maps) -->
-  <div id="fullScreenMenu" class="fullscreen-menu oculto">
-    <div class="fsm-content">
-      <div class="fsm-header">
-        <button id="closeFullScreen" class="close-fsm-btn">&times;</button>
-        <div class="fsm-profile-banner">
-          <img id="fsmAvatar" src="" alt="Mi Avatar" class="fsm-avatar-large">
-          <div class="fsm-profile-info">
-            <h2 id="fsmName">Nombre</h2>
-            <button id="btnProfile" class="fsm-view-profile-btn">Ver perfil</button>
+  <div id="menuOpciones" class="menu-pantalla-completa oculto">
+    <div class="contenido-menu">
+      <div class="cabecera-menu">
+        <button id="cerrarMenuOpciones" class="btn-cerrar-menu">&times;</button>
+        <div class="banner-perfil">
+          <img id="avatarMenu" src="" alt="Mi Avatar" class="avatar-grande">
+          <div class="info-perfil">
+            <h2 id="nombreMenu">Nombre</h2>
+            <button id="btnPerfil" class="btn-ver-perfil">Ver perfil</button>
           </div>
         </div>
       </div>
 
-      <div class="fsm-body">
+      <div class="cuerpo-menu">
         <!-- Navegación y Rutas -->
-        <div class="fsm-section">
+        <div class="seccion-menu">
           <h3>Ruta Actual</h3>
-          <div id="estadoRuta" class="fsm-status-text">Obteniendo tu ubicación...</div>
-          <div id="stepBox" class="fsm-step-box">Todavía no hay una ruta calculada.</div>
+          <div id="estadoRuta" class="texto-estado">Obteniendo tu ubicación...</div>
+          <div id="cajaPasos" class="caja-pasos">Todavía no hay una ruta calculada.</div>
           
-          <label class="fsm-toggle">
-            <input type="checkbox" id="clickMode">
-            <div class="fsm-toggle-slider"></div>
+          <label class="interruptor-menu">
+            <input type="checkbox" id="modoClic">
+            <div class="interruptor-menu-slider"></div>
             Destino en mapa con clic
           </label>
 
-          <button id="btnAR" class="btn-fsm-action oculto" style="margin-top: 15px; background: #eb1f5a; color: white;">Activar Cámara AR</button>
+          <button id="btnAR" class="btn-accion-menu oculto" style="margin-top: 15px; background: #eb1f5a; color: white;">Activar Cámara AR</button>
         </div>
 
         <!-- Mis Contactos -->
-        <div class="fsm-section">
+        <div class="seccion-menu">
           <h3>Mis Contactos</h3>
-          <label class="fsm-toggle" style="margin-top: 10px;">
-            <input type="checkbox" id="shareLocationMode">
-            <div class="fsm-toggle-slider"></div>
+          <label class="interruptor-menu" style="margin-top: 10px;">
+            <input type="checkbox" id="modoCompartirUbicacion">
+            <div class="interruptor-menu-slider"></div>
             Mostrar y compartir ubicación con amigos
           </label>
-          <div id="contactosList" class="fsm-contact-list">
+          <div id="contactosList" class="lista-contactos-menu">
             <p class="no-contacts-msg" style="color: #bbb;">Activa compartir para ver contactos.</p>
           </div>
         </div>
 
         <!-- Controles -->
-        <div class="fsm-section">
+        <div class="seccion-menu">
           <h3>Ajustes / Controles</h3>
-          <div class="fsm-controls-grid">
-            <button class="fsm-action-btn" data-event="zoomIn">Zoom +</button>
-            <button class="fsm-action-btn" data-event="zoomOut">Zoom -</button>
-            <button class="fsm-action-btn" data-event="toggleMode">2D/3D</button>
-            <button class="fsm-action-btn" data-event="deleteRoute">Eliminar ruta</button>
-            <button class="fsm-action-btn" data-event="recenter">Recentrar</button>
+          <div class="cuadricula-controles">
+            <button class="btn-control-menu" data-event="prevStep">Paso anterior</button>
+            <button class="btn-control-menu" data-event="nextStep">Paso Siguiente</button>
+            <button class="btn-control-menu" data-event="zoomIn">Zoom +</button>
+            <button class="btn-control-menu" data-event="zoomOut">Zoom -</button>
+            <button class="btn-control-menu" data-event="toggleMode">2D/3D</button>
+            <button class="btn-control-menu" data-event="deleteRoute">Eliminar ruta</button>
+            <button class="btn-control-menu" data-event="recenter">Recentrar</button>
           </div>
         </div>
         
@@ -109,9 +110,9 @@
     
     <!-- Elementos ocultos para que el JS no lance error -->
     <div style="display:none;">
-      <p id="connectionStatus"></p>
-      <p id="lastEvent"></p>
-      <p id="modeStatus"></p>
+      <p id="estadoConexion"></p>
+      <p id="ultimoEvento"></p>
+      <p id="estadoModo"></p>
     </div>
   </div>
 
@@ -119,50 +120,41 @@
   <div id="mapa"></div>
 
   <!-- Tarjeta inferior de ruta (aparece tras calcular ruta) -->
-  <div id="routeCard" class="route-card oculto">
-    <div class="route-card-header">
-      <div class="route-card-info">
-        <span id="routeCardTime" class="route-card-time">--</span>
-        <span id="routeCardDist" class="route-card-dist">-- km</span>
+  <div id="tarjetaRuta" class="tarjeta-ruta oculto">
+    <div class="tarjeta-ruta-header">
+      <div class="tarjeta-ruta-info">
+        <span id="tiempoTarjetaRuta" class="tarjeta-ruta-time">--</span>
+        <span id="distanciaTarjetaRuta" class="tarjeta-ruta-dist">-- km</span>
       </div>
-      <button id="routeCardClose" class="route-card-close">&times;</button>
+      <button id="cerrarTarjetaRuta" class="tarjeta-ruta-close">&times;</button>
     </div>
-    <div id="routeCardStep" class="route-card-step">Calculando...</div>
-    <div class="route-card-actions">
-      <button id="routeCardShare" class="route-card-btn route-card-btn-share">
+    <div id="pasoTarjetaRuta" class="tarjeta-ruta-step">Calculando...</div>
+    <div class="tarjeta-ruta-actions">
+      <button id="compartirTarjetaRuta" class="tarjeta-ruta-btn tarjeta-ruta-btn-share">
         <span class="material-symbols-outlined">share</span> Compartir
       </button>
-      <button id="routeCardAR" class="route-card-btn route-card-btn-ar">
+      <button id="btnARTarjetaRuta" class="tarjeta-ruta-btn tarjeta-ruta-btn-ar">
         <span class="material-symbols-outlined">photo_camera</span> AR
       </button>
-      <button id="routeCardGo" class="route-card-btn route-card-btn-go">
+      <button id="irTarjetaRuta" class="tarjeta-ruta-btn tarjeta-ruta-btn-go">
         <span class="material-symbols-outlined">navigation</span> Ir
       </button>
     </div>
     <!-- Navegación de pasos (visible tras pulsar Ir) -->
-    <div id="routeCardNav" class="route-card-nav oculto">
-      <button id="routeCardPrev" class="route-nav-btn"><span class="material-symbols-outlined">chevron_left</span> Anterior</button>
-      <button id="routeCardNext" class="route-nav-btn">Siguiente <span class="material-symbols-outlined">chevron_right</span></button>
-    </div>
   </div>
 
-  <!-- Botón flotante recentrar -->
-  <button id="btnRecenter" class="floating-btn floating-btn-recenter" title="Recentrar">
-    <span class="material-symbols-outlined">my_location</span>
-  </button>
-
   <!-- Modal Mi Perfil -->
-  <div id="profileModal" class="modal">
+  <div id="modalPerfil" class="modal">
     <div class="modal-content">
-      <span class="close-modal" id="closeProfileModal">&times;</span>
+      <span class="close-modal" id="cerrarModalPerfil">&times;</span>
       <h2 style="margin-top: 0; color: #2c3e50;">Mi Perfil</h2>
       
       <div class="profile-header">
-        <img id="myProfileAvatar" src="" alt="Mi Avatar" class="profile-avatar">
+        <img id="avatarMiPerfil" src="" alt="Mi Avatar" class="profile-avatar">
         <div style="flex: 1;">
-          <h3 id="myProfileName" style="margin:0 0 10px 0; color:#34495e;"></h3>
-          <input type="file" id="avatarFileInput" accept="image/*" style="font-size: 12px; margin-bottom: 5px;">
-          <button id="btnChangeAvatar" class="btn-primario" style="font-size: 12px; padding: 8px;">Guardar Foto</button>
+          <h3 id="nombreMiPerfil" style="margin:0 0 10px 0; color:#34495e;"></h3>
+          <input type="file" id="inputArchivoAvatar" accept="image/*" style="font-size: 12px; margin-bottom: 5px;">
+          <button id="btnCambiarAvatar" class="btn-primario" style="font-size: 12px; padding: 8px;">Guardar Foto</button>
         </div>
       </div>
       
@@ -170,15 +162,15 @@
       
       <h3 style="color: #34495e; font-size: 16px;">Buscar Amigos</h3>
       <div style="display: flex; gap: 5px; margin-bottom: 10px; align-items: center;">
-        <input type="text" id="searchFriendInput" class="input-moderno" placeholder="Nombre de usuario..." style="flex:1; margin-bottom:0;">
-        <button id="btnSearchFriend" class="btn-primario" style="padding: 10px 15px; width: auto; white-space: nowrap;">Buscar</button>
+        <input type="text" id="inputBuscarAmigo" class="input-moderno" placeholder="Nombre de usuario..." style="flex:1; margin-bottom:0;">
+        <button id="btnBuscarAmigo" class="btn-primario" style="padding: 10px 15px; width: auto; white-space: nowrap;">Buscar</button>
       </div>
-      <div id="searchResults" class="contactos-list" style="max-height: 120px; overflow-y: auto;"></div>
+      <div id="resultadosBusqueda" class="contactos-list" style="max-height: 120px; overflow-y: auto;"></div>
       
       <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
       
-      <h3 style="color: #34495e; font-size: 16px;">Mis Amigos (<span id="friendsCount">0</span>)</h3>
-      <div id="myFriendsList" class="contactos-list" style="max-height: 150px; overflow-y: auto;">
+      <h3 style="color: #34495e; font-size: 16px;">Mis Amigos (<span id="contadorAmigos">0</span>)</h3>
+      <div id="listaMisAmigos" class="contactos-list" style="max-height: 150px; overflow-y: auto;">
       </div>
 
     </div>

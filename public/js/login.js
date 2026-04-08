@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", () => {
+﻿document.addEventListener("DOMContentLoaded", () => {
   const loginSection = document.getElementById('login-section');
   const registerSection = document.getElementById('register-section');
   
@@ -43,14 +43,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
-      const resp = await fetch("/api/register", {
+      const respuesta = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password })
       });
-      const data = await resp.json();
+      const datos = await respuesta.json();
       
-      if (!resp.ok) {
+      if (!respuesta.ok) {
         regErrorMsg.textContent = data.error || "Error al registrar";
         regSuccessMsg.textContent = "";
       } else {
@@ -74,14 +74,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const password = logPasswordInput.value;
     
     try {
-      const resp = await fetch("/api/login", {
+      const respuesta = await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password })
       });
-      const data = await resp.json();
+      const datos = await respuesta.json();
       
-      if (!resp.ok) {
+      if (!respuesta.ok) {
         logErrorMsg.textContent = data.error || "Error al iniciar sesión";
       } else {
         logErrorMsg.textContent = "";

@@ -1,4 +1,4 @@
-// =========================
+﻿// =========================
 // CONEXIÓN CON SOCKET.IO
 // =========================
 
@@ -6,16 +6,16 @@
 const socket = io();
 
 // Referencias a elementos del panel de estado
-const connectionStatus = document.getElementById("connectionStatus");
-const lastEvent = document.getElementById("lastEvent");
-const modeStatus = document.getElementById("modeStatus");
-const stepBox = document.getElementById("stepBox");
+const estadoConexion = document.getElementById("estadoConexion");
+const ultimoEvento = document.getElementById("ultimoEvento");
+const estadoModo = document.getElementById("estadoModo");
+const cajaPasos = document.getElementById("cajaPasos");
 
 
 // Cuando la pantalla se conecta correctamente al servidor
 socket.on("connect", () => {
     // Mostramos el estado de conexión
-    connectionStatus.textContent = `Conectado. ID: ${socket.id}`;
+    estadoConexion.textContent = `Conectado. ID: ${socket.id}`;
 
     // Avisamos al servidor de que este cliente es la pantalla principal
     socket.emit("clientReady", { role: "pantalla" });
@@ -25,30 +25,30 @@ socket.on("connect", () => {
 // MÓDULO MULTIDISPOSITIVO (COMPARTIR UBICACIÓN Y AMIGOS)
 // =========================
 
-const savedUsername = localStorage.getItem("username");
-if (!savedUsername) {
+const nombreUsuarioGuardado = localStorage.getItem("username");
+if (!nombreUsuarioGuardado) {
   window.location.href = "/";
 }
 
 const contactos = {};
 
 // Usar el nombre de sesión
-let myName = savedUsername;
-let myAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(myName.charAt(0))}&background=random&color=fff&rounded=true&size=128`;
-let myETA = null;
-let myFriends = [];
+let miNombre = nombreUsuarioGuardado;
+let miAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(miNombre.charAt(0))}&background=random&color=fff&rounded=true&size=128`;
+let miETA = null;
+let misAmigos = [];
 
 try {
-  const userString = localStorage.getItem("user");
-  if (userString) {
-     const userObj = JSON.parse(userString);
-     myName = userObj.username;
-     if (userObj.avatar) myAvatar = userObj.avatar;
-     if (userObj.friends) myFriends = userObj.friends;
+  const stringUsuario = localStorage.getItem("user");
+  if (stringUsuario) {
+     const objUsuario = JSON.parse(stringUsuario);
+     miNombre = objUsuario.username;
+     if (objUsuario.avatar) miAvatar = objUsuario.avatar;
+     if (objUsuario.friends) misAmigos = objUsuario.friends;
   }
 } catch (e) {}
 
-function getContactColor(idStr) {
+function obtenerColorContacto(idStr) {
   // Genera un color consistente basado en el socket.id
   let hash = 0;
   for (let i = 0; i < idStr.length; i++) {
@@ -62,109 +62,122 @@ function getContactColor(idStr) {
 socket.on("existingSharedData", (data) => {
   for (const id in data) {
     if (id !== socket.id) {
-       const isFriend = data[id].location ? myFriends.includes(data[id].location.name) : true;
-       if (isFriend) {
-         if (data[id].location) processContactLocation(id, data[id].location);
-         if (data[id].route) processContactRoute(id, data[id].route);
+       const esAmigo = data[id].location ? misAmigos.includes(data[id].location.name) : true;
+       if (esAmigo) {
+         if (data[id].location) procesarUbicacionContacto(id, data[id].location);
+         if (data[id].route) procesarRutaContacto(id, data[id].route);
        }
     }
   }
 });
 
 socket.on("updateContactLocation", (data) => {
-  if (myFriends.includes(data.name)) {
-    processContactLocation(data.id, data);
+  if (misAmigos.includes(data.name)) {
+    procesarUbicacionContacto(data.id, data);
   }
 });
 
 socket.on("updateContactRoute", (data) => {
   if (contactos[data.id]) {
-    processContactRoute(data.id, data.route);
+    procesarRutaContacto(data.id, data.route);
   }
 });
 
 // =========================
 // MI PERFIL (MODAL) Y AMIGOS
 // =========================
-const btnProfile = document.getElementById("btnProfile");
-const profileModal = document.getElementById("profileModal");
-const closeProfileModal = document.getElementById("closeProfileModal");
-const myProfileName = document.getElementById("myProfileName");
-const myProfileAvatar = document.getElementById("myProfileAvatar");
-const avatarFileInput = document.getElementById("avatarFileInput");
-const btnChangeAvatar = document.getElementById("btnChangeAvatar");
-const myFriendsList = document.getElementById("myFriendsList");
-const friendsCount = document.getElementById("friendsCount");
+const btnPerfil = document.getElementById("btnPerfil");
+const modalPerfil = document.getElementById("modalPerfil");
+const cerrarModalPerfil = document.getElementById("cerrarModalPerfil");
+const nombreMiPerfil = document.getElementById("nombreMiPerfil");
+const avatarMiPerfil = document.getElementById("avatarMiPerfil");
+const inputArchivoAvatar = document.getElementById("inputArchivoAvatar");
+const btnCambiarAvatar = document.getElementById("btnCambiarAvatar");
+const listaMisAmigos = document.getElementById("listaMisAmigos");
+const contadorAmigos = document.getElementById("contadorAmigos");
 
-function renderMyFriends() {
-  if (!myFriendsList) return;
-  if (myFriends.length === 0) {
-    myFriendsList.innerHTML = "<p style='font-size:13px; color:gray;'>Aún no tienes amigos agregados.</p>";
-    if (friendsCount) friendsCount.textContent = "0";
+/* coge la matriz local de misAmigos y la muestra en forma de listado dentro del perfil. 
+  Limpia la placa vieja, cuenta los amigos y va fabricando 'divs' pequeños con cada nombre. */
+function mostrarMisAmigos() {
+  if (!listaMisAmigos) return;
+  if (misAmigos.length === 0) {
+    listaMisAmigos.innerHTML = "<p style='font-size:13px; color:gray;'>Aún no tienes amigos agregados.</p>";
+    if (contadorAmigos) contadorAmigos.textContent = "0";
     return;
   }
-  if (friendsCount) friendsCount.textContent = myFriends.length;
-  myFriendsList.innerHTML = "";
-  myFriends.forEach(f => {
+  if (contadorAmigos) contadorAmigos.textContent = misAmigos.length;
+  listaMisAmigos.innerHTML = "";
+  misAmigos.forEach(f => {
     const div = document.createElement("div");
     div.className = "contact-item";
     div.innerHTML = `<span style="font-size: 14px; font-weight: bold; color: #333;">${f}</span>`;
-    myFriendsList.appendChild(div);
+    listaMisAmigos.appendChild(dternamente,iv);
   });
 }
 
-if (btnProfile) {
-  btnProfile.addEventListener("click", () => {
-    profileModal.style.display = "block";
-    myProfileName.textContent = myName;
-    myProfileAvatar.src = myAvatar;
-    renderMyFriends();
+/* Este fragmento es el encargado de gestionar la apertura y cierre del modal flotante de perfil del usuario.
+  Esta oculto por defecto, y se activa al pulsar sobre la foto de perfil en la barra superior.
+  - Cuando hacemos clic en nuestra foto de perfil de arriba a la derecha, forzamos la aparición del cuadro,
+  sincronizamos los datos visuales y lanzamos la función para pintar la lista de amigos.
+  - También controla el mecanismo de cierre visual, ya sea pulsando la cruz superior o haciendo clic 
+  fuera del propio modal en el velo ennegrecido. */
+if (btnPerfil) {
+  btnPerfil.addEventListener("click", () => {
+    modalPerfil.style.display = "block";
+    nombreMiPerfil.textContent = miNombre;
+    avatarMiPerfil.src = miAvatar;
+    mostrarMisAmigos();
   });
 }
 
-if (closeProfileModal) {
-  closeProfileModal.addEventListener("click", () => {
-    profileModal.style.display = "none";
+if (cerrarModalPerfil) {
+  cerrarModalPerfil.addEventListener("click", () => {
+    modalPerfil.style.display = "none";
   });
 }
 
 window.addEventListener("click", (e) => {
-  if (e.target == profileModal) {
-    profileModal.style.display = "none";
+  if (e.target == modalPerfil) {
+    modalPerfil.style.display = "none";
   }
 });
 
-if (btnChangeAvatar) {
-  btnChangeAvatar.addEventListener("click", async () => {
-    if (!avatarFileInput || !avatarFileInput.files[0]) return;
+/* Se encarga de subir y procesar una nueva foto de perfil cuando decides cambiarla.
+  - Recoge el archivo subido desde tu carpeta mediante un input y lo procesamos mediante FormData.
+  - Envía este paquete a nuestra red.
+  - Con ella, actualizamos sin pestañear nuestro objeto local de sesión, el almacenamiento permanente y forzamos
+  al servidor Socket.io para que actualice a todos tus amigos la nueva foto */
+if (btnCambiarAvatar) {
+  btnCambiarAvatar.addEventListener("click", async () => {
+    if (!inputArchivoAvatar || !inputArchivoAvatar.files[0]) return;
     
-    const formData = new FormData();
-    formData.append("username", myName);
-    formData.append("avatar", avatarFileInput.files[0]);
+    const datosFormulario = new FormData();
+    datosFormulario.append("username", miNombre);
+    datosFormulario.append("avatar", inputArchivoAvatar.files[0]);
     
     try {
-      const resp = await fetch("/api/user/avatar", {
+      const respuesta = await fetch("/api/user/avatar", {
         method: "POST",
-        body: formData
+        body: datosFormulario
       });
-      if (resp.ok) {
-        const data = await resp.json();
-        myAvatar = data.avatar;
-        myProfileAvatar.src = myAvatar;
-        avatarFileInput.value = "";
+      if (respuesta.ok) {
+        const datos = await respuesta.json();
+        miAvatar = data.avatar;
+        avatarMiPerfil.src = miAvatar;
+        inputArchivoAvatar.value = "";
         
-        // Actualizar avatares en la UI flotante y el menú
-        const avatarBtn = document.getElementById("btnAvatarIcon");
-        const fsmAv = document.getElementById("fsmAvatar");
-        if (avatarBtn) avatarBtn.src = myAvatar;
-        if (fsmAv) fsmAv.src = myAvatar;
+        // Actualizar avatarespuestauesta en la UI flotante y el menú
+        const btnAvatar = document.getElementById("btnAvatarIcon");
+        const fsmAv = document.getElementById("avatarMenu");
+        if (btnAvatar) btnAvatar.src = miAvatar;
+        if (fsmAv) fsmAv.src = miAvatar;
         
-        const userObj = JSON.parse(localStorage.getItem("user") || "{}");
-        userObj.avatar = myAvatar;
-        localStorage.setItem("user", JSON.stringify(userObj));
+        const objUsuario = JSON.parse(localStorage.getItem("user") || "{}");
+        objUsuario.avatar = miAvatar;
+        localStorage.setItem("user", JSON.stringify(objUsuario));
         
-        if (shareLocationMode.checked && miLatitud !== null && miLongitud !== null) {
-          socket.emit("shareLocation", { lat: miLatitud, lng: miLongitud, name: myName, avatar: myAvatar, eta: myETA });
+        if (modoCompartirUbicacion.checked && miLatitud !== null && miLongitud !== null) {
+          socket.emit("shareLocation", { lat: miLatitud, lng: miLongitud, name: miNombre, avatar: miAvatar, eta: miETA });
         }
       }
     } catch (e) {
@@ -173,26 +186,40 @@ if (btnChangeAvatar) {
   });
 }
 
-const searchFriendInput = document.getElementById("searchFriendInput");
-const btnSearchFriend = document.getElementById("btnSearchFriend");
-const searchResults = document.getElementById("searchResults");
+const inputBuscarAmigo = document.getElementById("inputBuscarAmigo");
+const btnBuscarAmigo = document.getElementById("btnBuscarAmigo");
+const resultadosBusqueda = document.getElementById("resultadosBusqueda");
 
-if (btnSearchFriend) {
-  btnSearchFriend.addEventListener("click", async () => {
-    const q = searchFriendInput.value.trim();
+/* Es el motor de busqueda de amigos. Extra la frase que pongamos elimando espacios en blaco usando trim y pregunta 
+a la api por ese usario. Tras esto muestra las coincidencias en forma de trajeta en la caja de reultados. 
+Asimismo, comprueba si esa perosona ya estaba agreada, en caso no la vamos a poder agregar */
+if (btnBuscarAmigo) {
+  btnBuscarAmigo.addEventListener("click", async () => {
+    // Obtenemos el texto introducido eliminando espacios extra a los lados
+    const busqueda = inputBuscarAmigo.value.trim();
+    
+    // Si esta vacio no hacemos nada
     if (!q) return;
     
     try {
-      const resp = await fetch(`/api/users?q=${encodeURIComponent(q)}&current_user=${encodeURIComponent(myName)}`);
-      const data = await resp.json();
+      // Hacemos la peticion a la api pasandole nuestra busqueda y nuestro usuario actual
+      const respuesta = await fetch(`/api/users?q=${encodeURIComponent(q)}&current_user=${encodeURIComponent(miNombre)}`);
       
-      searchResults.innerHTML = "";
+      // Pasamos la respuestauesta devuelta a JSON
+      const datos = await respuesta.json();
+      
+      // Limpiamos los resultados antiguos de la caja
+      resultadosBusqueda.innerHTML = "";
+      
+      // Si no hay resultados mostramos un mensaje por pantalla
       if (data.length === 0) {
-        searchResults.innerHTML = "<p style='font-size:12px; color:rgba(0,0,0,0.7)'>No se encontraron coincidencias.</p>";
+        resultadosBusqueda.innerHTML = "<p style='font-size:12px; color:rgba(0,0,0,0.7)'>No se encontraron coincidencias.</p>";
         return;
       }
       
+      // Iteramos sobre todos los usuarios que nos ha devuelto la api
       data.forEach(u => {
+        // Creamos el contenedor global del contacto respuestaectivo
         const div = document.createElement("div");
         div.className = "contact-item";
         div.style.justifyContent = "space-between";
@@ -200,59 +227,84 @@ if (btnSearchFriend) {
         div.style.alignItems = "center";
         div.style.width = "100%";
         
-        const infoDiv = document.createElement("div");
-        infoDiv.style.display = "flex";
-        infoDiv.style.alignItems = "center";
-        infoDiv.style.gap = "10px";
+        // Creamos el contenedor que agrupa la imagen de perfil y su nombre
+        const divInfo = document.createElement("div");
+        divInfo.style.display = "flex";
+        divInfo.style.alignItems = "center";
+        divInfo.style.gap = "10px";
         
-        const img = document.createElement("img");
-        img.src = u.avatar;
-        img.style.width = "30px";
-        img.style.height = "30px";
-        img.style.borderRadius = "50%";
+        // Creamos la imagen de perfil del usuario encontrado
+        const imagen = document.createElement("img");
+        imagen.src = u.avatar;
+        imagen.style.width = "30px";
+        imagen.style.height = "30px";
+        imagen.style.borderRadius = "50%";
         
-        const nameSpan = document.createElement("span");
-        nameSpan.textContent = u.username;
+        // Creamos el texto de su nombre de usuario
+        const spanNombre = document.createElement("span");
+        spanNombre.textContent = u.username;
         
-        infoDiv.appendChild(img);
-        infoDiv.appendChild(nameSpan);
+        // Añadimos estas piezas al contenedor local que hicimos
+        divInfo.appendChild(img);
+        divInfo.appendChild(spanNombre);
         
-        const addBtn = document.createElement("button");
-        addBtn.className = "btn-primario";
-        addBtn.style.padding = "5px 10px";
-        addBtn.style.fontSize = "11px";
-        addBtn.style.marginBottom = "0";
-        addBtn.style.width = "auto";
+        // Creamos nuestro boton de añadir o de estado "amigo"
+        const btnAñadir = document.createElement("button");
+        btnAñadir.className = "btn-primario";
+        btnAñadir.style.padding = "5px 10px";
+        btnAñadir.style.fontSize = "11px";
+        btnAñadir.style.marginBottom = "0";
+        btnAñadir.style.width = "auto";
         
-        if (myFriends.includes(u.username)) {
-           addBtn.textContent = "Amigo";
-           addBtn.disabled = true;
-           addBtn.style.background = "#555";
+        // Comprobamos si este usuario ya figura en nuestra lista de amigos existente
+        if (misAmigos.includes(u.username)) {
+           // Si ya es amigo nuestro desactivamos las acciones del boton limitandolo a enseñarnos esto mismo
+           btnAñadir.textContent = "Amigo";
+           btnAñadir.disabled = true;
+           btnAñadir.style.background = "#555";
         } else {
-           addBtn.textContent = "Añadir";
-           addBtn.onclick = async () => {
-             const res = await fetch("/api/friend", {
+           // En caso de que no este como amigo todavia, le configuramos un evento de on click
+           btnAñadir.textContent = "Añadir";
+           btnAñadir.onclick = async () => {
+             // Enviamos de vuelta una peticion de amistad a traves de la api
+             const respuestauesta = await fetch("/api/friend", {
                method: "POST",
                headers: {"Content-Type": "application/json"},
-               body: JSON.stringify({username: myName, friend_username: u.username})
+               body: JSON.stringify({username: miNombre, friend_username: u.username})
              });
+             
+             // Si el servidor confirma todo procedemos a actualizar el equipo en local
              if (res.ok) {
-                const updated = await res.json();
-                myFriends = updated.friends;
-                const userObj = JSON.parse(localStorage.getItem("user") || "{}");
-                userObj.friends = myFriends;
-                localStorage.setItem("user", JSON.stringify(userObj));
-                addBtn.textContent = "Amigo";
-                addBtn.disabled = true;
-                addBtn.style.background = "#555";
-                renderMyFriends();
+                // Volcamos su respuestauesta para guardar todos nuestros amigos resultantes
+                const datosActualizados = await res.json();
+                
+                // Actualizamos la variable de la lista de todos nuestros amigos localmente
+                misAmigos = datosActualizados.friends;
+                
+                // Extraemos en objeto json nuestro usuario actual del navegador
+                const objUsuario = JSON.parse(localStorage.getItem("user") || "{}");
+                
+                // Le grabamos este array nuevo y lo rescribimos en el localstorage del perifl
+                objUsuario.friends = misAmigos;
+                localStorage.setItem("user", JSON.stringify(objUsuario));
+                
+                // Actualizamos tambien la interfaz de nuestro boton con las modificaciones pertinentes
+                btnAñadir.textContent = "Amigo";
+                btnAñadir.disabled = true;
+                btnAñadir.style.background = "#555";
+                
+                // Lanzamos la funcion para que actualice visualmente nuestra lista de amigos general visible
+                mostrarMisAmigos();
              }
            };
         }
         
-        div.appendChild(infoDiv);
-        div.appendChild(addBtn);
-        searchResults.appendChild(div);
+        // Agrupamos el contenedor del nombre imagen y este ultimo boton en el div global principal
+        div.appendChild(divInfo);
+        div.appendChild(btnAñadir);
+        
+        // Lo añadimos por ultima a nuestra interfaz general para que se acabe de enseñar y hacer en pantalla
+        resultadosBusqueda.appendChild(div);
       });
     } catch (e) {
       console.error(e);
@@ -260,103 +312,168 @@ if (btnSearchFriend) {
   });
 }
 
-function updateSidebarContacts() {
+/* Actualiza el panel lateral mostrando los amigos que están compartiendo su ubicación. 
+Extrae los ids actuales, genera el HTML para la información de cada usuario y lo inyecta en el panel lateral. */
+function actualizarContactosLateral() {
+  // Obtenemos el contenedor visual donde va la lista
   const container = document.getElementById("contactosList");
   if (!container) return;
   
-  const activeIds = Object.keys(contactos);
-  if (activeIds.length === 0) {
+  // Extraemos todos los ids de los contactos activos en este momento
+  const idsActivos = Object.keys(contactos);
+  
+  // Si no hay contactos, mostramos un mensaje por defecto y salimos de la función
+  if (idsActivos.length === 0) {
     container.innerHTML = '<p class="no-contacts-msg">Activa compartir para ver contactos.</p>';
     return;
   }
   
+  // Preparamos la variable donde iremos acumulando el HTML de todos los contactos
   let html = "";
-  activeIds.forEach(id => {
-    const c = contactos[id];
-    const color = getContactColor(id);
-    const nombre = c.data && c.data.name ? c.data.name : `Contacto`;
-    const avatar = c.data && c.data.avatar ? c.data.avatar : `https://ui-avatars.com/api/?name=C&rounded=true&size=128`;
-    const etaText = c.data && c.data.eta ? `<small style="color: #27ae60; font-weight: normal; margin-top: 2px;">📍 ${c.data.eta}</small>` : '';
+  
+  // Iteramos sobre todos los id de los usuarios detectados
+  idsActivos.forEach(id => {
+    const contacto = contactos[id];
+    // Generamos un color para el borde de la imagen basado en su id
+    const color = obtenerColorContacto(id);
     
+    // Obtenemos su nombre, o le asignamos "Contacto" si no lo tiene
+    const nombre = c.data && c.data.name ? c.data.name : `Contacto`;
+    
+    // Obtenemos su avatar, o le generamos uno genérico si no lo tiene
+    const avatar = c.data && c.data.avatar ? c.data.avatar : `https://ui-avatars.com/api/?name=C&rounded=true&size=128`;
+    
+    // Si el contacto tiene tiempo de llegada (ETA), creamos el HTML para mostrarlo
+    const textoLlegada = c.data && c.data.eta ? `<small style="color: #27ae60; font-weight: normal; margin-top: 2px;">📍 ${c.data.eta}</small>` : '';
+    
+    // Añadimos el HTML del componente del contacto al bloque de texto
     html += `
       <div class="contact-item">
         <img src="${avatar}" style="border-color: ${color}">
         <span style="display: flex; flex-direction: column;">
             ${nombre}
-            ${etaText}
+            ${textoLlegada}
         </span>
       </div>
     `;
   });
+  
+  // Reemplazamos el contenido antiguo del panel con el fragmento HTML nuevo
   container.innerHTML = html;
 }
 
+/* Cuando el servidor detecta que alguien deja de compartir su ubicación, lanza este evento. 
+Se encarga de limpiar el mapa borrando todos los trazos de su ruta, su marcador y por último
+actualiza la lista lateral para que no se muestre en los compañeros. */
 socket.on("removeContact", (data) => {
+  // Comprobamos si el contacto sigue registrado en nuestro array de contactos
   if (contactos[data.id]) {
+    // Si tiene un marcador activo, lo borramos del mapa general
     if (contactos[data.id].marker) mapa.removeLayer(contactos[data.id].marker);
+    
+    // Si estaba dibujando una ruta, borramos la línea visible en el mapa
     if (contactos[data.id].polyline) mapa.removeLayer(contactos[data.id].polyline);
+    
+    // Si la ruta tenía un marcador de destino, también lo borramos del mapa
     if (contactos[data.id].destMarker) mapa.removeLayer(contactos[data.id].destMarker);
+    
+    // Lo eliminamos por completo del listado local de seguimiento
     delete contactos[data.id];
-    updateSidebarContacts();
+    
+    // Volvemos a lanzar la actualización del panel visual para que desaparezca
+    actualizarContactosLateral();
   }
 });
 
-function processContactLocation(id, data) {
+/* Procesa los datos de ubicación del resto de usuarios en tiempo real. 
+Recibe la información, asigna el usuario a la lista de contactos, le designa un color y marcador y
+decide si crearlo de cero en el mapa o simplemente actualizar su nueva posición. */
+function procesarUbicacionContacto(id, data) {
+  // Si el contacto no existe, lo inicializamos en la lista de contactos
   if (!contactos[id]) contactos[id] = {};
+  
+  // Actualizamos toda la información recibida en su perfil de datos
   contactos[id].data = data;
   
-  const color = getContactColor(id);
+  // Obtenemos su color personalizado usando su id
+  const color = obtenerColorContacto(id);
+  
+  // Sacamos su nombre, poniendo un valor por defecto si no venía en los datos
   const nombre = data.name || "Contacto";
+  
+  // Comprobamos si nos manda avatar, en caso negativo generamos una imagen inicial
   const avatar = data.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(nombre.charAt(0))}&rounded=true&size=128`;
 
+  // Comprueba si este contacto no tiene todavía una marca creada dentro del mapa de Leaflet
   if (!contactos[id].marker) {
-    const iconHtml = `
+    // Definimos la estructura HTML del contenedor de su avatar en el mapa
+    const htmlIcono = `
       <div class="contact-marker-container">
         <img src="${avatar}" style="border-color: ${color}">
         <span class="contact-marker-name" style="background-color: ${color}">${nombre}</span>
       </div>
     `;
     
-    const divIcon = L.divIcon({
+    // Lo convertimos en formato DivIcon que la API Leaflet sabe procesar
+    const iconoDiv = L.iconoDiv({
       className: 'contact-avatar-marker',
-      html: iconHtml,
+      html: htmlIcono,
       iconSize: [40, 60],
       iconAnchor: [20, 30]
     });
 
-    contactos[id].marker = L.marker([data.lat, data.lng], { icon: divIcon }).addTo(mapa);
-    updateSidebarContacts();
+    // Inyectamos el marcador en el mapa usando sus coordenadas de latitud y longitud
+    contactos[id].marker = L.marker([data.lat, data.lng], { icon: iconoDiv }).addTo(mapa);
+    
+    // Actualizamos el listado derecho para añadir visualmente su presencia en pantalla
+    actualizarContactosLateral();
   } else {
+    // Como su marcador ya estaba en el mapa, simplemente actualizamos sus coordenadas actuales
     contactos[id].marker.setLatLng([data.lat, data.lng]);
   }
 }
 
-function processContactRoute(id, routeData) {
+/* Dibuja de forma local una línea en forma de ruta basándose en todos los puntos GPS 
+recibidos por el resto de usuarios cuando comparten su camino actual con nosotros. 
+Elimina cualquier trazado anterior de esa persona para que no haya solapamientos visuales. */
+function procesarRutaContacto(id, datosRuta) {
+  // Si el contacto no existe, lo inicializamos en nuestro listado local
   if (!contactos[id]) contactos[id] = {};
-  const color = getContactColor(id);
+  
+  // Obtenemos su color distintivo usando el hash numérico de su identificador
+  const color = obtenerColorContacto(id);
+  
+  // Conseguimos o preponemos un nombre que va a usarse al mostrar el cartel destino
   const nombre = (contactos[id].data && contactos[id].data.name) ? contactos[id].data.name : "Contacto";
   
-  // Limpiar ruta anterior
+  // Limpiamos la antigua capa principal orientativa de la ruta que hubiera dibujada en el mapa
   if (contactos[id].polyline) {
     mapa.removeLayer(contactos[id].polyline);
   }
-  // Limpiar marcador de destino anterior
+  
+  // Y limpiamos también el antiguo punto visual del destino por si la ruta cambió
   if (contactos[id].destMarker) {
     mapa.removeLayer(contactos[id].destMarker);
   }
 
-  const latLngs = routeData.map(pt => [pt.lat, pt.lng]);
-  contactos[id].polyline = L.polyline(latLngs, {
+  // Preparamos en parespuestauesta la latitud y longitud a través de este trazado recibido general de coordenadas
+  const coordenadasLatLng = datosRuta.map(pt => [pt.lat, pt.lng]);
+  
+  // Dibujamos toda la línea a lo largo de esa constelación de puntos en nuestra vista Leaflet
+  contactos[id].polyline = L.polyline(coordenadasLatLng, {
     color: color,
     weight: 4,
     opacity: 0.8,
     dashArray: '10, 10'
   }).bindTooltip("Ruta de " + nombre, { sticky: true }).addTo(mapa);
 
-  // Marcador en el punto de destino (último punto de la ruta)
-  if (latLngs.length > 0) {
-    const destino = latLngs[latLngs.length - 1];
-    const destIcon = L.divIcon({
+  // Consideramos seguro iterar si dicha ruta posee como mínimo un punto general de comienzo-final
+  if (coordenadasLatLng.length > 0) {
+    // Obtenemos el registro del último de sus puntos recibidos como su final verdadero del viaje
+    const destino = coordenadasLatLng[coordenadasLatLng.length - 1];
+    
+    // Creamos una nueva etiqueta gráfica Leaflet como meta, que le informa su nombre visual al usuario local
+    const iconoDestino = L.iconoDiv({
       className: 'contact-avatar-marker',
       html: `<div style="display:flex; flex-direction:column; align-items:center;">
                <div style="background:${color}; color:white; font-size:11px; font-weight:bold; padding:3px 8px; border-radius:8px; white-space:nowrap;">
@@ -366,7 +483,9 @@ function processContactRoute(id, routeData) {
       iconSize: [100, 30],
       iconAnchor: [50, 15]
     });
-    contactos[id].destMarker = L.marker(destino, { icon: destIcon }).addTo(mapa);
+    
+    // Lo fijamos y plasmamos su marca en nuestra propia sesión 
+    contactos[id].destMarker = L.marker(destino, { icon: iconoDestino }).addTo(mapa);
   }
 }
 
@@ -376,34 +495,55 @@ function processContactRoute(id, routeData) {
 
 // Elementos de AR
 const btnAR = document.getElementById("btnAR");                 // Botón de activar/desactivar AR
-const arContainer = document.getElementById("arContainer");     // Contenedor de AR
-const arVideo = document.getElementById("arVideo");             // Video de la cámara
-const arCanvas = document.getElementById("arCanvas");           // Canvas para dibujar sobre el video
+const contenedorAR = document.getElementById("contenedorAR");     // Contenedor de AR
+const videoAR = document.getElementById("videoAR");             // Video de la cámara
+const canvasAR = document.getElementById("canvasAR");           // Canvas para dibujar sobre el video
 
-const destinoInput = document.getElementById("destinoInput");   // Campo de texto del destino
+const inputDestino = document.getElementById("inputDestino");   // Campo de texto del destino
 const btnRuta = document.getElementById("btnRuta");             // Botón de calcular ruta
-const clickMode = document.getElementById("clickMode");         // Checkbox para elegir destino haciendo clic
-const shareLocationMode = document.getElementById("shareLocationMode"); // Checkbox para compartir ubicación
+const modoClic = document.getElementById("modoClic");         // Checkbox para elegir destino haciendo clic
+const modoCompartirUbicacion = document.getElementById("modoCompartirUbicacion"); // Checkbox para compartir ubicación
 const estadoRuta = document.getElementById("estadoRuta");       // Texto del estado de la ruta
 
 // Elementos del DOM del menú de pantalla completa
-const fullScreenMenu = document.getElementById("fullScreenMenu");     // Menú de pantalla completa
+const menuOpciones = document.getElementById("menuOpciones");     // Menú de pantalla completa
 const btnMenuToggle = document.getElementById("btnMenuToggle");       // Botón avatar para abrir menú
-const closeFullScreen = document.getElementById("closeFullScreen");   // Botón de cerrar menú
-const fsmAvatar = document.getElementById("fsmAvatar");               // Avatar grande del menú
-const fsmName = document.getElementById("fsmName");                   // Nombre en el menú
+const cerrarMenuOpciones = document.getElementById("cerrarMenuOpciones");   // Botón de cerrar menú
+const avatarMenu = document.getElementById("avatarMenu");               // Avatar grande del menú
+const nombreMenu = document.getElementById("nombreMenu");                   // Nombre en el menú
 const btnAvatarIcon = document.getElementById("btnAvatarIcon");       // Avatar pequeño en la barra flotante
 
 // Actualizar el avatar del botón flotante con el del usuario
 if (btnAvatarIcon) {
-  btnAvatarIcon.src = myAvatar;
+  btnAvatarIcon.src = miAvatar;
 }
 
-// Al cambiar el interruptor Multidispositivo
-shareLocationMode.addEventListener("change", () => {
-  if (shareLocationMode.checked) {
+/* Este evento reacciona cada vez que el usuario activa o desactiva el 
+  interruptor de Multidispositivo.
+  Hay que considerar dos frentes:
+  - Visual: Cambia el estilo y el texto del botón inferior de Compartir 
+  para dar un feedback visual claro en la pantalla de que estamos transmitiendo nuestra ubicación.
+  - Conexión: Al activarse, avisa inmediatamente a nuestro servidor emitiendo 
+  nuestra latitud, longitud, nombre y estado horario para que el resto de integrantes
+  de la sala puedan vernos. Si también estamos en medio de una ruta, emite
+  los puntos directos de esa ruta para que nuestros amigos vean exáctamente la línea que 
+  vamos a seguir. Viceversa, al desactivarse, solicita al servidor que nos borre furtivamente 
+  del mapa de los demás*/
+modoCompartirUbicacion.addEventListener("change", () => {
+  const btnCompartir = document.getElementById("compartirTarjetaRuta");
+  if (btnCompartir) {
+    if (modoCompartirUbicacion.checked) {
+      btnCompartir.classList.add("active");
+      btnCompartir.innerHTML = '<span class="material-symbols-outlined">share</span> Compartiendo';
+    } else {
+      btnCompartir.classList.remove("active");
+      btnCompartir.innerHTML = '<span class="material-symbols-outlined">share</span> Compartir';
+    }
+  }
+
+  if (modoCompartirUbicacion.checked) {
     if (miLatitud !== null && miLongitud !== null) {
-      socket.emit("shareLocation", { lat: miLatitud, lng: miLongitud, name: myName, avatar: myAvatar, eta: myETA });
+      socket.emit("shareLocation", { lat: miLatitud, lng: miLongitud, name: miNombre, avatar: miAvatar, eta: miETA });
     }
     if (coordenadasRuta.length > 0) {
       socket.emit("shareRoute", coordenadasRuta);
@@ -413,111 +553,97 @@ shareLocationMode.addEventListener("change", () => {
   }
 });
 
-// Abrir menú de pantalla completa
+/* Es el encargado de abrir el menú principal de usuario y opciones 
+  al pulsar sobre el su foto en la barra superior de la pantalla.
+  Para entender cómo funciona internamente, hay que tener en cuenta que el menú
+  es en una pantalla completa que inicialmente está oculta mediante la 
+  clase de CSS oculto. Cada vez que el redondel es pulsado:
+  - Reseteamos y sincronizamos forzosamente toda la información del menú superior 
+  - Eliminamos la clase oculto para que la capa transparente y 
+  nuestro reluciente panel de configuración deslicen y se apropien de la pantalla. */
 btnMenuToggle.addEventListener("click", () => {
-  fsmAvatar.src = myAvatar;
-  fsmName.textContent = myName;
-  btnAvatarIcon.src = myAvatar;
-  fullScreenMenu.classList.remove("oculto");
+  avatarMenu.src = miAvatar;
+  nombreMenu.textContent = miNombre;
+  btnAvatarIcon.src = miAvatar;
+  menuOpciones.classList.remove("oculto");
 });
 
 // Cerrar menú de pantalla completa
-closeFullScreen.addEventListener("click", () => {
-  fullScreenMenu.classList.add("oculto");
+cerrarMenuOpciones.addEventListener("click", () => {
+  menuOpciones.classList.add("oculto");
 });
 
 // =========================
 // TARJETA INFERIOR DE RUTA
 // =========================
 
-const routeCard = document.getElementById("routeCard");
-const routeCardTime = document.getElementById("routeCardTime");
-const routeCardDist = document.getElementById("routeCardDist");
-const routeCardStep = document.getElementById("routeCardStep");
-const routeCardClose = document.getElementById("routeCardClose");
-const routeCardShare = document.getElementById("routeCardShare");
-const routeCardAR = document.getElementById("routeCardAR");
-const routeCardGo = document.getElementById("routeCardGo");
-const routeCardNav = document.getElementById("routeCardNav");
-const routeCardPrev = document.getElementById("routeCardPrev");
-const routeCardNext = document.getElementById("routeCardNext");
-const btnRecenter = document.getElementById("btnRecenter");
+const tarjetaRuta = document.getElementById("tarjetaRuta");
+const tiempoTarjetaRuta = document.getElementById("tiempoTarjetaRuta");
+const distanciaTarjetaRuta = document.getElementById("distanciaTarjetaRuta");
+const pasoTarjetaRuta = document.getElementById("pasoTarjetaRuta");
+const cerrarTarjetaRuta = document.getElementById("cerrarTarjetaRuta");
+const compartirTarjetaRuta = document.getElementById("compartirTarjetaRuta");
+const btnARTarjetaRuta = document.getElementById("btnARTarjetaRuta");
+const irTarjetaRuta = document.getElementById("irTarjetaRuta");
+function mostrarTarjetaRuta(distanciaKm, tiempoFormateado) {
+  tiempoTarjetaRuta.textContent = tiempoFormateado;
+  distanciaTarjetaRuta.textContent = `${distanciaKm} km`;
+  pasoTarjetaRuta.textContent = "Ruta lista. Pulsa Ir para empezar la navegación.";
 
-function showRouteCard(distKm, tiempoFormateado) {
-  routeCardTime.textContent = tiempoFormateado;
-  routeCardDist.textContent = `${distKm} km`;
-  routeCardStep.textContent = "Ruta lista. Pulsa Ir para empezar la navegación.";
-  routeCardNav.classList.add("oculto");
-  routeCard.classList.remove("oculto");
-  document.body.classList.add("route-card-visible");
+  if (modoCompartirUbicacion.checked) {
+    compartirTarjetaRuta.classList.add("active");
+    compartirTarjetaRuta.innerHTML = '<span class="material-symbols-outlined">share</span> Compartiendo';
+  } else {
+    compartirTarjetaRuta.classList.remove("active");
+    compartirTarjetaRuta.innerHTML = '<span class="material-symbols-outlined">share</span> Compartir';
+  }
+
+  tarjetaRuta.classList.remove("oculto");
+  document.body.classList.add("tarjeta-ruta-visible");
 }
 
-function hideRouteCard() {
-  routeCard.classList.add("oculto");
-  document.body.classList.remove("route-card-visible");
-  routeCardNav.classList.add("oculto");
-  routeCardShare.classList.remove("active");
+function ocultarTarjetaRuta() {
+  tarjetaRuta.classList.add("oculto");
+  document.body.classList.remove("tarjeta-ruta-visible");
+  compartirTarjetaRuta.classList.remove("active");
 }
 
 // Cerrar tarjeta de ruta → elimina la ruta
-routeCardClose.addEventListener("click", () => {
+cerrarTarjetaRuta.addEventListener("click", () => {
   eliminarRuta();
 });
 
 // Compartir desde la tarjeta
-routeCardShare.addEventListener("click", () => {
-  if (!shareLocationMode.checked) {
-    shareLocationMode.checked = true;
-    shareLocationMode.dispatchEvent(new Event("change"));
-    routeCardShare.classList.add("active");
-    routeCardShare.innerHTML = '<span class="material-symbols-outlined">share</span> Compartiendo';
-  } else {
-    shareLocationMode.checked = false;
-    shareLocationMode.dispatchEvent(new Event("change"));
-    routeCardShare.classList.remove("active");
-    routeCardShare.innerHTML = '<span class="material-symbols-outlined">share</span> Compartir';
-  }
+compartirTarjetaRuta.addEventListener("click", () => {
+    modoCompartirUbicacion.checked = !modoCompartirUbicacion.checked;
+    modoCompartirUbicacion.dispatchEvent(new Event("change"));
 });
 
 // AR desde la tarjeta
-routeCardAR.addEventListener("click", () => {
-  if (typeof ActivarDesactivarARMode === "function") {
-    ActivarDesactivarARMode();
+btnARTarjetaRuta.addEventListener("click", () => {
+  if (typeof toggleAR === "function") {
+    toggleAR();
   }
 });
 
-// Botón Ir → iniciar navegación paso a paso
-routeCardGo.addEventListener("click", () => {
+/* Este fragmento de código es el encargado de que, cuando un usuario decide que la ruta   
+  recién calculada del punto A al punto B es la correcta.
+  - Al pulsar el botón verde abajo , listener cerificará si la variable de las instrucciones está vacía. 
+  Si no hay, ignora sin más para no crear fallos.
+  - Si, por el contrario, sí encuentra un camino mejor, reinicia su progreso 
+  reiniciando a 0 el índice */
+irTarjetaRuta.addEventListener("click", () => {
   if (!instruccionesRuta.length) return;
   indicePasoActual = 0;
   mostrarPasoActual();
-  routeCardNav.classList.remove("oculto");
-  actualizarRouteCardStep();
-});
-
-// Navegación de pasos desde la tarjeta
-routeCardPrev.addEventListener("click", () => {
-  pasoAnterior();
-  actualizarRouteCardStep();
-});
-
-routeCardNext.addEventListener("click", () => {
-  siguientePaso();
-  actualizarRouteCardStep();
+  actualizarPasoTarjetaRuta();
 });
 
 // Sincronizar el step en la tarjeta inferior
-function actualizarRouteCardStep() {
+function actualizarPasoTarjetaRuta() {
   if (!instruccionesRuta.length || indicePasoActual < 0) return;
-  const inst = instruccionesRuta[indicePasoActual];
-  routeCardStep.innerHTML = `<strong>Paso ${indicePasoActual + 1}/${instruccionesRuta.length}</strong>: ${inst.text || ""} (~${Math.round(inst.distance || 0)} m)`;
-}
-
-// Botón flotante recentrar
-if (btnRecenter) {
-  btnRecenter.addEventListener("click", () => {
-    recentrarMapa();
-  });
+  const instruccion = instruccionesRuta[indicePasoActual];
+  pasoTarjetaRuta.innerHTML = `<strong>Paso ${indicePasoActual + 1}/${instruccionesRuta.length}</strong>: ${instruccion.text || ""} (~${Math.round(instruccion.distance || 0)} m)`;
 }
 
 // =========================
@@ -607,7 +733,7 @@ let rutaTerminada = false;
 let rumboObjetivoSuavizado = null;
 let anguloFlechaRenderizado = null;
 
-let currentMode = "2D";
+let modoActual = "2D";
 
 
 // =========================
@@ -640,8 +766,8 @@ if ("geolocation" in navigator) {
       }
 
       // Compartir ubicación si está activado
-      if (shareLocationMode.checked) {
-        socket.emit("shareLocation", { lat: miLatitud, lng: miLongitud, name: myName, avatar: myAvatar, eta: myETA });
+      if (modoCompartirUbicacion.checked) {
+        socket.emit("shareLocation", { lat: miLatitud, lng: miLongitud, name: miNombre, avatar: miAvatar, eta: miETA });
       }
 
       // Actualizamos el paso automático
@@ -675,7 +801,7 @@ if ("geolocation" in navigator) {
 // Evento que se ejecuta cuando se hace clic en el mapa
 mapa.on("click", (e) => {
   // Si no está activado el modo de clic, no hacemos nada
-  if (!clickMode.checked) return;
+  if (!modoClic.checked) return;
 
   // Guardamos las coordenadas del clic
   destinoClickLat = e.latlng.lat;
@@ -688,7 +814,7 @@ mapa.on("click", (e) => {
     // Si no existe, lo creamos
     marcadorDestino = L.marker(e.latlng, {
       icon: L.icon({
-        // Los marcadores los sacamos de internet
+        // Los marcadorespuestauesta los sacamos de internet
         iconUrl:
           "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
         shadowUrl:
@@ -727,8 +853,8 @@ function limpiarRuta() {
   }
 
   // Si existe el modo AR, lo desactivamos
-  if (typeof ActivarDesactivarARMode === "function" && typeof isARMode !== "undefined" && isARMode) {
-    ActivarDesactivarARMode();
+  if (typeof toggleAR === "function" && typeof isARMode !== "undefined" && isARMode) {
+    toggleAR();
   }
 
   // Si existe el botón AR, lo ocultamos
@@ -737,7 +863,7 @@ function limpiarRuta() {
   }
 
   // Ocultamos la tarjeta de ruta
-  hideRouteCard();
+  ocultarTarjetaRuta();
 
   // Si existe el marcador del paso actual, lo eliminamos
   if (marcadorPasoActual) {
@@ -756,11 +882,11 @@ function limpiarRuta() {
   anguloFlechaRenderizado = null; // Ángulo de la flecha renderizado
 
   // Actualizamos el estado de la ruta
-  stepBox.textContent = "No hay una ruta activa.";
-  myETA = null;
+  cajaPasos.textContent = "No hay una ruta activa.";
+  miETA = null;
   // Si estamos compartiendo posición, actualizamos que ya no tenemos ETA
-  if (shareLocationMode.checked && miLatitud !== null && miLongitud !== null) {
-    socket.emit("shareLocation", { lat: miLatitud, lng: miLongitud, name: myName, avatar: myAvatar, eta: myETA });
+  if (modoCompartirUbicacion.checked && miLatitud !== null && miLongitud !== null) {
+    socket.emit("shareLocation", { lat: miLatitud, lng: miLongitud, name: miNombre, avatar: miAvatar, eta: miETA });
   }
 }
 
@@ -779,7 +905,7 @@ function distanciaEnMetros(lat1, lon1, lat2, lon2) {
     Math.sin(dLon / 2) * Math.sin(dLon / 2);
   
   // Distancia en metros
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const contacto = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;    // Devuelve el producto del radio de la Tierra y el ángulo central en radianes
 }
 
@@ -831,7 +957,7 @@ function actualizarPasoAutomatico() {
       rutaTerminada = true;
       indicePasoActual = instruccionesRuta.length - 1;    // Actualizamos el índice del paso actual
       estadoRuta.textContent = "Has llegado al destino.";
-      stepBox.textContent = "Has llegado al destino.";
+      cajaPasos.textContent = "Has llegado al destino.";
       ultimoCambioAutomatico = ahora;                     // Actualizamos el tiempo del último cambio automático
       return;
     }
@@ -873,7 +999,7 @@ function actualizarPasoAutomatico() {
 function mostrarPasoActual() {
   // Si no hay instrucciones, mostramos un mensaje
   if (!instruccionesRuta.length) {
-    stepBox.textContent = "No hay instrucciones disponibles para esta ruta.";
+    cajaPasos.textContent = "No hay instrucciones disponibles para esta ruta.";
     return;
   }
   /* Esto de los indices se usa para que si por ejemplo estamos en el paso 2 
@@ -898,15 +1024,14 @@ function mostrarPasoActual() {
     `Distancia aproximada: ${Math.round((instruccion.distance || 0))} m`;
 
   // Usamos innerHTML para que se interpreten los saltos de línea
-  stepBox.innerHTML = textoPaso;
+  cajaPasos.innerHTML = textoPaso;
 
-   /* Este fragmento es el encargado de que la cámara del mapa se deslice automáticamente hacia
-    el lugar donde ocurre la instrucción. Para entender cómo funciona internamente, hay que tener cuenta 
-    que el trazador de rutas (Leaflet Routing Machine) nos devuelve dos listas separadas:
-    - instruccionesRuta: El listado de maniobras en texto (Gira a la derecha, Sigue recto 200m, etc.)
-    - coordenadasRuta: Un listado gigante de puntos GPS (Latitud y Longitud) de toda la línea azul dibujada en el mapa, punto por punto.
-    Cada vez que da una instrucción, suele venir con una propiedad llamada 'index' que nos indica en qué punto de la lista de coordenadas 
-    se encuentra esa instrucción.*/
+  /* Se encarga de que la cámara del mapa se deslice automáticamente hacia
+  el lugar donde ocurre la instrucción. El trazador de rutas nos devuelve dos listas separadas:
+  - instruccionesRuta: El listado de maniobras en texto (Gira a la derecha, Sigue recto 200m, etc.)
+  - coordenadasRuta: Un listado gigante de coordenadas GPS de toda la línea azul dibujada en el mapa, punto por punto.
+  Cada vez que da una instrucción, suele venir con una propiedad lamada index que nos indica en qué punto de la lista de coordenadas 
+  se encuentra esa instrucción.*/
 
     /* Este 'if' realiza 2 comprobaciones de seguridad:
      - Verifica que la propiedad 'index' traiga un número asociado a la instrucción
@@ -939,7 +1064,7 @@ function mostrarPasoActual() {
 function siguientePaso() {
   // Si no hay instrucciones, mostramos un mensaje
   if (!instruccionesRuta.length) {
-    stepBox.textContent =
+    cajaPasos.textContent =
       "No puedes avanzar pasos porque todavía no hay una ruta calculada.";
     return;
   }
@@ -957,7 +1082,7 @@ function siguientePaso() {
 function pasoAnterior() {
   // Si no hay instrucciones, mostramos un mensaje
   if (!instruccionesRuta.length) {
-    stepBox.textContent =
+    cajaPasos.textContent =
       "No puedes retroceder pasos porque todavía no hay una ruta calculada.";
     return;
   }
@@ -973,17 +1098,17 @@ function pasoAnterior() {
 
 // Función que cambia entre modo 2D y 3D
 function toggleModeVisual() {
-  if (currentMode === "2D") {
-    currentMode = "3D";
+  if (modoActual === "2D") {
+    modoActual = "3D";
     document.body.classList.remove("modo-2d");
     document.body.classList.add("modo-3d");
   } else {
-    currentMode = "2D";
+    modoActual = "2D";
     document.body.classList.remove("modo-3d");
     document.body.classList.add("modo-2d");
   }
 
-  modeStatus.textContent = `Modo: ${currentMode}`;
+  estadoModo.textContent = `Modo: ${modoActual}`;
 
   setTimeout(() => {
     mapa.invalidateSize();
@@ -1015,7 +1140,7 @@ function recentrarMapa() {
 function eliminarRuta() {
     // Si no hay ruta que se esté mostrando, avisamos
     if (!controlRuta) {
-        stepBox.innerHTML = "No puedes eliminar la ruta porque todavía no hay una activa.";
+        cajaPasos.innerHTML = "No puedes eliminar la ruta porque todavía no hay una activa.";
         return;
     }
 
@@ -1031,12 +1156,12 @@ function eliminarRuta() {
     }
 
     // Actualizamos el texto de la caja de información
-    stepBox.innerHTML = "Ruta eliminada.";
+    cajaPasos.innerHTML = "Ruta eliminada.";
     estadoRuta.textContent = "Ruta eliminada. Elige un nuevo destino.";
 }
 
 // Asignamos la funcionalidad a cada botón del menú usando su atributo data-event
-document.querySelectorAll(".fsm-action-btn").forEach(boton => {
+document.querySelectorAll(".btn-control-menu").forEach(boton => {
     boton.addEventListener("click", () => {
         const evento = boton.getAttribute("data-event");
 
@@ -1057,8 +1182,6 @@ document.querySelectorAll(".fsm-action-btn").forEach(boton => {
                 eliminarRuta();
                 break;
         }
-        // Cerrar el menú tras la acción para volver al mapa
-        fullScreenMenu.classList.add("oculto");
     });
 });
 
@@ -1070,6 +1193,18 @@ document.querySelectorAll(".fsm-action-btn").forEach(boton => {
 // =========================
 
 // Función que calcula la ruta
+/* Este bloque es el corazón incansable del motor de recolección inicial y la barra de búsqueda superior,
+   y es el encargado absoluto de arrancar toda la operativa cada vez que un usuario decide que "ahí va a ir".
+   Para entender cómo funciona internamente y cómo controla el flujo inicial al pulsar 
+   enter en la caja de destino o el botón de lupa, hace falta tener en cuenta que necesitamos
+   evaluar a toda costa si tenemos algo desde dónde partir. Sigue un escalafón estricto de sentencias:
+    - 1. Si no nos está llegando señal activa de ubicación GPS en la matriz de estado local 
+      ('miLatitud' en nulo), la maquinaria nos deniega drásticamente un cálculo y aborta (su return final).
+    - 2. Suponiendo que hay conexión con nosotros, empieza por desbrozar y quitar los espacios en blanco
+      accidentales que pudiera haber en el destino textual escrito en la barra ('inputDestino.value.trim').
+    - 3. Evalúa si de modo contrario, un usuario ha estado marcando una chincheta roja con el dedo 
+      al pulsar por el mapa (su 'modoClic.checked' está activo), para dar a esas coordenadas absolutas 
+      prioridad abrumadora de destino frente a buscar algo en el propio servidor de mapas en un segundo. */
 async function calcularRuta() {
   // Si no se conoce la posición actual, se muestra un mensaje
   if (miLatitud === null || miLongitud === null) {
@@ -1077,8 +1212,8 @@ async function calcularRuta() {
     return;
   }
 
-  const destino = destinoInput.value.trim();  // Obtenemos el destino del input
-  const usarClic = clickMode.checked;         // Obtenemos si se está usando el modo clic
+  const destino = inputDestino.value.trim();  // Obtenemos el destino del input
+  const usarClic = modoClic.checked;         // Obtenemos si se está usando el modo clic
 
   // Variables para almacenar las coordenadas y el nombre del destino
   let destLat;
@@ -1098,30 +1233,30 @@ async function calcularRuta() {
     y obtener sus coordenadas. Para entender cómo funciona internamente, 
     hay que tener cuenta que Nominatim es un servicio de geocodificación que 
     nos devuelve un listado de coordenadas para una búsqueda dada, ya que el sistema
-    no entiende de nombres de lugares. Por lo tanto, necesitamos convertir el nombre 
+    no entiende de nombrespuestauesta de lugares. Por lo tanto, necesitamos convertir el nombre 
     del destino en coordenadas para poder calcular la ruta.*/
     try {
       /*Construimos la URL para hacer la petición a Nominatim. 
-      format=json indica que queremos la respuesta en formato JSON.
+      format=json indica que queremos la respuestauesta en formato JSON.
       q=${encodeURIComponent(destino)} sirve para codificar el destino y que se pueda enviar por URL.
       limit=1 indica que queremos solo un resultado*/
-      const geoUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(destino)}&limit=1`;
-      // Hacemos la petición a Nominatim y usamos await para obligar al programa a esperar la respuesta
-      const geoRes = await fetch(geoUrl);
-      // Convertimos la respuesta a JSON
-      const geoData = await geoRes.json();
+      const urlGeo = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(destino)}&limit=1`;
+      // Hacemos la petición a Nominatim y usamos await para obligar al programa a esperar la respuestauesta
+      const respuestaGeo = await fetch(urlGeo);
+      // Convertimos la respuestauesta a JSON
+      const datosGeo = await respuestaGeo.json();
 
       // Si Nominatim no encuentra nada, nos lo dice y no seguimos
-      if (geoData.length === 0) {
+      if (datosGeo.length === 0) {
         estadoRuta.textContent =
           "No se encontró ese destino. Intenta ser más específico.";
         return;
       }
 
       // Si Nominatim encuentra algo, guardamos latitud, longitud y nombre del destino
-      destLat = parseFloat(geoData[0].lat);
-      destLon = parseFloat(geoData[0].lon);     // parseFloat convierte el texto en número
-      destNombre = geoData[0].display_name;     // Guardamos el nombre del destino
+      destLat = parseFloat(datosGeo[0].lat);
+      destLon = parseFloat(datosGeo[0].lon);     // parseFloat convierte el texto en número
+      destNombre = datosGeo[0].display_name;     // Guardamos el nombre del destino
 
     } catch (error) {
       // Si falla la petición
@@ -1196,39 +1331,39 @@ async function calcularRuta() {
     rutaTerminada = false;
 
     // Calculamos distancia y tiempo
-    const distKm = (ruta.summary.totalDistance / 1000).toFixed(1);
-    const totalMinutos = Math.round(ruta.summary.totalTime / 60);
+    const distanciaKm = (ruta.summary.totalDistance / 1000).toFixed(1);
+    const minutosTotales = Math.round(ruta.summary.totalTime / 60);
 
     let tiempoFormateado = "";
-    if (totalMinutos < 60) {
-      tiempoFormateado = `${totalMinutos} min`;
-    } else if (totalMinutos < 1440) {
-      const horas = Math.floor(totalMinutos / 60);
-      const minRestantes = totalMinutos % 60;
-      tiempoFormateado = `${horas} h ${minRestantes} min`;
+    if (minutosTotales < 60) {
+      tiempoFormateado = `${minutosTotales} min`;
+    } else if (minutosTotales < 1440) {
+      const horas = Math.floor(minutosTotales / 60);
+      const minutosRestantes = minutosTotales % 60;
+      tiempoFormateado = `${horas} h ${minutosRestantes} min`;
     } else {
-      const dias = Math.floor(totalMinutos / 1440);
-      const horasRestantes = Math.floor((totalMinutos % 1440) / 60);
+      const dias = Math.floor(minutosTotales / 1440);
+      const horasRestantes = Math.floor((minutosTotales % 1440) / 60);
       tiempoFormateado = `${dias} d ${horasRestantes} h`;
     }
 
-    myETA = `Llega en ${tiempoFormateado} (${distKm} km)`;
-    if (shareLocationMode.checked && miLatitud !== null && miLongitud !== null) {
-        socket.emit("shareLocation", { lat: miLatitud, lng: miLongitud, name: myName, avatar: myAvatar, eta: myETA });
+    miETA = `Llega en ${tiempoFormateado} (${distanciaKm} km)`;
+    if (modoCompartirUbicacion.checked && miLatitud !== null && miLongitud !== null) {
+        socket.emit("shareLocation", { lat: miLatitud, lng: miLongitud, name: miNombre, avatar: miAvatar, eta: miETA });
     }
 
-    estadoRuta.textContent = `Ruta calculada: ${distKm} km, ~${tiempoFormateado} a pie.`;
+    estadoRuta.textContent = `Ruta calculada: ${distanciaKm} km, ~${tiempoFormateado} a pie.`;
 
     // Activamos la opción de AR en el menú full-screen
     btnAR.classList.remove("oculto");
 
     // Compartir ruta si está activado
-    if (shareLocationMode.checked) {
+    if (modoCompartirUbicacion.checked) {
       socket.emit("shareRoute", coordenadasRuta);
     }
 
     // Mostramos la tarjeta inferior de ruta con Compartir / AR / Ir
-    showRouteCard(distKm, tiempoFormateado);
+    mostrarTarjetaRuta(distanciaKm, tiempoFormateado);
 
     // Mostramos el primer paso
     mostrarPasoActual();
@@ -1251,7 +1386,7 @@ async function calcularRuta() {
 btnRuta.addEventListener("click", calcularRuta);
 
 // Evento que se ejecuta cuando se presiona una tecla en el campo de destino
-destinoInput.addEventListener("keydown", (e) => {
+inputDestino.addEventListener("keydown", (e) => {
   // Si la tecla presionada es Enter, se calcula la ruta
   if (e.key === "Enter") {
     calcularRuta();
