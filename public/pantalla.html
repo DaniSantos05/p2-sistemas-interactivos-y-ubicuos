@@ -19,6 +19,7 @@
 
   <!-- Estilos de Leaflet Routing Machine -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
 
   <!-- Google Material Symbols (iconos vectoriales gratuitos) -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
@@ -33,6 +34,7 @@
     <video id="videoAR" autoplay playsinline></video>     <!-- Video de la cámara -->
     <canvas id="canvasAR"></canvas>                       <!-- Canvas para dibujar sobre el video -->
   </div>
+  <div id="panelPasoAR" class="panel-paso-ar oculto">Sigue la ruta para ver pasos.</div>
 
   <!-- Interfaz Flotante Superior -->
   <div class="top-floating-ui">
@@ -41,6 +43,7 @@
       <button id="btnRuta" class="btn-search-modern">
         <span class="material-symbols-outlined">search</span>
       </button>
+      <div id="sugerenciasDestino" class="sugerencias-destino oculto"></div>
     </div>
     
     <button id="btnMenuToggle" class="profile-toggle-btn">
@@ -71,6 +74,10 @@
        <button class="btn-control-flotante" onclick="if(typeof cambiarCapa === 'function') cambiarCapa()" title="Capas">
          <span class="material-symbols-outlined">layers</span>
        </button>
+       <!-- Modo 3D -->
+       <button class="btn-control-flotante" onclick="if(typeof toggleModeVisual === 'function') toggleModeVisual()" title="Modo 3D">
+         <span class="material-symbols-outlined">3d_rotation</span>
+       </button>
      </div>
    </div>
 
@@ -94,6 +101,14 @@
           <h3>Ruta Actual</h3>
           <div id="estadoRuta" class="texto-estado">Obteniendo tu ubicación...</div>
           <div id="cajaPasos" class="caja-pasos">Todavía no hay una ruta calculada.</div>
+          <label class="interruptor-menu">
+            <input type="checkbox" id="modoContadorPasos">
+            <div class="interruptor-menu-slider"></div>
+            Contador de pasos
+          </label>
+          <div id="resumenContadorRuta" class="resumen-contador-ruta">
+            Pasos: 0 · Calorías: 0 kcal
+          </div>
           
           <label class="interruptor-menu">
             <input type="checkbox" id="modoClic">
@@ -116,6 +131,23 @@
             <p class="no-contacts-msg" style="color: #bbb;">Activa compartir para ver contactos.</p>
           </div>
         </div>
+
+        <div class="seccion-menu">
+          <h3>Actividad de rutas</h3>
+          <div class="actividad-filtros">
+            <button class="btn-control-menu btn-filtro-actividad activo" data-period="day">Día</button>
+            <button class="btn-control-menu btn-filtro-actividad" data-period="week">Semana</button>
+            <button class="btn-control-menu btn-filtro-actividad" data-period="month">Mes</button>
+          </div>
+          <div id="actividadTotales" class="actividad-totales">
+            <p>Pasos: 0</p>
+            <p>Calorías: 0 kcal</p>
+            <p>Rutas: 0</p>
+          </div>
+          <div id="actividadHistorial" class="actividad-historial">
+            <p class="no-contacts-msg">Aún no hay actividad guardada.</p>
+          </div>
+        </div>
         
       </div>
     </div>
@@ -130,6 +162,7 @@
 
   <!-- Contenedor del mapa -->
   <div id="mapa"></div>
+  <div id="mapa3d"></div>
 
   <!-- Tarjeta inferior de ruta (aparece tras calcular ruta) -->
   <div id="tarjetaRuta" class="tarjeta-ruta oculto">
@@ -196,6 +229,7 @@
 
   <!-- Cliente de Socket.IO -->
   <script src="/socket.io/socket.io.js"></script>
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 
   <!-- Nuestros JS -->
   <script src="/js/pantalla.js"></script>

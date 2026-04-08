@@ -70,6 +70,33 @@ function saveUsers(users) {
   fs.writeFileSync(usersFile, JSON.stringify(users, null, 2));
 }
 
+function obtenerClaveSemanaISO(fecha) {
+  const d = new Date(Date.UTC(fecha.getFullYear(), fecha.getMonth(), fecha.getDate()));
+  const diaNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - diaNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
+}
+
+function obtenerClavePeriodo(fechaISO, periodo) {
+  const fecha = new Date(fechaISO);
+  if (Number.isNaN(fecha.getTime())) return null;
+  const year = fecha.getFullYear();
+  const month = String(fecha.getMonth() + 1).padStart(2, "0");
+  const day = String(fecha.getDate()).padStart(2, "0");
+
+  if (periodo === "month") return `${year}-${month}`;
+  if (periodo === "week") return obtenerClaveSemanaISO(fecha);
+  return `${year}-${month}-${day}`;
+}
+
+function normalizarHistorialActividad(user) {
+  if (!Array.isArray(user.activityHistory)) {
+    user.activityHistory = [];
+  }
+}
+
 app.post("/api/register", (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) return res.status(400).json({ error: "Faltan datos" });
@@ -144,6 +171,74 @@ app.post("/api/friend", (req, res) => {
   }
 
   res.json({ success: true, friends: user.friends });
+});
+
+app.post("/api/activity", (req, res) => {
+  const { username, steps, calories, distanceKm, startedAt, endedAt, destination } = req.body;
+  if (!username) return res.status(400).json({ error: "Falta username" });
+
+  const users = loadUsers();
+  const user = users.find(u => u.username === username);
+  if (!user) return res.status(404).json({ error: "Usuario no encontrado" });
+
+  normalizarHistorialActividad(user);
+  const nuevaActividad = {
+    createdAt: new Date().toISOString(),
+    startedAt: startedAt || null,
+    endedAt: endedAt || new Date().toISOString(),
+    destination: destination || "Ruta",
+    steps: Math.max(0, parseInt(steps, 10) || 0),
+    calories: Math.max(0, parseInt(calories, 10) || 0),
+    distanceKm: Math.max(0, Number(distanceKm) || 0)
+  };
+
+  if (nuevaActividad.steps === 0 && nuevaActividad.calories === 0) {
+    return res.status(400).json({ error: "Actividad sin datos" });
+  }
+
+  user.activityHistory.push(nuevaActividad);
+  saveUsers(users);
+  res.json({ success: true });
+});
+
+app.get("/api/activity", (req, res) => {
+  const { username, period = "day" } = req.query;
+  if (!username) return res.status(400).json({ error: "Falta username" });
+
+  const users = loadUsers();
+  const user = users.find(u => u.username === username);
+  if (!user) return res.status(404).json({ error: "Usuario no encontrado" });
+
+  normalizarHistorialActividad(user);
+  const activities = user.activityHistory;
+  const groupsMap = new Map();
+  const totals = { steps: 0, calories: 0, routes: 0 };
+
+  activities.forEach((a) => {
+    const refDate = a.endedAt || a.createdAt;
+    const key = obtenerClavePeriodo(refDate, period);
+    if (!key) return;
+    if (!groupsMap.has(key)) {
+      groupsMap.set(key, { key, steps: 0, calories: 0, routes: 0, distanceKm: 0 });
+    }
+
+    const group = groupsMap.get(key);
+    const pasos = Math.max(0, parseInt(a.steps, 10) || 0);
+    const cals = Math.max(0, parseInt(a.calories, 10) || 0);
+    const distance = Math.max(0, Number(a.distanceKm) || 0);
+
+    group.steps += pasos;
+    group.calories += cals;
+    group.routes += 1;
+    group.distanceKm += distance;
+
+    totals.steps += pasos;
+    totals.calories += cals;
+    totals.routes += 1;
+  });
+
+  const groups = Array.from(groupsMap.values()).sort((a, b) => b.key.localeCompare(a.key));
+  res.json({ totals, groups });
 });
 
 

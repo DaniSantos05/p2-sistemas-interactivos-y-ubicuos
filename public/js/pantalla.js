@@ -512,6 +512,12 @@ const inputDestino = document.getElementById("inputDestino");   // Campo de text
 const btnRuta = document.getElementById("btnRuta");             // Botón de calcular ruta
 const modoClic = document.getElementById("modoClic");         // Checkbox para elegir destino haciendo clic
 const modoCompartirUbicacion = document.getElementById("modoCompartirUbicacion"); // Checkbox para compartir ubicación
+const modoContadorPasos = document.getElementById("modoContadorPasos");
+const resumenContadorRuta = document.getElementById("resumenContadorRuta");
+const actividadTotales = document.getElementById("actividadTotales");
+const actividadHistorial = document.getElementById("actividadHistorial");
+const botonesFiltroActividad = document.querySelectorAll(".btn-filtro-actividad");
+const sugerenciasDestino = document.getElementById("sugerenciasDestino");
 const estadoRuta = document.getElementById("estadoRuta");       // Texto del estado de la ruta
 
 // Elementos del DOM del menú de pantalla completa
@@ -562,6 +568,20 @@ modoCompartirUbicacion.addEventListener("change", () => {
   }
 });
 
+if (modoClic) {
+  modoClic.addEventListener("change", () => {
+    if (modoClic.checked) {
+      // El menú tapa el mapa: cerramos para que el toque llegue al mapa.
+      if (menuOpciones) {
+        menuOpciones.classList.add("oculto");
+      }
+      estadoRuta.textContent = "Modo clic activado. Toca el mapa para seleccionar el destino.";
+      return;
+    }
+    estadoRuta.textContent = "Modo clic desactivado. Puedes escribir destino en el buscador.";
+  });
+}
+
 /* Es el encargado de abrir el menú principal de usuario y opciones 
   al pulsar sobre el su foto en la barra superior de la pantalla.
   Para entender cómo funciona internamente, hay que tener en cuenta que el menú
@@ -575,6 +595,7 @@ btnMenuToggle.addEventListener("click", () => {
   nombreMenu.textContent = miNombre;
   btnAvatarIcon.src = miAvatar;
   menuOpciones.classList.remove("oculto");
+  cargarActividad(periodoActividadActual);
 });
 
 // Cerrar menú de pantalla completa
@@ -593,10 +614,23 @@ const tarjetaRuta = document.getElementById("tarjetaRuta");
 const tiempoTarjetaRuta = document.getElementById("tiempoTarjetaRuta");
 const distanciaTarjetaRuta = document.getElementById("distanciaTarjetaRuta");
 const pasoTarjetaRuta = document.getElementById("pasoTarjetaRuta");
+const panelPasoAR = document.getElementById("panelPasoAR");
 const cerrarTarjetaRuta = document.getElementById("cerrarTarjetaRuta");
 const compartirTarjetaRuta = document.getElementById("compartirTarjetaRuta");
 const btnARTarjetaRuta = document.getElementById("btnARTarjetaRuta");
 const irTarjetaRuta = document.getElementById("irTarjetaRuta");
+
+function actualizarBotonIrCancelar() {
+  if (!irTarjetaRuta) return;
+  if (navegacionIniciada) {
+    irTarjetaRuta.classList.add("tarjeta-ruta-btn-cancel");
+    irTarjetaRuta.innerHTML = '<span class="material-symbols-outlined">close</span> Cancelar ruta';
+  } else {
+    irTarjetaRuta.classList.remove("tarjeta-ruta-btn-cancel");
+    irTarjetaRuta.innerHTML = '<span class="material-symbols-outlined">navigation</span> Ir';
+  }
+}
+
 function mostrarTarjetaRuta(distanciaKm, tiempoFormateado) {
   tiempoTarjetaRuta.textContent = tiempoFormateado;
   distanciaTarjetaRuta.textContent = `${distanciaKm} km`;
@@ -612,6 +646,7 @@ function mostrarTarjetaRuta(distanciaKm, tiempoFormateado) {
 
   tarjetaRuta.classList.remove("oculto");
   document.body.classList.add("tarjeta-ruta-visible");
+  actualizarBotonIrCancelar();
 }
 
 function ocultarTarjetaRuta() {
@@ -646,16 +681,69 @@ btnARTarjetaRuta.addEventListener("click", () => {
   reiniciando a 0 el índice */
 irTarjetaRuta.addEventListener("click", () => {
   if (!instruccionesRuta.length) return;
+  if (navegacionIniciada) {
+    eliminarRuta();
+    return;
+  }
+  navegacionIniciada = true;
+  actualizarBotonIrCancelar();
   indicePasoActual = 0;
+  if (modoContadorPasos && modoContadorPasos.checked) {
+    iniciarSesionContadorRuta();
+  }
   mostrarPasoActual();
   actualizarPasoTarjetaRuta();
 });
 
 // Sincronizar el step en la tarjeta inferior
+function traducirInstruccionRuta(texto) {
+  if (!texto) return "Sin texto disponible";
+  let t = texto;
+  const reemplazos = [
+    [/\bHead north\b/gi, "Dirígete al norte"],
+    [/\bHead south\b/gi, "Dirígete al sur"],
+    [/\bHead east\b/gi, "Dirígete al este"],
+    [/\bHead west\b/gi, "Dirígete al oeste"],
+    [/\bHead northeast\b/gi, "Dirígete al noreste"],
+    [/\bHead northwest\b/gi, "Dirígete al noroeste"],
+    [/\bHead southeast\b/gi, "Dirígete al sureste"],
+    [/\bHead southwest\b/gi, "Dirígete al suroeste"],
+    [/\bTurn left\b/gi, "Gira a la izquierda"],
+    [/\bTurn right\b/gi, "Gira a la derecha"],
+    [/\bContinue\b/gi, "Continúa"],
+    [/\bKeep left\b/gi, "Mantente a la izquierda"],
+    [/\bKeep right\b/gi, "Mantente a la derecha"],
+    [/\bAt the roundabout\b/gi, "En la rotonda"],
+    [/\bTake the (\d+)(st|nd|rd|th) exit\b/gi, "toma la salida $1"],
+    [/\bDestination reached\b/gi, "Has llegado al destino"],
+    [/\bYou have arrived\b/gi, "Has llegado"],
+    [/\bonto\b/gi, "hacia"],
+    [/\bon\b/gi, "en"],
+    [/\btowards\b/gi, "hacia"]
+  ];
+  reemplazos.forEach(([pattern, valor]) => {
+    t = t.replace(pattern, valor);
+  });
+  return t;
+}
+
 function actualizarPasoTarjetaRuta() {
   if (!instruccionesRuta.length || indicePasoActual < 0) return;
   const instruccion = instruccionesRuta[indicePasoActual];
-  pasoTarjetaRuta.innerHTML = `<strong>Paso ${indicePasoActual + 1}/${instruccionesRuta.length}</strong>: ${instruccion.text || ""} (~${Math.round(instruccion.distance || 0)} m)`;
+  const textoInstruccion = traducirInstruccionRuta(instruccion.text || "");
+  pasoTarjetaRuta.innerHTML = `<strong>Paso ${indicePasoActual + 1}/${instruccionesRuta.length}</strong>: ${textoInstruccion} (~${Math.round(instruccion.distance || 0)} m)`;
+  actualizarPanelPasoAR();
+}
+
+function actualizarPanelPasoAR() {
+  if (!panelPasoAR) return;
+  const enModoAR = (typeof isARMode !== "undefined" && isARMode);
+  if (enModoAR && modoContadorPasos && modoContadorPasos.checked && navegacionIniciada && sesionPasosActiva) {
+    panelPasoAR.classList.remove("oculto");
+    panelPasoAR.innerHTML = `<strong>Contador</strong><br>Pasos: ${pasosSesionActual} · ${caloriasSesionActual} kcal`;
+    return;
+  }
+  panelPasoAR.classList.add("oculto");
 }
 
 
@@ -699,6 +787,116 @@ const mapa = L.map("mapa", {
   zoomControl: false
 });
 
+let mapa3d = null;
+let marcadorUsuario3D = null;
+let marcadorDestino3D = null;
+let ultimoUpdateVista3D = 0;
+let pausaAutoCentrado3DHasta = 0;
+let pausaAutoCentrado2DHasta = 0;
+
+function pausarAutoCentrado(milisegundos = 6000) {
+  const hasta = Date.now() + milisegundos;
+  pausaAutoCentrado2DHasta = hasta;
+  pausaAutoCentrado3DHasta = Math.max(pausaAutoCentrado3DHasta, hasta);
+}
+
+function initMapa3D() {
+  if (mapa3d || typeof maplibregl === "undefined") return;
+  mapa3d = new maplibregl.Map({
+    container: "mapa3d",
+    style: "https://tiles.openfreemap.org/styles/liberty",
+    center: [mapa.getCenter().lng, mapa.getCenter().lat],
+    zoom: mapa.getZoom(),
+    pitch: 64,
+    bearing: 0,
+    antialias: false,
+    renderWorldCopies: false
+  });
+
+  mapa3d.on("load", () => {
+    mapa3d.addControl(new maplibregl.NavigationControl(), "top-right");
+
+    // Si el usuario manipula el mapa (zoom/drag/rotación), pausamos el auto-centrado
+    // para evitar la sensación de "mapa loco" en móvil.
+    const pausarAutoCentrado = () => {
+      pausarAutoCentrado(6000);
+    };
+    mapa3d.on("movestart", pausarAutoCentrado);
+    mapa3d.on("zoomstart", pausarAutoCentrado);
+    mapa3d.on("rotatestart", pausarAutoCentrado);
+    mapa3d.on("pitchstart", pausarAutoCentrado);
+
+    if (!mapa3d.getSource("terrainSource")) {
+      mapa3d.addSource("terrainSource", {
+        type: "raster-dem",
+        tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
+        encoding: "terrarium",
+        tileSize: 256,
+        maxzoom: 14
+      });
+    }
+    mapa3d.setTerrain({ source: "terrainSource", exaggeration: 1.6 });
+
+    mapa3d.on("click", (ev) => {
+      if (!ev || !ev.lngLat) return;
+      seleccionarDestinoEnMapa(ev.lngLat.lat, ev.lngLat.lng);
+    });
+
+    if (!mapa3d.getSource("route3d")) {
+      mapa3d.addSource("route3d", {
+        type: "geojson",
+        data: { type: "Feature", geometry: { type: "LineString", coordinates: [] } }
+      });
+      mapa3d.addLayer({
+        id: "route3d-layer",
+        type: "line",
+        source: "route3d",
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: { "line-color": "#1f6feb", "line-width": 5 }
+      });
+    }
+    syncMapa3D();
+  });
+}
+
+function syncMapa3D() {
+  if (!mapa3d || modoActual !== "3D") return;
+
+  if (miLatitud !== null && miLongitud !== null) {
+    if (!marcadorUsuario3D) {
+      marcadorUsuario3D = new maplibregl.Marker({ color: "#2563eb" })
+        .setLngLat([miLongitud, miLatitud])
+        .addTo(mapa3d);
+    } else {
+      marcadorUsuario3D.setLngLat([miLongitud, miLatitud]);
+    }
+  }
+
+  if (destinoClickLat !== null && destinoClickLon !== null) {
+    if (!marcadorDestino3D) {
+      marcadorDestino3D = new maplibregl.Marker({ color: "#ef4444" })
+        .setLngLat([destinoClickLon, destinoClickLat])
+        .addTo(mapa3d);
+    } else {
+      marcadorDestino3D.setLngLat([destinoClickLon, destinoClickLat]);
+    }
+  } else if (marcadorDestino3D) {
+    marcadorDestino3D.remove();
+    marcadorDestino3D = null;
+  }
+
+  const src = mapa3d.getSource("route3d");
+  if (src) {
+    src.setData({
+      type: "Feature",
+      geometry: {
+        type: "LineString",
+        coordinates: coordenadasRuta.map((pt) => [pt.lng, pt.lat])
+      }
+    });
+  }
+}
+
 
 
 
@@ -723,6 +921,17 @@ let instruccionesRuta = [];   // Ruta e instrucciones actuales
 let coordenadasRuta = [];     // Coordenadas de la ruta actual
 let indicePasoActual = -1;    // Índice del paso actual
 let marcadorPasoActual = null; // Marcador visual (punto azul) del paso actual
+let navegacionIniciada = false; // Se activa al pulsar "Ir"
+let periodoActividadActual = "day";
+
+let sesionPasosActiva = false;
+let sesionPasosGuardada = false;
+let pasosSesionActual = 0;
+let caloriasSesionActual = 0;
+let distanciaSesionMetros = 0;
+let posicionAnteriorSesion = null;
+let inicioSesionISO = null;
+let destinoSesionNombre = "";
 
 
 
@@ -749,6 +958,36 @@ let rumboObjetivoSuavizado = null;
 let anguloFlechaRenderizado = null;
 
 let modoActual = "2D";
+
+function actualizarVista3D() {
+  if (modoActual !== "3D") return;
+  initMapa3D();
+  if (!mapa3d || miLatitud === null || miLongitud === null) return;
+  if (Date.now() < pausaAutoCentrado3DHasta) return;
+  const ahora = Date.now();
+  if (ahora - ultimoUpdateVista3D < 900) return;
+  ultimoUpdateVista3D = ahora;
+
+  let bearing = mapa3d.getBearing();
+  const puntoRef = obtenerPuntoDeInstruccion(indicePasoActual + 1) || obtenerPuntoDeInstruccion(indicePasoActual);
+  if (puntoRef) {
+    const targetBearing = calcularRumbo(miLatitud, miLongitud, puntoRef.lat, puntoRef.lng);
+    const delta = ((targetBearing - bearing + 540) % 360) - 180;
+    bearing += delta * 0.2;
+  }
+
+  mapa3d.jumpTo({
+    center: [miLongitud, miLatitud],
+    zoom: Math.max(mapa.getZoom(), 15.5),
+    pitch: 58,
+    bearing
+  });
+  syncMapa3D();
+}
+
+// Si el usuario manipula el mapa 2D, pausamos auto-centrado temporalmente.
+mapa.on("movestart", () => pausarAutoCentrado(6000));
+mapa.on("zoomstart", () => pausarAutoCentrado(6000));
 
 
 // =========================
@@ -785,6 +1024,10 @@ if ("geolocation" in navigator) {
         socket.emit("shareLocation", { lat: miLatitud, lng: miLongitud, name: miNombre, avatar: miAvatar, eta: miETA });
       }
 
+      actualizarContadorRutaConGPS();
+      syncMapa3D();
+      actualizarVista3D();
+
       // Actualizamos el paso automático
       actualizarPasoAutomatico();
     },
@@ -813,21 +1056,26 @@ if ("geolocation" in navigator) {
 // SELECCIÓN DE DESTINO CON CLIC
 // =========================
 
-// Evento que se ejecuta cuando se hace clic en el mapa
-mapa.on("click", (e) => {
+function seleccionarDestinoEnMapa(lat, lng) {
   // Si no está activado el modo de clic, no hacemos nada
   if (!modoClic.checked) return;
+  // Mientras estás en navegación ("Ir"), no dejamos recalcular por clic.
+  if (navegacionIniciada) {
+    estadoRuta.textContent = "Ya estás en navegación. Cancela la ruta actual para elegir otro destino.";
+    return;
+  }
 
   // Guardamos las coordenadas del clic
-  destinoClickLat = e.latlng.lat;
-  destinoClickLon = e.latlng.lng;
+  destinoClickLat = lat;
+  destinoClickLon = lng;
+  const latlngLeaflet = L.latLng(destinoClickLat, destinoClickLon);
 
   // Si existe el marcador de destino, lo actualizamos
   if (marcadorDestino) {
-    marcadorDestino.setLatLng(e.latlng);
+    marcadorDestino.setLatLng(latlngLeaflet);
   } else {
     // Si no existe, lo creamos
-    marcadorDestino = L.marker(e.latlng, {
+    marcadorDestino = L.marker(latlngLeaflet, {
       icon: L.icon({
         // Los marcadores los sacamos de internet
         iconUrl:
@@ -849,7 +1097,18 @@ mapa.on("click", (e) => {
 
   // Actualizamos el estado de la ruta
   estadoRuta.textContent =
-    "Destino seleccionado en el mapa. Pulsa 'Buscar y calcular ruta'.";
+    "Destino seleccionado en el mapa. Calculando ruta...";
+
+  syncMapa3D();
+
+  // En modo clic, lanzar el cálculo automáticamente para mostrar la tarjeta con "Ir".
+  calcularRuta();
+}
+
+// Evento que se ejecuta cuando se hace clic en el mapa
+mapa.on("click", (e) => {
+  if (!e || !e.latlng) return;
+  seleccionarDestinoEnMapa(e.latlng.lat, e.latlng.lng);
 });
 
 
@@ -890,19 +1149,33 @@ function limpiarRuta() {
   instruccionesRuta = [];       // Array de instrucciones
   coordenadasRuta = [];         // Array de coordenadas
   indicePasoActual = -1;        // Índice del paso actual
+  navegacionIniciada = false;
+  actualizarBotonIrCancelar();
   ultimoCambioAutomatico = 0;   // Momento del último cambio automático
   rutaTerminada = false;        // Estado de la ruta
 
   rumboObjetivoSuavizado = null;  // Rumbo objetivo suavizado
   anguloFlechaRenderizado = null; // Ángulo de la flecha renderizado
+  sesionPasosActiva = false;
+  sesionPasosGuardada = false;
+  posicionAnteriorSesion = null;
+  inicioSesionISO = null;
+  destinoSesionNombre = "";
+  if (modoContadorPasos && modoContadorPasos.checked) {
+    actualizarResumenContadorRuta();
+  }
 
   // Actualizamos el estado de la ruta
   cajaPasos.textContent = "No hay una ruta activa.";
+  if (panelPasoAR) {
+    panelPasoAR.classList.add("oculto");
+  }
   miETA = null;
   // Si estamos compartiendo posición, actualizamos que ya no tenemos ETA
   if (modoCompartirUbicacion.checked && miLatitud !== null && miLongitud !== null) {
     socket.emit("shareLocation", { lat: miLatitud, lng: miLongitud, name: miNombre, avatar: miAvatar, eta: miETA });
   }
+  syncMapa3D();
 }
 
 // Función para calcular la distancia en metros entre dos puntos usando la fórmula de Haversine
@@ -922,6 +1195,113 @@ function distanciaEnMetros(lat1, lon1, lat2, lon2) {
   // Distancia en metros
   const contacto = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * contacto;    // Devuelve el producto del radio de la Tierra y el ángulo central en radianes
+}
+
+function actualizarResumenContadorRuta() {
+  if (!resumenContadorRuta) return;
+  resumenContadorRuta.textContent = `Pasos: ${pasosSesionActual} · Calorías: ${caloriasSesionActual} kcal`;
+  actualizarPanelPasoAR();
+}
+
+function iniciarSesionContadorRuta() {
+  sesionPasosActiva = true;
+  sesionPasosGuardada = false;
+  pasosSesionActual = 0;
+  caloriasSesionActual = 0;
+  distanciaSesionMetros = 0;
+  posicionAnteriorSesion = null;
+  inicioSesionISO = new Date().toISOString();
+  destinoSesionNombre = inputDestino && inputDestino.value ? inputDestino.value.trim() : "Ruta";
+  actualizarResumenContadorRuta();
+}
+
+function actualizarContadorRutaConGPS() {
+  if (!sesionPasosActiva || !modoContadorPasos || !modoContadorPasos.checked) return;
+  if (miLatitud === null || miLongitud === null) return;
+
+  const posicionActual = { lat: miLatitud, lng: miLongitud };
+  if (!posicionAnteriorSesion) {
+    posicionAnteriorSesion = posicionActual;
+    return;
+  }
+
+  const incremento = distanciaEnMetros(
+    posicionAnteriorSesion.lat,
+    posicionAnteriorSesion.lng,
+    posicionActual.lat,
+    posicionActual.lng
+  );
+
+  if (incremento > 0.3 && incremento < 20) {
+    distanciaSesionMetros += incremento;
+    pasosSesionActual = Math.round(distanciaSesionMetros / 0.78);
+    caloriasSesionActual = Math.round((distanciaSesionMetros / 1000) * 50);
+    actualizarResumenContadorRuta();
+  }
+
+  posicionAnteriorSesion = posicionActual;
+}
+
+async function guardarActividadRuta() {
+  if (sesionPasosGuardada || !inicioSesionISO) return;
+  if (pasosSesionActual <= 0 && caloriasSesionActual <= 0) return;
+
+  try {
+    await fetch("/api/activity", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: miNombre,
+        steps: pasosSesionActual,
+        calories: caloriasSesionActual,
+        distanceKm: Number((distanciaSesionMetros / 1000).toFixed(3)),
+        startedAt: inicioSesionISO,
+        endedAt: new Date().toISOString(),
+        destination: destinoSesionNombre || "Ruta"
+      })
+    });
+    sesionPasosGuardada = true;
+    await cargarActividad(periodoActividadActual);
+  } catch (error) {
+    console.error("No se pudo guardar la actividad de la ruta", error);
+  }
+}
+
+function obtenerEtiquetaPeriodo(tipo, clave) {
+  if (tipo === "day") return clave;
+  if (tipo === "week") return `Semana ${clave}`;
+  return clave;
+}
+
+async function cargarActividad(periodo = "day") {
+  if (!actividadTotales || !actividadHistorial || !miNombre) return;
+  periodoActividadActual = periodo;
+  try {
+    const resp = await fetch(`/api/activity?username=${encodeURIComponent(miNombre)}&period=${encodeURIComponent(periodo)}`);
+    if (!resp.ok) throw new Error("Error al cargar actividad");
+    const data = await resp.json();
+    const totals = data.totals || { steps: 0, calories: 0, routes: 0 };
+    actividadTotales.innerHTML = `
+      <p>Pasos: ${totals.steps || 0}</p>
+      <p>Calorías: ${totals.calories || 0} kcal</p>
+      <p>Rutas: ${totals.routes || 0}</p>
+    `;
+
+    const groups = data.groups || [];
+    if (!groups.length) {
+      actividadHistorial.innerHTML = '<p class="no-contacts-msg">Aún no hay actividad guardada.</p>';
+    } else {
+      actividadHistorial.innerHTML = groups.map(g => `
+        <div class="actividad-item">
+          <div class="actividad-item-titulo">${obtenerEtiquetaPeriodo(periodo, g.key)}</div>
+          <div class="actividad-item-resumen">Pasos: ${g.steps} · Calorías: ${g.calories} kcal · Rutas: ${g.routes}</div>
+        </div>
+      `).join("");
+    }
+  } catch (error) {
+    console.error(error);
+    actividadHistorial.innerHTML = '<p class="no-contacts-msg">No se pudo cargar la actividad.</p>';
+  }
 }
 
 /* Función que devuelve el punto GPS asociado a una instrucción concreta.
@@ -973,6 +1353,10 @@ function actualizarPasoAutomatico() {
       indicePasoActual = instruccionesRuta.length - 1;    // Actualizamos el índice del paso actual
       estadoRuta.textContent = "Has llegado al destino.";
       cajaPasos.textContent = "Has llegado al destino.";
+      if (sesionPasosActiva && modoContadorPasos && modoContadorPasos.checked) {
+        guardarActividadRuta();
+        sesionPasosActiva = false;
+      }
       ultimoCambioAutomatico = ahora;                     // Actualizamos el tiempo del último cambio automático
       return;
     }
@@ -1031,15 +1415,18 @@ function mostrarPasoActual() {
 
   // Cogemos la instrucción actual
   const instruccion = instruccionesRuta[indicePasoActual];
+  const textoInstruccion = traducirInstruccionRuta(instruccion.text || "");
 
   // Mostramos el paso actual
   const textoPaso =
     `Paso ${indicePasoActual + 1} de ${instruccionesRuta.length}:<br><br>` +
-    `<strong>${instruccion.text || "Sin texto disponible"}</strong><br><br>` +
+    `<strong>${textoInstruccion}</strong><br><br>` +
     `Distancia aproximada: ${Math.round((instruccion.distance || 0))} m`;
 
   // Usamos innerHTML para que se interpreten los saltos de línea
   cajaPasos.innerHTML = textoPaso;
+  actualizarPanelPasoAR();
+  actualizarVista3D();
 
   /* Se encarga de que la cámara del mapa se deslice automáticamente hacia
   el lugar donde ocurre la instrucción. El trazador de rutas nos devuelve dos listas separadas:
@@ -1056,10 +1443,17 @@ function mostrarPasoActual() {
     typeof instruccion.index === "number" &&
     coordenadasRuta[instruccion.index]
   ) {
-    // Si ambas comprobaciones son correctas, cogemos ese punto y movemos el mapa hacia él
+    // Si ambas comprobaciones son correctas, cogemos ese punto
     const punto = coordenadasRuta[instruccion.index];
-    // panTo es una función de Leaflet que mueve el mapa a una posición determinada
-    mapa.panTo([punto.lat, punto.lng]);
+    // En AR priorizamos el centro en la posición real del usuario para evitar descentrados.
+    if (Date.now() >= pausaAutoCentrado2DHasta) {
+      if (typeof isARMode !== "undefined" && isARMode && miLatitud !== null && miLongitud !== null) {
+        mapa.panTo([miLatitud, miLongitud]);
+      } else {
+        // En modo normal centramos la instrucción actual.
+        mapa.panTo([punto.lat, punto.lng]);
+      }
+    }
     // Ponemos un puntito rojo para que se vea donde está la instrucción
     if (marcadorPasoActual) {
         marcadorPasoActual.setLatLng([punto.lat, punto.lng]);
@@ -1080,29 +1474,39 @@ function mostrarPasoActual() {
 function toggleModeVisual() {
   if (modoActual === "2D") {
     modoActual = "3D";
+    initMapa3D();
     document.body.classList.remove("modo-2d");
     document.body.classList.add("modo-3d");
+    syncMapa3D();
+    actualizarVista3D();
   } else {
     modoActual = "2D";
     document.body.classList.remove("modo-3d");
     document.body.classList.add("modo-2d");
+    if (mapa3d) {
+      const c = mapa3d.getCenter();
+      mapa.setView([c.lat, c.lng], mapa3d.getZoom(), { animate: false });
+    }
   }
 
   estadoModo.textContent = `Modo: ${modoActual}`;
 
   setTimeout(() => {
     mapa.invalidateSize();
+    if (mapa3d) mapa3d.resize();
   }, 450);
 }
 
 // Función para hacer zoom in
 function zoomIn() {
-    mapa.zoomIn();
+    if (modoActual === "3D" && mapa3d) mapa3d.zoomIn();
+    else mapa.zoomIn();
 }
 
 // Función para hacer zoom out
 function zoomOut() {
-    mapa.zoomOut();
+    if (modoActual === "3D" && mapa3d) mapa3d.zoomOut();
+    else mapa.zoomOut();
 }
 
 // Gestión personalizada de las capas de mapa
@@ -1127,7 +1531,12 @@ function cambiarCapa() {
 function recentrarMapa() {
   // Si la posición actual es conocida, movemos el mapa hacia ella
   if (miLatitud !== null && miLongitud !== null) {
-    mapa.setView([miLatitud, miLongitud], 16);
+    if (modoActual === "3D") {
+      initMapa3D();
+      if (mapa3d) mapa3d.easeTo({ center: [miLongitud, miLatitud], zoom: 16, pitch: 60, duration: 350 });
+    } else {
+      mapa.setView([miLatitud, miLongitud], 16);
+    }
     estadoRuta.textContent = "Mapa recentrado en tu posición.";
   } else {
     estadoRuta.textContent = "Todavía no se conoce tu posición actual.";
@@ -1156,7 +1565,61 @@ function eliminarRuta() {
     // Actualizamos el texto de la caja de información
     cajaPasos.innerHTML = "Ruta eliminada.";
     estadoRuta.textContent = "Ruta eliminada. Elige un nuevo destino.";
+    syncMapa3D();
 }
+
+// Asignamos la funcionalidad a cada botón del menú usando su atributo data-event
+document.querySelectorAll(".btn-control-menu").forEach(boton => {
+    boton.addEventListener("click", () => {
+        const evento = boton.getAttribute("data-event");
+
+        switch (evento) {
+            case "zoomIn":
+                zoomIn();
+                break;
+            case "zoomOut":
+                zoomOut();
+                break;
+            case "toggleMode":
+                toggleModeVisual();
+                break;
+            case "recenter":
+                recentrarMapa();
+                break;
+            case "deleteRoute":
+                eliminarRuta();
+                break;
+        }
+    });
+});
+
+if (modoContadorPasos) {
+  modoContadorPasos.addEventListener("change", () => {
+    if (!modoContadorPasos.checked) {
+      sesionPasosActiva = false;
+      sesionPasosGuardada = false;
+      pasosSesionActual = 0;
+      caloriasSesionActual = 0;
+      distanciaSesionMetros = 0;
+      posicionAnteriorSesion = null;
+      inicioSesionISO = null;
+      destinoSesionNombre = "";
+    }
+    actualizarResumenContadorRuta();
+  });
+}
+
+if (botonesFiltroActividad && botonesFiltroActividad.length) {
+  botonesFiltroActividad.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      botonesFiltroActividad.forEach((b) => b.classList.remove("activo"));
+      btn.classList.add("activo");
+      cargarActividad(btn.getAttribute("data-period") || "day");
+    });
+  });
+}
+
+actualizarResumenContadorRuta();
 
 
 
@@ -1193,8 +1656,12 @@ async function calcularRuta() {
   let destLon;
   let destNombre;
 
-  // Si se está usando el modo clic y se ha seleccionado un punto en el mapa, usamos ese punto
-  if (usarClic && destinoClickLat !== null) {
+  // Si el modo clic está activado, exigimos que haya un punto seleccionado.
+  if (usarClic) {
+    if (destinoClickLat === null || destinoClickLon === null) {
+      estadoRuta.textContent = "Activa modo clic y toca el mapa para marcar un destino.";
+      return;
+    }
     destLat = destinoClickLat;
     destLon = destinoClickLon;
     destNombre = `Punto: ${destLat.toFixed(5)}, ${destLon.toFixed(5)}`;
@@ -1299,6 +1766,8 @@ async function calcularRuta() {
     coordenadasRuta = ruta.coordinates || [];
 
     // Reiniciamos el índice del paso actual
+    navegacionIniciada = false;
+    actualizarBotonIrCancelar();
     indicePasoActual = 0;
     ultimoCambioAutomatico = 0;
     rutaTerminada = false;
@@ -1340,6 +1809,8 @@ async function calcularRuta() {
 
     // Mostramos el primer paso
     mostrarPasoActual();
+    syncMapa3D();
+    actualizarVista3D();
   });
 
   // Si falla el cálculo de la ruta
@@ -1355,15 +1826,83 @@ async function calcularRuta() {
 // BOTÓN Y ENTER PARA CALCULAR LA RUTA
 // =========================
 
+let timeoutBusquedaDestino = null;
+let requestSugerenciasEnCurso = null;
+
+function ocultarSugerenciasDestino() {
+  if (!sugerenciasDestino) return;
+  sugerenciasDestino.classList.add("oculto");
+  sugerenciasDestino.innerHTML = "";
+}
+
+function mostrarSugerenciasDestino(items) {
+  if (!sugerenciasDestino) return;
+  if (!items || !items.length) {
+    ocultarSugerenciasDestino();
+    return;
+  }
+
+  sugerenciasDestino.innerHTML = items.map((item) => (
+    `<div class="sugerencia-destino-item" data-display="${item.display_name.replace(/"/g, "&quot;")}">${item.display_name}</div>`
+  )).join("");
+  sugerenciasDestino.classList.remove("oculto");
+
+  sugerenciasDestino.querySelectorAll(".sugerencia-destino-item").forEach((el) => {
+    el.addEventListener("click", () => {
+      inputDestino.value = el.getAttribute("data-display") || "";
+      ocultarSugerenciasDestino();
+    });
+  });
+}
+
+async function buscarSugerenciasDestino(texto) {
+  if (!texto || texto.length < 3) {
+    ocultarSugerenciasDestino();
+    return;
+  }
+
+  if (requestSugerenciasEnCurso) {
+    requestSugerenciasEnCurso.abort();
+  }
+  requestSugerenciasEnCurso = new AbortController();
+
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(texto)}&limit=5`;
+    const resp = await fetch(url, { signal: requestSugerenciasEnCurso.signal });
+    const data = await resp.json();
+    mostrarSugerenciasDestino(Array.isArray(data) ? data : []);
+  } catch (error) {
+    if (error.name !== "AbortError") {
+      console.error("Error al cargar sugerencias de destino:", error);
+    }
+  }
+}
+
 // Evento que se ejecuta cuando se hace clic en el botón de calcular ruta
-btnRuta.addEventListener("click", calcularRuta);
+btnRuta.addEventListener("click", () => {
+  ocultarSugerenciasDestino();
+  calcularRuta();
+});
 
 // Evento que se ejecuta cuando se presiona una tecla en el campo de destino
 inputDestino.addEventListener("keydown", (e) => {
   // Si la tecla presionada es Enter, se calcula la ruta
   if (e.key === "Enter") {
+    ocultarSugerenciasDestino();
     calcularRuta();
   }
+});
+
+inputDestino.addEventListener("input", () => {
+  const texto = inputDestino.value.trim();
+  clearTimeout(timeoutBusquedaDestino);
+  timeoutBusquedaDestino = setTimeout(() => {
+    buscarSugerenciasDestino(texto);
+  }, 250);
+});
+
+inputDestino.addEventListener("blur", () => {
+  setTimeout(ocultarSugerenciasDestino, 150);
 });
 
 
