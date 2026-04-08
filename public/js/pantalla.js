@@ -503,6 +503,11 @@ const inputDestino = document.getElementById("inputDestino");   // Campo de text
 const btnRuta = document.getElementById("btnRuta");             // Botón de calcular ruta
 const modoClic = document.getElementById("modoClic");         // Checkbox para elegir destino haciendo clic
 const modoCompartirUbicacion = document.getElementById("modoCompartirUbicacion"); // Checkbox para compartir ubicación
+const modoContadorPasos = document.getElementById("modoContadorPasos");
+const resumenContadorRuta = document.getElementById("resumenContadorRuta");
+const actividadTotales = document.getElementById("actividadTotales");
+const actividadHistorial = document.getElementById("actividadHistorial");
+const botonesFiltroActividad = document.querySelectorAll(".btn-filtro-actividad");
 const estadoRuta = document.getElementById("estadoRuta");       // Texto del estado de la ruta
 
 // Elementos del DOM del menú de pantalla completa
@@ -553,6 +558,16 @@ modoCompartirUbicacion.addEventListener("change", () => {
   }
 });
 
+if (modoClic) {
+  modoClic.addEventListener("change", () => {
+    if (modoClic.checked) {
+      estadoRuta.textContent = "Modo clic activado. Toca el mapa para seleccionar el destino.";
+      return;
+    }
+    estadoRuta.textContent = "Modo clic desactivado. Puedes escribir destino en el buscador.";
+  });
+}
+
 /* Es el encargado de abrir el menú principal de usuario y opciones 
   al pulsar sobre el su foto en la barra superior de la pantalla.
   Para entender cómo funciona internamente, hay que tener en cuenta que el menú
@@ -566,6 +581,7 @@ btnMenuToggle.addEventListener("click", () => {
   nombreMenu.textContent = miNombre;
   btnAvatarIcon.src = miAvatar;
   menuOpciones.classList.remove("oculto");
+  cargarActividad(periodoActividadActual);
 });
 
 // Cerrar menú de pantalla completa
@@ -635,6 +651,9 @@ btnARTarjetaRuta.addEventListener("click", () => {
 irTarjetaRuta.addEventListener("click", () => {
   if (!instruccionesRuta.length) return;
   indicePasoActual = 0;
+  if (modoContadorPasos && modoContadorPasos.checked) {
+    iniciarSesionContadorRuta();
+  }
   mostrarPasoActual();
   actualizarPasoTarjetaRuta();
 });
@@ -708,6 +727,16 @@ let instruccionesRuta = [];   // Ruta e instrucciones actuales
 let coordenadasRuta = [];     // Coordenadas de la ruta actual
 let indicePasoActual = -1;    // Índice del paso actual
 let marcadorPasoActual = null; // Marcador visual (punto azul) del paso actual
+let periodoActividadActual = "day";
+
+let sesionPasosActiva = false;
+let sesionPasosGuardada = false;
+let pasosSesionActual = 0;
+let caloriasSesionActual = 0;
+let distanciaSesionMetros = 0;
+let posicionAnteriorSesion = null;
+let inicioSesionISO = null;
+let destinoSesionNombre = "";
 
 
 
@@ -769,6 +798,8 @@ if ("geolocation" in navigator) {
       if (modoCompartirUbicacion.checked) {
         socket.emit("shareLocation", { lat: miLatitud, lng: miLongitud, name: miNombre, avatar: miAvatar, eta: miETA });
       }
+
+      actualizarContadorRutaConGPS();
 
       // Actualizamos el paso automático
       actualizarPasoAutomatico();
@@ -880,6 +911,14 @@ function limpiarRuta() {
 
   rumboObjetivoSuavizado = null;  // Rumbo objetivo suavizado
   anguloFlechaRenderizado = null; // Ángulo de la flecha renderizado
+  sesionPasosActiva = false;
+  sesionPasosGuardada = false;
+  posicionAnteriorSesion = null;
+  inicioSesionISO = null;
+  destinoSesionNombre = "";
+  if (modoContadorPasos && modoContadorPasos.checked) {
+    actualizarResumenContadorRuta();
+  }
 
   // Actualizamos el estado de la ruta
   cajaPasos.textContent = "No hay una ruta activa.";
@@ -907,6 +946,112 @@ function distanciaEnMetros(lat1, lon1, lat2, lon2) {
   // Distancia en metros
   const contacto = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * contacto;    // Devuelve el producto del radio de la Tierra y el ángulo central en radianes
+}
+
+function actualizarResumenContadorRuta() {
+  if (!resumenContadorRuta) return;
+  resumenContadorRuta.textContent = `Pasos: ${pasosSesionActual} · Calorías: ${caloriasSesionActual} kcal`;
+}
+
+function iniciarSesionContadorRuta() {
+  sesionPasosActiva = true;
+  sesionPasosGuardada = false;
+  pasosSesionActual = 0;
+  caloriasSesionActual = 0;
+  distanciaSesionMetros = 0;
+  posicionAnteriorSesion = null;
+  inicioSesionISO = new Date().toISOString();
+  destinoSesionNombre = inputDestino && inputDestino.value ? inputDestino.value.trim() : "Ruta";
+  actualizarResumenContadorRuta();
+}
+
+function actualizarContadorRutaConGPS() {
+  if (!sesionPasosActiva || !modoContadorPasos || !modoContadorPasos.checked) return;
+  if (miLatitud === null || miLongitud === null) return;
+
+  const posicionActual = { lat: miLatitud, lng: miLongitud };
+  if (!posicionAnteriorSesion) {
+    posicionAnteriorSesion = posicionActual;
+    return;
+  }
+
+  const incremento = distanciaEnMetros(
+    posicionAnteriorSesion.lat,
+    posicionAnteriorSesion.lng,
+    posicionActual.lat,
+    posicionActual.lng
+  );
+
+  if (incremento > 0.3 && incremento < 20) {
+    distanciaSesionMetros += incremento;
+    pasosSesionActual = Math.round(distanciaSesionMetros / 0.78);
+    caloriasSesionActual = Math.round((distanciaSesionMetros / 1000) * 50);
+    actualizarResumenContadorRuta();
+  }
+
+  posicionAnteriorSesion = posicionActual;
+}
+
+async function guardarActividadRuta() {
+  if (sesionPasosGuardada || !inicioSesionISO) return;
+  if (pasosSesionActual <= 0 && caloriasSesionActual <= 0) return;
+
+  try {
+    await fetch("/api/activity", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: miNombre,
+        steps: pasosSesionActual,
+        calories: caloriasSesionActual,
+        distanceKm: Number((distanciaSesionMetros / 1000).toFixed(3)),
+        startedAt: inicioSesionISO,
+        endedAt: new Date().toISOString(),
+        destination: destinoSesionNombre || "Ruta"
+      })
+    });
+    sesionPasosGuardada = true;
+    await cargarActividad(periodoActividadActual);
+  } catch (error) {
+    console.error("No se pudo guardar la actividad de la ruta", error);
+  }
+}
+
+function obtenerEtiquetaPeriodo(tipo, clave) {
+  if (tipo === "day") return clave;
+  if (tipo === "week") return `Semana ${clave}`;
+  return clave;
+}
+
+async function cargarActividad(periodo = "day") {
+  if (!actividadTotales || !actividadHistorial || !miNombre) return;
+  periodoActividadActual = periodo;
+  try {
+    const resp = await fetch(`/api/activity?username=${encodeURIComponent(miNombre)}&period=${encodeURIComponent(periodo)}`);
+    if (!resp.ok) throw new Error("Error al cargar actividad");
+    const data = await resp.json();
+    const totals = data.totals || { steps: 0, calories: 0, routes: 0 };
+    actividadTotales.innerHTML = `
+      <p>Pasos: ${totals.steps || 0}</p>
+      <p>Calorías: ${totals.calories || 0} kcal</p>
+      <p>Rutas: ${totals.routes || 0}</p>
+    `;
+
+    const groups = data.groups || [];
+    if (!groups.length) {
+      actividadHistorial.innerHTML = '<p class="no-contacts-msg">Aún no hay actividad guardada.</p>';
+    } else {
+      actividadHistorial.innerHTML = groups.map(g => `
+        <div class="actividad-item">
+          <div class="actividad-item-titulo">${obtenerEtiquetaPeriodo(periodo, g.key)}</div>
+          <div class="actividad-item-resumen">Pasos: ${g.steps} · Calorías: ${g.calories} kcal · Rutas: ${g.routes}</div>
+        </div>
+      `).join("");
+    }
+  } catch (error) {
+    console.error(error);
+    actividadHistorial.innerHTML = '<p class="no-contacts-msg">No se pudo cargar la actividad.</p>';
+  }
 }
 
 /* Función que devuelve el punto GPS asociado a una instrucción concreta.
@@ -958,6 +1103,10 @@ function actualizarPasoAutomatico() {
       indicePasoActual = instruccionesRuta.length - 1;    // Actualizamos el índice del paso actual
       estadoRuta.textContent = "Has llegado al destino.";
       cajaPasos.textContent = "Has llegado al destino.";
+      if (sesionPasosActiva && modoContadorPasos && modoContadorPasos.checked) {
+        guardarActividadRuta();
+        sesionPasosActiva = false;
+      }
       ultimoCambioAutomatico = ahora;                     // Actualizamos el tiempo del último cambio automático
       return;
     }
@@ -1041,10 +1190,15 @@ function mostrarPasoActual() {
     typeof instruccion.index === "number" &&
     coordenadasRuta[instruccion.index]
   ) {
-    // Si ambas comprobaciones son correctas, cogemos ese punto y movemos el mapa hacia él
+    // Si ambas comprobaciones son correctas, cogemos ese punto
     const punto = coordenadasRuta[instruccion.index];
-    // panTo es una función de Leaflet que mueve el mapa a una posición determinada
-    mapa.panTo([punto.lat, punto.lng]);
+    // En AR priorizamos el centro en la posición real del usuario para evitar descentrados.
+    if (typeof isARMode !== "undefined" && isARMode && miLatitud !== null && miLongitud !== null) {
+      mapa.panTo([miLatitud, miLongitud]);
+    } else {
+      // En modo normal centramos la instrucción actual.
+      mapa.panTo([punto.lat, punto.lng]);
+    }
     // Ponemos un puntito rojo para que se vea donde está la instrucción
     if (marcadorPasoActual) {
         marcadorPasoActual.setLatLng([punto.lat, punto.lng]);
@@ -1185,6 +1339,34 @@ document.querySelectorAll(".btn-control-menu").forEach(boton => {
     });
 });
 
+if (modoContadorPasos) {
+  modoContadorPasos.addEventListener("change", () => {
+    if (!modoContadorPasos.checked) {
+      sesionPasosActiva = false;
+      sesionPasosGuardada = false;
+      pasosSesionActual = 0;
+      caloriasSesionActual = 0;
+      distanciaSesionMetros = 0;
+      posicionAnteriorSesion = null;
+      inicioSesionISO = null;
+      destinoSesionNombre = "";
+    }
+    actualizarResumenContadorRuta();
+  });
+}
+
+if (botonesFiltroActividad && botonesFiltroActividad.length) {
+  botonesFiltroActividad.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      botonesFiltroActividad.forEach((b) => b.classList.remove("activo"));
+      btn.classList.add("activo");
+      cargarActividad(btn.getAttribute("data-period") || "day");
+    });
+  });
+}
+
+actualizarResumenContadorRuta();
+
 
 
 
@@ -1220,8 +1402,12 @@ async function calcularRuta() {
   let destLon;
   let destNombre;
 
-  // Si se está usando el modo clic y se ha seleccionado un punto en el mapa, usamos ese punto
-  if (usarClic && destinoClickLat !== null) {
+  // Si el modo clic está activado, exigimos que haya un punto seleccionado.
+  if (usarClic) {
+    if (destinoClickLat === null || destinoClickLon === null) {
+      estadoRuta.textContent = "Activa modo clic y toca el mapa para marcar un destino.";
+      return;
+    }
     destLat = destinoClickLat;
     destLon = destinoClickLon;
     destNombre = `Punto: ${destLat.toFixed(5)}, ${destLon.toFixed(5)}`;
