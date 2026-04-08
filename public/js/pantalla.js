@@ -371,7 +371,6 @@ function processContactRoute(id, routeData) {
 }
 
 // =========================
-
 // ELEMENTOS DEL DOM
 // =========================
 
@@ -740,6 +739,12 @@ function limpiarRuta() {
   // Ocultamos la tarjeta de ruta
   hideRouteCard();
 
+  // Si existe el marcador del paso actual, lo eliminamos
+  if (marcadorPasoActual) {
+    mapa.removeLayer(marcadorPasoActual);
+    marcadorPasoActual = null;
+  }
+
   // Reseteamos las variables de la ruta
   instruccionesRuta = [];       // Array de instrucciones
   coordenadasRuta = [];         // Array de coordenadas
@@ -1041,12 +1046,6 @@ document.querySelectorAll(".fsm-action-btn").forEach(boton => {
                 break;
             case "zoomOut":
                 zoomOut();
-                break;
-            case "prevStep":
-                pasoAnterior();
-                break;
-            case "nextStep":
-                siguientePaso();
                 break;
             case "toggleMode":
                 toggleModeVisual();
