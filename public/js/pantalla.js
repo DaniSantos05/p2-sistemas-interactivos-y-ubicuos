@@ -792,6 +792,13 @@ let marcadorUsuario3D = null;
 let marcadorDestino3D = null;
 let ultimoUpdateVista3D = 0;
 let pausaAutoCentrado3DHasta = 0;
+let pausaAutoCentrado2DHasta = 0;
+
+function pausarAutoCentrado(milisegundos = 6000) {
+  const hasta = Date.now() + milisegundos;
+  pausaAutoCentrado2DHasta = hasta;
+  pausaAutoCentrado3DHasta = Math.max(pausaAutoCentrado3DHasta, hasta);
+}
 
 function initMapa3D() {
   if (mapa3d || typeof maplibregl === "undefined") return;
@@ -812,7 +819,7 @@ function initMapa3D() {
     // Si el usuario manipula el mapa (zoom/drag/rotación), pausamos el auto-centrado
     // para evitar la sensación de "mapa loco" en móvil.
     const pausarAutoCentrado = () => {
-      pausaAutoCentrado3DHasta = Date.now() + 6000;
+      pausarAutoCentrado(6000);
     };
     mapa3d.on("movestart", pausarAutoCentrado);
     mapa3d.on("zoomstart", pausarAutoCentrado);
@@ -977,6 +984,10 @@ function actualizarVista3D() {
   });
   syncMapa3D();
 }
+
+// Si el usuario manipula el mapa 2D, pausamos auto-centrado temporalmente.
+mapa.on("movestart", () => pausarAutoCentrado(6000));
+mapa.on("zoomstart", () => pausarAutoCentrado(6000));
 
 
 // =========================
@@ -1435,11 +1446,13 @@ function mostrarPasoActual() {
     // Si ambas comprobaciones son correctas, cogemos ese punto
     const punto = coordenadasRuta[instruccion.index];
     // En AR priorizamos el centro en la posición real del usuario para evitar descentrados.
-    if (typeof isARMode !== "undefined" && isARMode && miLatitud !== null && miLongitud !== null) {
-      mapa.panTo([miLatitud, miLongitud]);
-    } else {
-      // En modo normal centramos la instrucción actual.
-      mapa.panTo([punto.lat, punto.lng]);
+    if (Date.now() >= pausaAutoCentrado2DHasta) {
+      if (typeof isARMode !== "undefined" && isARMode && miLatitud !== null && miLongitud !== null) {
+        mapa.panTo([miLatitud, miLongitud]);
+      } else {
+        // En modo normal centramos la instrucción actual.
+        mapa.panTo([punto.lat, punto.lng]);
+      }
     }
     // Ponemos un puntito rojo para que se vea donde está la instrucción
     if (marcadorPasoActual) {
