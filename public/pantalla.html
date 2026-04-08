@@ -59,11 +59,11 @@
      
      <div id="opcionesDesplegables" class="opciones-desplegables oculto">
        <!-- Zoom In -->
-       <button class="btn-control-flotante" onclick="if(typeof zoomIn === 'function') { zoomIn(); } else if(typeof mapa !== 'undefined') { mapa.zoomIn(); }" title="Zoom +">
+      <button class="btn-control-flotante" onclick="if(typeof acercarZoom === 'function') { acercarZoom(); } else if(typeof mapa !== 'undefined') { mapa.zoomIn(); }" title="Zoom +">
          <span class="material-symbols-outlined">add</span>
        </button>
        <!-- Zoom Out -->
-       <button class="btn-control-flotante" onclick="if(typeof zoomOut === 'function') { zoomOut(); } else if(typeof mapa !== 'undefined') { mapa.zoomOut(); }" title="Zoom -">
+      <button class="btn-control-flotante" onclick="if(typeof alejarZoom === 'function') { alejarZoom(); } else if(typeof mapa !== 'undefined') { mapa.zoomOut(); }" title="Zoom -">
          <span class="material-symbols-outlined">remove</span>
        </button>
        <!-- Recentrar -->
@@ -75,7 +75,7 @@
          <span class="material-symbols-outlined">layers</span>
        </button>
        <!-- Modo 3D -->
-       <button class="btn-control-flotante" onclick="if(typeof toggleModeVisual === 'function') toggleModeVisual()" title="Modo 3D">
+      <button class="btn-control-flotante" onclick="if(typeof alternarModoVisual === 'function') alternarModoVisual()" title="Modo 3D">
          <span class="material-symbols-outlined">3d_rotation</span>
        </button>
      </div>

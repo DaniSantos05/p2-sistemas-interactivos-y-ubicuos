@@ -17,6 +17,13 @@ let rumboActual = 0;
 // Variable auxiliar para suavizar el rumbo y evitar temblores.
 let rumboSuavizado = 0;
 
+// Referencias DOM locales (independientes de pantalla.js).
+const botonARPrincipal = document.getElementById("btnAR");
+const botonARTarjeta = document.getElementById("btnARTarjetaRuta");
+const contenedorARLocal = document.getElementById("contenedorAR");
+const videoARLocal = document.getElementById("videoAR");
+const canvasARLocal = document.getElementById("canvasAR");
+
 // =========================
 // AJUSTES DE AR
 // =========================
@@ -43,10 +50,10 @@ const ZONA_MUERTA_RECTO_GRADOS = 12;
 const LIMITE_GIRO_VISUAL_GRADOS = 145;
 
 // Variable donde guardamos el rumbo objetivo ya suavizado.
-let rumboObjetivoSuavizado = null;
+let rumboObjetivoSuavizadoAR = null;
 
 // Variable donde guardamos el ángulo final que se está dibujando en pantalla.
-let anguloFlechaRenderizado = null;
+let anguloFlechaRenderizadoAR = null;
 
 // =========================
 // FUNCIONES DE ÁNGULOS Y RUMBO
@@ -484,18 +491,18 @@ function pintarFlechaAR() {
 
   // Si el tamaño del canvas no coincide con la pantalla, lo actualizamos.
   if (
-    canvasAR.width !== window.innerWidth ||
-    canvasAR.height !== window.innerHeight
+    canvasARLocal.width !== window.innerWidth ||
+    canvasARLocal.height !== window.innerHeight
   ) {
-    canvasAR.width = window.innerWidth;
-    canvasAR.height = window.innerHeight;
+    canvasARLocal.width = window.innerWidth;
+    canvasARLocal.height = window.innerHeight;
   }
 
   // Obtenemos el contexto 2D del canvas.
-  const ctx = canvasAR.getContext("2d");
+  const ctx = canvasARLocal.getContext("2d");
 
   // Limpiamos el canvas antes de dibujar el nuevo frame.
-  ctx.clearRect(0, 0, canvasAR.width, canvasAR.height);
+  ctx.clearRect(0, 0, canvasARLocal.width, canvasARLocal.height);
 
   // Solo seguimos si tenemos posición y una ruta calculada.
   if (
@@ -518,23 +525,23 @@ function pintarFlechaAR() {
       );
 
       // Si aún no había rumbo objetivo suavizado, lo inicializamos.
-      if (rumboObjetivoSuavizado === null) {
-        rumboObjetivoSuavizado = rumboObjetivoCrudo;
+      if (rumboObjetivoSuavizadoAR === null) {
+        rumboObjetivoSuavizadoAR = rumboObjetivoCrudo;
       } else {
         // Calculamos la diferencia angular entre el nuevo rumbo y el suavizado.
         const diffObjetivo = restaAngulos(
           rumboObjetivoCrudo,
-          rumboObjetivoSuavizado
+          rumboObjetivoSuavizadoAR
         );
 
         // Suavizamos el rumbo objetivo.
-        rumboObjetivoSuavizado = normalizarAngulo(
-          rumboObjetivoSuavizado + diffObjetivo * SUAVIZADO_RUMBO_OBJETIVO
+        rumboObjetivoSuavizadoAR = normalizarAngulo(
+          rumboObjetivoSuavizadoAR + diffObjetivo * SUAVIZADO_RUMBO_OBJETIVO
         );
       }
 
       // Calculamos la diferencia entre hacia dónde hay que ir y hacia dónde apunta el móvil.
-      let anguloRelativo = restaAngulos(rumboObjetivoSuavizado, rumboActual);
+      let anguloRelativo = restaAngulos(rumboObjetivoSuavizadoAR, rumboActual);
 
       // Si el error es pequeño, lo consideramos recto.
       if (Math.abs(anguloRelativo) < ZONA_MUERTA_RECTO_GRADOS) {
@@ -551,26 +558,26 @@ function pintarFlechaAR() {
       );
 
       // Si aún no había ángulo renderizado, lo inicializamos.
-      if (anguloFlechaRenderizado === null) {
-        anguloFlechaRenderizado = anguloObjetivoRad;
+      if (anguloFlechaRenderizadoAR === null) {
+        anguloFlechaRenderizadoAR = anguloObjetivoRad;
       } else {
         // Calculamos la diferencia angular visual entre el nuevo ángulo y el actual.
         const diffRot = restaAngulosRad(
           anguloObjetivoRad,
-          anguloFlechaRenderizado
+          anguloFlechaRenderizadoAR
         );
 
         // Suavizamos la rotación final de la flecha.
-        anguloFlechaRenderizado = normalizarRadianes(
-          anguloFlechaRenderizado + diffRot * SUAVIZADO_ROTACION_FLECHA
+        anguloFlechaRenderizadoAR = normalizarRadianes(
+          anguloFlechaRenderizadoAR + diffRot * SUAVIZADO_ROTACION_FLECHA
         );
       }
 
       // Coordenada horizontal de la flecha.
-      const cx = canvasAR.width / 2;
+      const cx = canvasARLocal.width / 2;
 
       // Altura por defecto de la flecha si no hay tarjeta inferior.
-      let cy = canvasAR.height * 0.68;
+      let cy = canvasARLocal.height * 0.68;
 
       // Si la tarjeta de ruta está visible, subimos la flecha para que no la tape.
       if (
@@ -586,10 +593,10 @@ function pintarFlechaAR() {
       }
 
       // Limitamos la altura de la flecha para que no suba o baje demasiado.
-      cy = Math.max(canvasAR.height * 0.45, Math.min(cy, canvasAR.height * 0.72));
+      cy = Math.max(canvasARLocal.height * 0.45, Math.min(cy, canvasARLocal.height * 0.72));
 
       // Dibujamos la flecha final con efecto suelo.
-      dibujarFlechaSuelo(ctx, cx, cy, anguloFlechaRenderizado);
+      dibujarFlechaSuelo(ctx, cx, cy, anguloFlechaRenderizadoAR);
     }
   }
 
@@ -603,19 +610,30 @@ function pintarFlechaAR() {
 
 // Función principal para encender o apagar el modo AR.
 async function activarDesactivarAR() {
+  if (!contenedorARLocal || !videoARLocal || !canvasARLocal) {
+    if (typeof estadoRuta !== "undefined" && estadoRuta) {
+      estadoRuta.textContent = "No se pudo iniciar AR: faltan elementos de interfaz AR.";
+    }
+    return;
+  }
+
+  if (typeof estadoRuta !== "undefined" && estadoRuta) {
+    estadoRuta.textContent = "Intentando activar/desactivar modo AR...";
+  }
+
   // Si AR ya está activado, lo apagamos.
   if (isARMode) {
     // Marcamos que AR ya no está activo.
     isARMode = false;
 
     // Cambiamos el texto del botón superior si existe.
-    if (btnAR) {
-      btnAR.textContent = "Activar Cámara AR";
+    if (botonARPrincipal) {
+      botonARPrincipal.textContent = "Activar Cámara AR";
     }
 
     // Cambiamos también el texto del botón de la tarjeta si existe.
-    if (typeof btnARTarjetaRuta !== "undefined" && btnARTarjetaRuta) {
-      btnARTarjetaRuta.innerHTML =
+    if (botonARTarjeta) {
+      botonARTarjeta.innerHTML =
         '<span class="material-symbols-outlined">view_in_ar</span> AR';
     }
 
@@ -623,13 +641,13 @@ async function activarDesactivarAR() {
     document.body.classList.remove("modo-ar");
 
     // Ocultamos el contenedor AR.
-    if (contenedorAR) {
-      contenedorAR.classList.add("oculto");
+    if (contenedorARLocal) {
+      contenedorARLocal.classList.add("oculto");
     }
 
     // Reseteamos variables de dibujo.
-    rumboObjetivoSuavizado = null;
-    anguloFlechaRenderizado = null;
+    rumboObjetivoSuavizadoAR = null;
+    anguloFlechaRenderizadoAR = null;
 
     // Si había cámara abierta, la cerramos.
     if (videoStream) {
@@ -656,13 +674,11 @@ async function activarDesactivarAR() {
     return;
   }
 
-  // Si no hay ruta calculada, no permitimos activar AR.
-  if (!coordenadasRuta || !coordenadasRuta.length) {
-    if (estadoRuta) {
-      estadoRuta.textContent =
-        "Calcula primero una ruta antes de activar la cámara AR.";
-    }
-    return;
+  // Permitimos abrir AR aunque no haya ruta.
+  // En ese caso se verá la cámara y la flecha aparecerá cuando exista una ruta activa.
+  if ((!coordenadasRuta || !coordenadasRuta.length) && estadoRuta) {
+    estadoRuta.textContent =
+      "Modo AR activado. Calcula una ruta para mostrar la flecha de navegación.";
   }
 
   // En iPhone pedimos permiso para acceder a la orientación del dispositivo.
@@ -696,10 +712,10 @@ async function activarDesactivarAR() {
     });
 
     // Asignamos el stream al elemento de vídeo.
-    videoAR.srcObject = videoStream;
+    videoARLocal.srcObject = videoStream;
 
     // Intentamos reproducir el vídeo.
-    videoAR.play().catch((e) => {
+    videoARLocal.play().catch((e) => {
       console.warn("Autoplay evitado por el navegador", e);
     });
 
@@ -707,22 +723,22 @@ async function activarDesactivarAR() {
     isARMode = true;
 
     // Cambiamos el texto del botón superior si existe.
-    if (btnAR) {
-      btnAR.textContent = "Desactivar AR";
+    if (botonARPrincipal) {
+      botonARPrincipal.textContent = "Desactivar AR";
     }
 
     // Cambiamos también el botón de la tarjeta si existe.
-    if (typeof btnARTarjetaRuta !== "undefined" && btnARTarjetaRuta) {
-      btnARTarjetaRuta.innerHTML =
+    if (botonARTarjeta) {
+      botonARTarjeta.innerHTML =
         '<span class="material-symbols-outlined">exit_to_app</span> Salir AR';
     }
 
     // Reseteamos los valores de dibujado.
-    rumboObjetivoSuavizado = null;
-    anguloFlechaRenderizado = null;
+    rumboObjetivoSuavizadoAR = null;
+    anguloFlechaRenderizadoAR = null;
 
     // Mostramos el contenedor AR.
-    contenedorAR.classList.remove("oculto");
+    contenedorARLocal.classList.remove("oculto");
 
     // Añadimos clase visual al body.
     document.body.classList.add("modo-ar");
@@ -764,10 +780,10 @@ document.addEventListener("visibilitychange", () => {
     }
 
     // Paramos el vídeo.
-    videoAR.pause();
+    videoARLocal.pause();
 
     // Quitamos el stream del vídeo.
-    videoAR.srcObject = null;
+    videoARLocal.srcObject = null;
 
     // Cancelamos la animación del canvas.
     if (arAnimation) {
@@ -776,20 +792,20 @@ document.addEventListener("visibilitychange", () => {
     }
 
     // Reseteamos variables visuales.
-    rumboObjetivoSuavizado = null;
-    anguloFlechaRenderizado = null;
+    rumboObjetivoSuavizadoAR = null;
+    anguloFlechaRenderizadoAR = null;
 
     // Marcamos AR como apagado.
     isARMode = false;
 
     // Restauramos el texto del botón superior si existe.
-    if (btnAR) {
-      btnAR.textContent = "Activar Cámara AR";
+    if (botonARPrincipal) {
+      botonARPrincipal.textContent = "Activar Cámara AR";
     }
 
     // Restauramos el texto del botón de la tarjeta si existe.
-    if (typeof btnARTarjetaRuta !== "undefined" && btnARTarjetaRuta) {
-      btnARTarjetaRuta.innerHTML =
+    if (botonARTarjeta) {
+      botonARTarjeta.innerHTML =
         '<span class="material-symbols-outlined">view_in_ar</span> AR';
     }
 
@@ -797,11 +813,37 @@ document.addEventListener("visibilitychange", () => {
     document.body.classList.remove("modo-ar");
 
     // Ocultamos el contenedor AR.
-    contenedorAR.classList.add("oculto");
+    contenedorARLocal.classList.add("oculto");
   }
 });
 
 // Enlaza el botón AR principal con la función de activar/desactivar.
-if (btnAR) {
-  btnAR.addEventListener("click", activarDesactivarAR);
+if (botonARPrincipal) {
+  botonARPrincipal.addEventListener("click", activarDesactivarAR);
+  botonARPrincipal.onclick = activarDesactivarAR;
 }
+
+// Compatibilidad por si algún flujo antiguo sigue llamando al nombre anterior.
+window.toggleAR = activarDesactivarAR;
+window.activarDesactivarAR = activarDesactivarAR;
+
+// Refuerzo del botón AR de la tarjeta inferior.
+if (botonARTarjeta) {
+  botonARTarjeta.addEventListener("click", activarDesactivarAR);
+  botonARTarjeta.onclick = activarDesactivarAR;
+}
+
+// Captura global de clics: si se pulsa cualquier botón AR, activamos/desactivamos.
+// Esto evita fallos si un listener se pierde por re-render, overlays o cambios de estado.
+document.addEventListener(
+  "click",
+  (evento) => {
+    const objetivo = evento.target;
+    if (!objetivo) return;
+    const botonAR = objetivo.closest("#btnAR, #btnARTarjetaRuta");
+    if (!botonAR) return;
+    evento.preventDefault();
+    activarDesactivarAR();
+  },
+  true
+);

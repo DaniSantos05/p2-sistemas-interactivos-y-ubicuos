@@ -1,6 +1,7 @@
 /* Controlador del mapa 3D.
 Centraliza creación del mapa, sincronización de marcadores/ruta y cámara de seguimiento. */
 function crearControladorMapa3D(configuracion) {
+  // `configuracion` actúa como adaptador entre pantalla.js y este módulo 3D.
   // Instancia principal de MapLibre.
   let mapa3d = null;
   // Marcador de posición del usuario.
@@ -10,7 +11,9 @@ function crearControladorMapa3D(configuracion) {
 
   // Inicializa el mapa 3D solo una vez.
   function inicializar() {
+    // Si ya existe mapa o falta librería, salimos.
     if (mapa3d || typeof maplibregl === "undefined") return;
+    // Crea instancia de MapLibre.
     mapa3d = new maplibregl.Map({
       container: "mapa3d",
       style: "https://tiles.openfreemap.org/styles/liberty",
@@ -47,7 +50,9 @@ function crearControladorMapa3D(configuracion) {
 
       // Permite seleccionar destino con clic en mapa 3D.
       mapa3d.on("click", (ev) => {
+        // Validación básica de evento.
         if (!ev || !ev.lngLat) return;
+        // Notifica selección al módulo principal.
         configuracion.alSeleccionarDestino(ev.lngLat.lat, ev.lngLat.lng);
       });
 
@@ -71,14 +76,17 @@ function crearControladorMapa3D(configuracion) {
 
   // Refresca marcadores y geometría de ruta.
   function sincronizar() {
+    // Solo en modo 3D y con mapa inicializado.
     if (!mapa3d || configuracion.obtenerModo() !== "3D") return;
 
     // Marcador del usuario.
     const posicion = configuracion.obtenerPosicion();
     if (posicion && posicion.lat !== null && posicion.lng !== null) {
+      // Crea marcador si no existe.
       if (!marcadorUsuario3D) {
         marcadorUsuario3D = new maplibregl.Marker({ color: "#2563eb" }).setLngLat([posicion.lng, posicion.lat]).addTo(mapa3d);
       } else {
+        // O actualiza si ya existe.
         marcadorUsuario3D.setLngLat([posicion.lng, posicion.lat]);
       }
     }
@@ -86,12 +94,15 @@ function crearControladorMapa3D(configuracion) {
     // Marcador de destino.
     const destino = configuracion.obtenerDestino();
     if (destino && destino.lat !== null && destino.lng !== null) {
+      // Crea marcador si no existe.
       if (!marcadorDestino3D) {
         marcadorDestino3D = new maplibregl.Marker({ color: "#ef4444" }).setLngLat([destino.lng, destino.lat]).addTo(mapa3d);
       } else {
+        // O actualiza si ya existe.
         marcadorDestino3D.setLngLat([destino.lng, destino.lat]);
       }
     } else if (marcadorDestino3D) {
+      // Si ya no hay destino, elimina marcador.
       marcadorDestino3D.remove();
       marcadorDestino3D = null;
     }
@@ -99,7 +110,9 @@ function crearControladorMapa3D(configuracion) {
     // Trazado de ruta en formato GeoJSON.
     const fuenteRuta = mapa3d.getSource("route3d");
     if (fuenteRuta) {
+      // La ruta llega en lat/lng; MapLibre espera [lng, lat].
       const coordenadas = configuracion.obtenerCoordenadasRuta();
+      // Actualiza geometría de línea.
       fuenteRuta.setData({
         type: "Feature",
         geometry: { type: "LineString", coordinates: coordenadas.map((pt) => [pt.lng, pt.lat]) }
@@ -109,16 +122,22 @@ function crearControladorMapa3D(configuracion) {
 
   // Sigue al usuario y orienta la cámara hacia el siguiente punto de referencia.
   function actualizarVista() {
+    // Requiere mapa inicializado.
     if (!mapa3d) return;
+    // Obtiene posición actual del usuario.
     const posicion = configuracion.obtenerPosicion();
+    // Si no hay posición válida, salimos.
     if (!posicion || posicion.lat === null || posicion.lng === null) return;
 
     // Rotación suave para evitar giros bruscos.
     let orientacion = mapa3d.getBearing();
     const puntoReferencia = configuracion.obtenerSiguientePuntoReferencia();
     if (puntoReferencia) {
+      // Rumbo objetivo hacia el próximo punto.
       const objetivo = configuracion.calcularRumboObjetivo(posicion.lat, posicion.lng, puntoReferencia.lat, puntoReferencia.lng);
+      // Diferencia angular normalizada.
       const delta = ((objetivo - orientacion + 540) % 360) - 180;
+      // Suaviza giro para evitar tirones.
       orientacion += delta * 0.2;
     }
 
@@ -128,6 +147,7 @@ function crearControladorMapa3D(configuracion) {
       pitch: 58,
       bearing: orientacion
     });
+    // Tras mover cámara, refresca overlays.
     sincronizar();
   }
 

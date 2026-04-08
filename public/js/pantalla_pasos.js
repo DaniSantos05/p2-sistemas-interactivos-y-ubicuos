@@ -4,8 +4,11 @@
 
 // Traduce al vuelo parte de los textos de maniobras que llegan en inglés.
 function traducirInstruccionRuta(texto) {
+  // Fallback cuando no llega texto de instrucción.
   if (!texto) return "Sin texto disponible";
+  // Copia editable.
   let t = texto;
+  // Diccionario de reemplazos rápidos para instrucciones comunes de OSRM.
   const reemplazos = [
     [/\bHead north\b/gi, "Dirígete al norte"],
     [/\bHead south\b/gi, "Dirígete al sur"],
@@ -28,20 +31,28 @@ function traducirInstruccionRuta(texto) {
     [/\bon\b/gi, "en"],
     [/\btowards\b/gi, "hacia"]
   ];
+  // Aplica cada reemplazo al texto final.
   reemplazos.forEach(([pattern, valor]) => {
     t = t.replace(pattern, valor);
   });
+  // Devuelve instrucción traducida.
   return t;
 }
 
 // Muestra en AR un panel compacto solo cuando el contador está activo en navegación.
 function actualizarPanelPasoAR() {
+  // Si no existe panel, no seguimos.
   if (!panelPasoAR) return;
+  // Estado actual de AR.
   const enModoAR = typeof isARMode !== "undefined" && isARMode;
+  // Solo mostrar si AR + contador activo + navegación iniciada.
   if (enModoAR && modoContadorPasos && modoContadorPasos.checked && navegacionIniciada && sesionPasosActiva) {
+    // Muestra panel.
     panelPasoAR.classList.remove("oculto");
+    // Render del resumen compacto.
     panelPasoAR.innerHTML = `<strong>Contador</strong><br>Pasos: ${pasosSesionActual} · ${caloriasSesionActual} kcal`;
     return;
   }
+  // Oculta panel en cualquier otro caso.
   panelPasoAR.classList.add("oculto");
 }

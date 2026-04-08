@@ -43,17 +43,23 @@ try {
 
 // Al conectar mostramos estado y avisamos rol del cliente.
 socket.on("connect", () => {
+  // Muestra id de socket en UI de diagnóstico.
   estadoConexion.textContent = `Conectado. ID: ${socket.id}`;
+  // Notifica al servidor que este cliente ya está listo.
   socket.emit("clientReady", { role: "pantalla" });
 });
 
 // Genera un color estable para cada contacto.
 function obtenerColorContacto(idSocket) {
+  // Semilla hash inicial.
   let hash = 0;
+  // Recorre string y construye hash estable.
   for (let i = 0; i < idSocket.length; i++) {
     hash = idSocket.charCodeAt(i) + ((hash << 5) - hash);
   }
+  // Convierte hash en color hexadecimal.
   const color = Math.floor(Math.abs(Math.sin(hash) * 16777215)).toString(16);
+  // Rellena con ceros y antepone '#'.
   return "#" + ("000000" + color).slice(-6);
 }
 
@@ -63,16 +69,22 @@ function obtenerColorContacto(idSocket) {
 
 // Al entrar recibimos estado inicial de usuarios compartiendo.
 socket.on("existingSharedData", (data) => {
+  // Recorre todos los clientes compartiendo.
   for (const id in data) {
+    // No nos dibujamos a nosotros mismos.
     if (id === socket.id) continue;
+    // Filtra por lista de amigos si hay nombre disponible.
     const esAmigo = data[id].location ? misAmigos.includes(data[id].location.name) : true;
     if (!esAmigo) continue;
+    // Procesa ubicación inicial del contacto.
     if (data[id].location) procesarUbicacionContacto(id, data[id].location);
+    // Procesa ruta inicial del contacto.
     if (data[id].route) procesarRutaContacto(id, data[id].route);
   }
 });
 
 // Actualización de posición de un contacto.
+// Solo se dibuja si está en la lista de amigos del usuario actual.
 socket.on("updateContactLocation", (data) => {
   if (misAmigos.includes(data.name)) {
     procesarUbicacionContacto(data.id, data);
@@ -113,6 +125,7 @@ const contadorAmigos = document.getElementById("contadorAmigos");
 
 // Pinta la lista de amigos del usuario.
 function mostrarMisAmigos() {
+  // Si no existe contenedor, no renderiza.
   if (!listaMisAmigos) return;
 
   if (misAmigos.length === 0) {
@@ -125,6 +138,7 @@ function mostrarMisAmigos() {
   listaMisAmigos.innerHTML = "";
 
   misAmigos.forEach((nombreAmigo) => {
+    // Fila simple para cada amigo.
     const div = document.createElement("div");
     div.className = "contact-item";
     div.innerHTML = `<span style="font-size: 14px; font-weight: bold; color: #333;">${nombreAmigo}</span>`;
@@ -159,6 +173,7 @@ window.addEventListener("click", (e) => {
 // Sube una nueva imagen de perfil y refresca interfaz local.
 if (btnCambiarAvatar) {
   btnCambiarAvatar.addEventListener("click", async () => {
+    // Sin archivo, no subimos nada.
     if (!inputArchivoAvatar || !inputArchivoAvatar.files[0]) return;
 
     const datosFormulario = new FormData();
@@ -166,6 +181,7 @@ if (btnCambiarAvatar) {
     datosFormulario.append("avatar", inputArchivoAvatar.files[0]);
 
     try {
+      // Subida de avatar al backend.
       const respuesta = await fetch("/api/user/avatar", {
         method: "POST",
         body: datosFormulario
@@ -173,6 +189,7 @@ if (btnCambiarAvatar) {
 
       if (!respuesta.ok) return;
 
+      // Respuesta del backend con avatar final.
       const datos = await respuesta.json();
       miAvatar = datos.avatar;
       avatarMiPerfil.src = miAvatar;
@@ -191,6 +208,7 @@ if (btnCambiarAvatar) {
 
       // Si estamos compartiendo ubicación emitimos avatar actualizado.
       if (typeof modoCompartirUbicacion !== "undefined" && modoCompartirUbicacion.checked && miLatitud !== null && miLongitud !== null) {
+        // Propaga nuevo avatar al resto de clientes en tiempo real.
         socket.emit("shareLocation", { lat: miLatitud, lng: miLongitud, name: miNombre, avatar: miAvatar, eta: miETA });
       }
     } catch (e) {
@@ -210,10 +228,12 @@ const resultadosBusqueda = document.getElementById("resultadosBusqueda");
 // Busca usuarios y permite añadirlos como amigo.
 if (btnBuscarAmigo) {
   btnBuscarAmigo.addEventListener("click", async () => {
+    // Texto del buscador sin espacios.
     const textoBusqueda = inputBuscarAmigo.value.trim();
     if (!textoBusqueda) return;
 
     try {
+      // Consulta de usuarios coincidentes.
       const respuesta = await fetch(`/api/users?q=${encodeURIComponent(textoBusqueda)}&current_user=${encodeURIComponent(miNombre)}`);
       const usuarios = await respuesta.json();
       resultadosBusqueda.innerHTML = "";
@@ -224,6 +244,7 @@ if (btnBuscarAmigo) {
       }
 
       usuarios.forEach((usuario) => {
+        // Fila visual de resultado.
         const fila = document.createElement("div");
         fila.className = "contact-item";
         fila.style.justifyContent = "space-between";
@@ -256,10 +277,12 @@ if (btnBuscarAmigo) {
         boton.style.width = "auto";
 
         if (misAmigos.includes(usuario.username)) {
+          // Ya es amigo: botón desactivado.
           boton.textContent = "Amigo";
           boton.disabled = true;
           boton.style.background = "#555";
         } else {
+          // No es amigo: permite enviarlo al backend.
           boton.textContent = "Añadir";
           boton.onclick = async () => {
             const res = await fetch("/api/friend", {
