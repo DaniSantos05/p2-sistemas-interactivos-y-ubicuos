@@ -110,6 +110,7 @@ function actualizarBotonIrCancelar() {
   }
 }
 
+/*Función que muestra la tarjeta de ruta*/
 function mostrarTarjetaRuta(distanciaKm, tiempoFormateado) {
   tiempoTarjetaRuta.textContent = tiempoFormateado;
   distanciaTarjetaRuta.textContent = `${distanciaKm} km`;
@@ -128,6 +129,7 @@ function mostrarTarjetaRuta(distanciaKm, tiempoFormateado) {
   actualizarBotonIrCancelar();
 }
 
+/*Función que oculta la tarjeta de ruta*/
 function ocultarTarjetaRuta() {
   tarjetaRuta.classList.add("oculto");
   document.body.classList.remove("tarjeta-ruta-visible");
@@ -163,6 +165,7 @@ irTarjetaRuta.addEventListener("click", () => {
   mostrarPasoActual();
   actualizarPasoTarjetaRuta();
   
+  /*Si el modo actual no es 3D y el usuario está en AR, recentra el mapa*/
   if (typeof recentrarMapa === "function") {
     recentrarMapa();
     // Zoom adicional para que el minimapa muestre de cerca el entorno al iniciar
@@ -172,6 +175,7 @@ irTarjetaRuta.addEventListener("click", () => {
   }
 });
 
+/*Función que actualiza el paso actual de la ruta */
 function actualizarPasoTarjetaRuta() {
   if (!instruccionesRuta.length || indicePasoActual < 0) return;
   const instruccion = instruccionesRuta[indicePasoActual];
@@ -522,6 +526,7 @@ function recentrarMapa() {
   }
 }
 
+/*Si el modo contador de pasos está activado, se inicia una sesión de contador de pasos*/
 if (modoContadorPasos) {
   modoContadorPasos.addEventListener("change", () => {
     if (!modoContadorPasos.checked) {
@@ -538,6 +543,7 @@ if (modoContadorPasos) {
   });
 }
 
+/*Si los botones de filtro de actividad están activados, se inicia una sesión de contador de pasos*/
 if (botonesFiltroActividad && botonesFiltroActividad.length) {
   botonesFiltroActividad.forEach((btn) => {
     btn.addEventListener("click", () => {
