@@ -10,9 +10,6 @@ let ultimoCambioAutomatico = 0;
 let rutaTerminada = false;
 
 
-
-
-
 // Devuelve el punto de la geometría asociado a una instrucción de maniobra.
 function obtenerPuntoDeInstruccion(indiceInstruccion) {
   // Si el índice está fuera de rango, devolvemos null

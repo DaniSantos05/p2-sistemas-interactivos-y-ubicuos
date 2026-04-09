@@ -1,4 +1,4 @@
-﻿// =========================
+// =========================
 // MODO REALIDAD AUMENTADA (AR)
 // =========================
 
@@ -820,7 +820,6 @@ document.addEventListener("visibilitychange", () => {
 // Enlaza el botón AR principal con la función de activar/desactivar.
 if (botonARPrincipal) {
   botonARPrincipal.addEventListener("click", activarDesactivarAR);
-  botonARPrincipal.onclick = activarDesactivarAR;
 }
 
 // Compatibilidad por si algún flujo antiguo sigue llamando al nombre anterior.
@@ -830,20 +829,4 @@ window.activarDesactivarAR = activarDesactivarAR;
 // Refuerzo del botón AR de la tarjeta inferior.
 if (botonARTarjeta) {
   botonARTarjeta.addEventListener("click", activarDesactivarAR);
-  botonARTarjeta.onclick = activarDesactivarAR;
 }
-
-// Captura global de clics: si se pulsa cualquier botón AR, activamos/desactivamos.
-// Esto evita fallos si un listener se pierde por re-render, overlays o cambios de estado.
-document.addEventListener(
-  "click",
-  (evento) => {
-    const objetivo = evento.target;
-    if (!objetivo) return;
-    const botonAR = objetivo.closest("#btnAR, #btnARTarjetaRuta");
-    if (!botonAR) return;
-    evento.preventDefault();
-    activarDesactivarAR();
-  },
-  true
-);

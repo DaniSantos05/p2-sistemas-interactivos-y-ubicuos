@@ -35,10 +35,7 @@ function limpiarRuta() {
     activarDesactivarAR();
   }
 
-  // Si existe el botón AR, lo ocultamos
-  if (btnAR) {
-    btnAR.classList.add("oculto");
-  }
+
 
   // Ocultamos la tarjeta de ruta
   ocultarTarjetaRuta();
@@ -281,8 +278,7 @@ async function calcularRuta() {
 
     estadoRuta.textContent = `Ruta calculada: ${distanciaKm} km, ~${tiempoFormateado} a pie.`;
 
-    // Activamos la opción de AR en el menú full-screen
-    btnAR.classList.remove("oculto");
+
 
     // Compartir ruta si está activado
     if (modoCompartirUbicacion.checked) {

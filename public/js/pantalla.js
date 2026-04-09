@@ -4,7 +4,7 @@
 // =========================
 
 // Elementos de AR
-const btnAR = document.getElementById("btnAR");                 // Botón de activar/desactivar AR
+
 const contenedorAR = document.getElementById("contenedorAR");     // Contenedor de AR
 const videoAR = document.getElementById("videoAR");             // Video de la cámara
 const canvasAR = document.getElementById("canvasAR");           // Canvas para dibujar sobre el video
@@ -64,11 +64,7 @@ modoCompartirUbicacion.addEventListener("change", () => {
 if (modoClic) {
   modoClic.addEventListener("change", () => {
     if (modoClic.checked) {
-      // El menú tapa el mapa: cerramos para que el toque llegue al mapa.
-      if (menuOpciones) {
-        menuOpciones.classList.add("oculto");
-      }
-      estadoRuta.textContent = "Modo clic activado. Toca el mapa para seleccionar el destino.";
+      estadoRuta.textContent = "Modo clic activado. Cierra el menú y toca el mapa para buscar.";
       return;
     }
     estadoRuta.textContent = "Modo clic desactivado. Puedes escribir destino en el buscador.";
@@ -149,12 +145,7 @@ compartirTarjetaRuta.addEventListener("click", () => {
     modoCompartirUbicacion.dispatchEvent(new Event("change"));
 });
 
-// AR desde la tarjeta
-btnARTarjetaRuta.addEventListener("click", () => {
-  if (typeof activarDesactivarAR === "function") {
-    activarDesactivarAR();
-  }
-});
+// AR desde la tarjeta (el evento se maneja centralizado en ar.js para evitar doble ejecución)
 
 // Alterna entre "Ir" y "Cancelar ruta" según el estado actual de navegación.
 irTarjetaRuta.addEventListener("click", () => {
@@ -171,6 +162,14 @@ irTarjetaRuta.addEventListener("click", () => {
   }
   mostrarPasoActual();
   actualizarPasoTarjetaRuta();
+  
+  if (typeof recentrarMapa === "function") {
+    recentrarMapa();
+    // Zoom adicional para que el minimapa muestre de cerca el entorno al iniciar
+    if (modoActual !== "3D" && miLatitud !== null && miLongitud !== null) {
+      mapa.setView([miLatitud, miLongitud], 18);
+    }
+  }
 });
 
 function actualizarPasoTarjetaRuta() {
@@ -219,17 +218,19 @@ const mapa = L.map("mapa", {
   zoomControl: false
 });
 
-let ultimoUpdateVista3D = 0;
-let pausaAutoCentrado3DHasta = 0;
-let pausaAutoCentrado2DHasta = 0;
-let map3DController = null;
+let ultimoUpdateVista3D = 0;          // Para controlar la frecuencia de actualización de la vista 3D
+let pausaAutoCentrado3DHasta = 0;     // Para controlar la pausa del auto-centrado en 3D
+let pausaAutoCentrado2DHasta = 0;     // Para controlar la pausa del auto-centrado en 2D
+let map3DController = null;           // Controlador del mapa 3D
 
+/*Función que pausa el auto-centrado del mapa */
 function pausarAutoCentrado(milisegundos = 6000) {
   const hasta = Date.now() + milisegundos;
   pausaAutoCentrado2DHasta = hasta;
   pausaAutoCentrado3DHasta = Math.max(pausaAutoCentrado3DHasta, hasta);
 }
 
+/*Función que obtiene el controlador del mapa 3D */
 function obtenerControladorMapa3D() {
   if (map3DController || typeof crearControladorMapa3D !== "function") return map3DController;
   map3DController = crearControladorMapa3D({
@@ -246,11 +247,13 @@ function obtenerControladorMapa3D() {
   return map3DController;
 }
 
+/*Función que inicializa el mapa 3D */
 function inicializarMapa3D() {
   const controlador = obtenerControladorMapa3D();
   if (controlador) controlador.inicializar();
 }
 
+/*Función que sincroniza el mapa 3D */
 function sincronizarMapa3D() {
   const controlador = obtenerControladorMapa3D();
   if (controlador) controlador.sincronizar();
@@ -278,14 +281,14 @@ let marcadorPasoActual = null; // Marcador visual (punto azul) del paso actual
 let navegacionIniciada = false; // Se activa al pulsar "Ir"
 let periodoActividadActual = "day";
 
-let sesionPasosActiva = false;
-let sesionPasosGuardada = false;
-let pasosSesionActual = 0;
-let caloriasSesionActual = 0;
-let distanciaSesionMetros = 0;
-let posicionAnteriorSesion = null;
-let inicioSesionISO = null;
-let destinoSesionNombre = "";
+let sesionPasosActiva = false;      // Indica si la sesión de pasos está activa
+let sesionPasosGuardada = false;    // Indica si la sesión de pasos ha sido guardada
+let pasosSesionActual = 0;          // Contador de pasos de la sesión actual
+let caloriasSesionActual = 0;       // Contador de calorías de la sesión actual
+let distanciaSesionMetros = 0;       // Contador de distancia de la sesión actual
+let posicionAnteriorSesion = null;  // Posición anterior del usuario en la sesión actual
+let inicioSesionISO = null;         // Fecha y hora de inicio de la sesión en formato ISO
+let destinoSesionNombre = "";       // Nombre del destino de la sesión
 
 // =========================
 // AJUSTES DE AR
@@ -296,6 +299,7 @@ let anguloFlechaRenderizado = null;
 
 let modoActual = "2D";
 
+/*Función que actualiza la vista 3D */
 function actualizarVista3D() {
   if (modoActual !== "3D") return;
   inicializarMapa3D();
@@ -352,6 +356,13 @@ if ("geolocation" in navigator) {
 
       // Actualizamos el paso automático
       actualizarPasoAutomatico();
+
+      // Si estamos en AR y navegando, el minimapa debe seguir al usuario continuamente
+      if (navegacionIniciada && typeof isARMode !== "undefined" && isARMode && modoActual !== "3D") {
+        if (Date.now() >= pausaAutoCentrado2DHasta) {
+          mapa.panTo([miLatitud, miLongitud]);
+        }
+      }
     },
     (err) => {
       // Si hay un error, mostramos un mensaje
@@ -510,31 +521,6 @@ function recentrarMapa() {
     estadoRuta.textContent = "Todavía no se conoce tu posición actual.";
   }
 }
-
-// Asignamos la funcionalidad a cada botón del menú usando su atributo data-event
-document.querySelectorAll(".btn-control-menu").forEach(boton => {
-    boton.addEventListener("click", () => {
-        const evento = boton.getAttribute("data-event");
-
-        switch (evento) {
-            case "zoomIn":
-                acercarZoom();
-                break;
-            case "zoomOut":
-                alejarZoom();
-                break;
-            case "toggleMode":
-                alternarModoVisual();
-                break;
-            case "recenter":
-                recentrarMapa();
-                break;
-            case "deleteRoute":
-                eliminarRuta();
-                break;
-        }
-    });
-});
 
 if (modoContadorPasos) {
   modoContadorPasos.addEventListener("change", () => {
