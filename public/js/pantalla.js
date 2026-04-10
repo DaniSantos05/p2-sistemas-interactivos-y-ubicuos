@@ -28,6 +28,99 @@ const cerrarMenuOpciones = document.getElementById("cerrarMenuOpciones");   // B
 const avatarMenu = document.getElementById("avatarMenu");               // Avatar grande del menú
 const nombreMenu = document.getElementById("nombreMenu");                   // Nombre en el menú
 const btnAvatarIcon = document.getElementById("btnAvatarIcon");       // Avatar pequeño en la barra flotante
+const metaViewport = document.querySelector('meta[name="viewport"]');
+const VIEWPORT_BLOQUEADO = "width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content";
+
+function actualizarOffsetsViewport() {
+  const viewport = window.visualViewport;
+  const appHeight = viewport ? viewport.height : window.innerHeight;
+  const offsetLeft = viewport ? Math.max(0, viewport.offsetLeft) : 0;
+  const offsetRight = viewport
+    ? Math.max(0, window.innerWidth - viewport.width - viewport.offsetLeft)
+    : 0;
+  const offsetTop = viewport ? Math.max(0, viewport.offsetTop) : 0;
+  const offsetBottom = viewport
+    ? Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop)
+    : 0;
+
+  document.documentElement.style.setProperty("--app-height", `${Math.max(appHeight, 0)}px`);
+  document.documentElement.style.setProperty("--viewport-offset-left", `${offsetLeft}px`);
+  document.documentElement.style.setProperty("--viewport-offset-right", `${offsetRight}px`);
+  document.documentElement.style.setProperty("--viewport-offset-top", `${offsetTop}px`);
+  document.documentElement.style.setProperty("--viewport-offset-bottom", `${offsetBottom}px`);
+
+  window.scrollTo(0, 0);
+  document.documentElement.scrollLeft = 0;
+  document.documentElement.scrollTop = 0;
+  document.body.scrollLeft = 0;
+  document.body.scrollTop = 0;
+}
+
+function bloquearZoomViewport() {
+  if (!metaViewport) return;
+  metaViewport.setAttribute("content", VIEWPORT_BLOQUEADO);
+}
+
+function corregirZoomSiExiste() {
+  if (!window.visualViewport || !window.visualViewport.scale) return;
+  if (window.visualViewport.scale > 1.01) {
+    bloquearZoomViewport();
+    actualizarOffsetsViewport();
+  }
+}
+
+bloquearZoomViewport();
+actualizarOffsetsViewport();
+window.addEventListener("resize", () => {
+  actualizarOffsetsViewport();
+  corregirZoomSiExiste();
+});
+window.addEventListener("orientationchange", () => {
+  bloquearZoomViewport();
+  actualizarOffsetsViewport();
+  corregirZoomSiExiste();
+});
+
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", () => {
+    actualizarOffsetsViewport();
+    corregirZoomSiExiste();
+  });
+  window.visualViewport.addEventListener("scroll", () => {
+    actualizarOffsetsViewport();
+    corregirZoomSiExiste();
+  });
+}
+
+if (inputDestino) {
+  const bloquearZoomEnBusqueda = () => {
+    bloquearZoomViewport();
+    actualizarOffsetsViewport();
+    corregirZoomSiExiste();
+  };
+
+  inputDestino.addEventListener("touchstart", bloquearZoomEnBusqueda, { passive: true });
+  inputDestino.addEventListener("focus", bloquearZoomEnBusqueda);
+  inputDestino.addEventListener("blur", () => {
+    setTimeout(() => {
+      bloquearZoomViewport();
+      actualizarOffsetsViewport();
+      corregirZoomSiExiste();
+    }, 80);
+  });
+}
+
+["gesturestart", "gesturechange", "gestureend"].forEach((eventName) => {
+  document.addEventListener(eventName, (event) => {
+    event.preventDefault();
+  }, { passive: false });
+});
+
+document.addEventListener("touchmove", (event) => {
+  if (event.touches && event.touches.length > 1) {
+    event.preventDefault();
+  }
+}, { passive: false });
 
 // Actualizar el avatar del botón flotante con el del usuario
 if (btnAvatarIcon) {
@@ -112,6 +205,7 @@ function actualizarBotonIrCancelar() {
 
 /*Función que muestra la tarjeta de ruta*/
 function mostrarTarjetaRuta(distanciaKm, tiempoFormateado) {
+  actualizarOffsetsViewport();
   tiempoTarjetaRuta.textContent = tiempoFormateado;
   distanciaTarjetaRuta.textContent = `${distanciaKm} km`;
   pasoTarjetaRuta.textContent = "Ruta lista. Pulsa Ir para empezar la navegación.";
@@ -134,6 +228,7 @@ function ocultarTarjetaRuta() {
   tarjetaRuta.classList.add("oculto");
   document.body.classList.remove("tarjeta-ruta-visible");
   compartirTarjetaRuta.classList.remove("active");
+  actualizarOffsetsViewport();
 }
 
 // Cerrar tarjeta de ruta → elimina la ruta
@@ -571,9 +666,6 @@ if (typeof inicializarAutocompletadoDestino === "function") {
 if (typeof inicializarControlesDesplegablesMapa === "function") {
   inicializarControlesDesplegablesMapa();
 }
-
-
-
 
 
 

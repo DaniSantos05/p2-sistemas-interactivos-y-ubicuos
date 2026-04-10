@@ -5,10 +5,38 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
+:root {
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+  --viewport-offset-left: 0px;
+  --viewport-offset-right: 0px;
+  --viewport-offset-top: 0px;
+  --viewport-offset-bottom: 0px;
+  --app-height: 100dvh;
+}
+
+html {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #1a1a2e;
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
+}
+
 /* ---- Reset base ---- */
 body {
   margin: 0;
+  width: 100%;
+  height: var(--app-height);
+  min-height: var(--app-height);
+  position: fixed;
+  inset: 0;
   overflow: hidden;
+  overscroll-behavior: none;
   font-family: 'Inter', Arial, sans-serif;
   background: #1a1a2e;
 }
@@ -24,8 +52,7 @@ body {
 #mapa,
 #mapa3d {
   width: 100vw;
-  height: 100vh;
-  height: 100dvh;
+  height: var(--app-height);
 }
 
 #mapa3d {
@@ -39,9 +66,9 @@ body {
 /*Barra flotante superior*/  
 .top-floating-ui {
   position: fixed;
-  top: 16px;
-  left: 16px;
-  right: 16px;
+  top: calc(max(var(--safe-area-top), var(--viewport-offset-top)) + 16px);
+  left: calc(var(--viewport-offset-left) + var(--safe-area-left) + 16px);
+  right: calc(var(--viewport-offset-right) + var(--safe-area-right) + 16px);
   z-index: 2000;
   display: flex;
   align-items: center;
@@ -59,6 +86,7 @@ body {
   flex: 1;
   display: flex;
   align-items: center;
+  min-width: 0;
   position: relative;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(14px);
@@ -67,6 +95,7 @@ body {
   box-shadow: 0 2px 12px rgba(0,0,0,0.18);
   padding: 4px 6px 4px 18px;
   transition: box-shadow 0.3s ease;
+  touch-action: manipulation;
 }
 
 /*Contenedor de búsqueda tipo píldora*/
@@ -77,10 +106,11 @@ body {
 /*Input de búsqueda*/
 .search-input-modern {
   flex: 1;
+  min-width: 0;
   border: none;
   outline: none;
   background: transparent;
-  font-size: 15px;
+  font-size: 16px;
   font-family: 'Inter', Arial, sans-serif;
   color: #222;
   padding: 12px 8px;
@@ -159,8 +189,8 @@ body {
 /*Contenedor de los controles del mapa*/
 .mapa-controles {
   position: fixed;
-  top: 80px; /* Debajo del botón de perfil que está en top: 16px con altura 48px */
-  right: 16px;
+  top: calc(max(var(--safe-area-top), var(--viewport-offset-top)) + 80px);
+  right: calc(var(--viewport-offset-right) + var(--safe-area-right) + 16px);
   z-index: 2000;
   display: flex;
   flex-direction: column;
@@ -241,8 +271,8 @@ body {
 /*Contenedor del botón para activar tilt en el móvil*/
 .control-tilt {
   position: fixed;
-  top: 80px;
-  left: 16px;
+  top: calc(max(var(--safe-area-top), var(--viewport-offset-top)) + 80px);
+  left: calc(var(--viewport-offset-left) + var(--safe-area-left) + 16px);
   z-index: 2000;
   display: flex;
   flex-direction: column;
@@ -892,8 +922,8 @@ body.modo-3d #mapa3d { display: block; }
 
 body.modo-ar #mapa {
   position: fixed !important;
-  top: 20px !important;
-  right: 20px !important;
+  top: calc(max(var(--safe-area-top), var(--viewport-offset-top)) + 20px) !important;
+  right: calc(var(--viewport-offset-right) + var(--safe-area-right) + 20px) !important;
   left: auto !important;
   width: 250px !important;
   height: 250px !important;
@@ -946,8 +976,8 @@ body.modo-ar .tarjeta-ruta-btn-ar {
 /*Panel de paso en modo AR*/
 .panel-paso-ar {
   position: fixed;
-  top: 20px;
-  left: 20px;
+  top: calc(max(var(--safe-area-top), var(--viewport-offset-top)) + 20px);
+  left: calc(var(--viewport-offset-left) + var(--safe-area-left) + 20px);
   z-index: 10020;
   max-width: min(68vw, 360px);
   padding: 10px 12px;
@@ -1045,6 +1075,10 @@ body.modo-ar .panel-paso-ar:not(.oculto) {
   opacity: 1;
   max-width: 600px;
   margin: 0 auto;
+}
+
+.leaflet-bottom {
+  transition: bottom 0.3s ease;
 }
 
 /*Tarjeta de ruta oculta*/
@@ -1222,10 +1256,19 @@ body.modo-ar .panel-paso-ar:not(.oculto) {
 /* ============================================= */
 
 @media (max-width: 600px) {
+  .search-input-modern,
+  .input-moderno,
+  input[type="file"] {
+    font-size: 16px;
+  }
+
   .top-floating-ui {
-    top: 10px;
-    left: 10px;
-    right: 10px;
+    top: calc(max(var(--safe-area-top), var(--viewport-offset-top)) + 10px);
+    left: calc(var(--viewport-offset-left) + var(--safe-area-left) + 10px);
+    right: calc(var(--viewport-offset-right) + var(--safe-area-right) + 10px);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
     gap: 8px;
   }
 
@@ -1239,6 +1282,10 @@ body.modo-ar .panel-paso-ar:not(.oculto) {
     padding: 10px 6px;
   }
 
+  .sugerencias-destino {
+    max-height: min(220px, 36vh);
+  }
+
   .btn-search-modern {
     width: 38px;
     height: 38px;
@@ -1248,6 +1295,16 @@ body.modo-ar .panel-paso-ar:not(.oculto) {
   .profile-toggle-btn {
     width: 42px;
     height: 42px;
+  }
+
+  .mapa-controles {
+    top: calc(max(var(--safe-area-top), var(--viewport-offset-top)) + 76px);
+    right: calc(var(--viewport-offset-right) + var(--safe-area-right) + 10px);
+  }
+
+  .control-tilt {
+    top: calc(max(var(--safe-area-top), var(--viewport-offset-top)) + 76px);
+    left: calc(var(--viewport-offset-left) + var(--safe-area-left) + 10px);
   }
 
   .contenido-menu {
@@ -1274,24 +1331,61 @@ body.modo-ar .panel-paso-ar:not(.oculto) {
   }
 
   .tarjeta-ruta {
-    padding: 16px 16px 20px;
+    left: calc(var(--viewport-offset-left) + var(--safe-area-left) + 10px);
+    right: calc(var(--viewport-offset-right) + var(--safe-area-right) + 10px);
+    bottom: calc(max(var(--safe-area-bottom), var(--viewport-offset-bottom)) + 10px);
+    width: auto;
+    max-width: none;
+    max-height: min(46vh, 320px);
+    overflow-y: auto;
+    border-radius: 22px;
+    padding: 16px 16px calc(16px + var(--safe-area-bottom));
   }
 
   .tarjeta-ruta-time {
     font-size: 22px;
   }
 
+  .tarjeta-ruta-header {
+    gap: 10px;
+  }
+
+  .tarjeta-ruta-info {
+    min-width: 0;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+  }
+
+  .tarjeta-ruta-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
   .tarjeta-ruta-btn {
-    padding: 12px 6px;
+    min-width: 0;
+    padding: 12px 10px;
     font-size: 13px;
+  }
+
+  .tarjeta-ruta-btn .material-symbols-outlined {
+    font-size: 18px;
+  }
+
+  .tarjeta-ruta-btn-go {
+    grid-column: 1 / -1;
+  }
+
+  body.tarjeta-ruta-visible .leaflet-bottom {
+    bottom: 210px;
   }
 
 
 
   /* Mini-mapa AR más pequeño en móviles */
   body.modo-ar #mapa {
-    top: 15px !important;
-    right: 15px !important;
+    top: calc(max(var(--safe-area-top), var(--viewport-offset-top)) + 15px) !important;
+    right: calc(var(--viewport-offset-right) + var(--safe-area-right) + 15px) !important;
     width: 140px !important;
     height: 140px !important;
     border-radius: 10px !important;
@@ -1299,8 +1393,8 @@ body.modo-ar .panel-paso-ar:not(.oculto) {
   }
 
   .panel-paso-ar {
-    top: 14px;
-    left: 14px;
+    top: calc(max(var(--safe-area-top), var(--viewport-offset-top)) + 14px);
+    left: calc(var(--viewport-offset-left) + var(--safe-area-left) + 14px);
     max-width: 64vw;
     font-size: 12px;
     padding: 8px 10px;
