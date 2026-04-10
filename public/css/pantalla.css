@@ -235,6 +235,85 @@ body {
 }
 
 /* ============================================= */
+/* Botón para activar tilt en el móvil
+/* ============================================= */
+
+/*Contenedor del botón para activar tilt en el móvil*/
+.control-tilt {
+  position: fixed;
+  top: 80px;
+  left: 16px;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  pointer-events: none;
+}
+
+/*Botón para activar tilt en el móvil*/
+.btn-tilt-flotante {
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(241, 7, 7, 0.8);
+  color: white;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: transform 0.2s, background 0.2s, box-shadow 0.2s;  /*Transición suave*/
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+/*Hover del botón para activar tilt en el móvil*/
+.btn-tilt-flotante:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  color: white;
+}
+
+/* Active es cuando se pulsa el botón */
+.btn-tilt-flotante:active {
+  transform: scale(0.95);
+}
+
+/* El botón de tilt cuando está activado */
+.btn-tilt-flotante.activo {
+  background-color: #2ecc71 !important;
+  color: white;
+}
+
+/* Ocultar el botón de tilt cuando la AR está activa */
+body.modo-ar .btn-tilt-flotante {
+  display: none !important;
+}
+
+/* ============================================= */
+/*  Clases para resaltar elemento */
+/* ============================================= */
+
+/*Clase para resaltar el elemento focalizado*/
+.tilt-focus {
+  box-shadow: 0 0 15px 5px rgba(46, 204, 113, 0.8) !important;
+  outline: 3px solid #2ecc71 !important;    /*Contorno verde*/
+  transition: all 0.2s ease-in-out;
+  border-radius: 50%;                         /*Mantiene el border-radius del elemento*/
+}
+
+/*Clase para resaltar el elemento focalizado dentro del menú*/
+.tilt-focus-menu {
+  background-color: rgba(46, 204, 113, 0.15) !important;
+  box-shadow: 0 0 10px 3px rgba(46, 204, 113, 0.8) inset !important;      /*Sombra interior verde*/
+  border-radius: 50%;                                                 
+}
+
+
+/* ============================================= */
 /* Botón circular del perfil / avatar            */
 /* ============================================= */
 

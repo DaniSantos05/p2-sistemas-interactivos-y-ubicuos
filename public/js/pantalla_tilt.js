@@ -1,0 +1,210 @@
+// =========================
+// NAVEGACIÓN CON TILT
+// =========================
+
+const btnActivarTilt = document.getElementById("btnActivarTilt");
+const modalPerfilTilt = document.getElementById("modalPerfil");
+let tiltActivo = false;                 // Indica si el control por inclinación está activo
+let tiltBeta = null;                    // El ángulo beta es el de arriba/abajo
+let tiltGamma = null;                   // El ángulo gamma es el de izquierda/derecha
+let tiltCooldown = false;               // Cooldown para evitar cambios bruscos
+let tiltFocusIndex = -1;                // Índice del elemento focalizado
+let tiltElementos = [];                 // Array de elementos focalizables
+let bloqueoVertical = false;            // Bloqueo vertical para evitar cambios bruscos
+let bloqueoHorizontal = false;          // Bloqueo horizontal para evitar cambios bruscos
+
+/*Función que actualiza los elementos que se pueden focalizar con el control por inclinación*/
+function actualizarElementosTilt() {
+  const opcionesDesplegables = document.getElementById("opcionesDesplegables");
+  
+  /*Si el desplegable de opciones del mapa está abierto, se focalizan los botones de zoom y capas*/
+  if (opcionesDesplegables && !opcionesDesplegables.classList.contains("oculto")) {
+    const elementosDeseados = Array.from(opcionesDesplegables.querySelectorAll('button'));
+    tiltElementos = elementosDeseados.filter(el => el.offsetParent !== null);
+  } else {
+    /*Fuera de todo, solo interactuamos con el botón de opciones de control del mapa*/
+    tiltElementos = [document.getElementById("btnDesplegarControles")].filter(Boolean);
+  }
+  
+  /*Si el índice de foco está fuera de rango, se establece en 0.*/
+  if (tiltFocusIndex < 0 || tiltFocusIndex >= tiltElementos.length) tiltFocusIndex = 0;
+}
+
+/*Función que pinta el foco en el elemento focalizado*/
+function pintarFocoTilt() {
+  /*Limpia el foco anterior*/
+  document.querySelectorAll('.tilt-focus, .tilt-focus-menu').forEach(el => {
+    el.classList.remove('tilt-focus', 'tilt-focus-menu');
+  });
+  
+  /*Si no hay elementos focalizables, no hace nada*/
+  if (tiltElementos.length === 0 || tiltFocusIndex < 0 || tiltFocusIndex >= tiltElementos.length) return;
+  
+  /*Obtiene el elemento focalizado*/
+  const focalizado = tiltElementos[tiltFocusIndex];
+  
+  /*Obtiene el desplegable de opciones del mapa*/
+  const opcionesDesplegables = document.getElementById("opcionesDesplegables");
+  
+  /*Si el desplegable de opciones del mapa está abierto, se pinta el foco en el elemento focalizado*/
+  if (opcionesDesplegables && !opcionesDesplegables.classList.contains("oculto")) {
+     focalizado.classList.add("tilt-focus-menu");
+  } else {
+     focalizado.classList.add("tilt-focus");
+  }
+}
+
+/*Función que simula un click en el elemento focalizado*/
+function simularClickTilt(elemento) {
+  /*Si no hay elemento focalizado, no hace nada*/
+  if (!elemento) return;
+  
+  /*Ejecuta el click sobre el botón o elemento de control*/
+  elemento.click();
+}
+
+/*Función que maneja el control por inclinación*/
+function manejarTilt(e) {
+  /*Si el control por inclinación no está activo o está en cooldown, no hace nada*/
+  if (!tiltActivo || tiltCooldown) return;
+  
+  /*Obtiene los ángulos beta y gamma*/
+  let beta = e.beta;          // Inclinación vertical (arriba/abajo)
+  let gamma = e.gamma;        // Inclinación horizontal (izquierda/derecha)
+  
+  /*Si los ángulos beta y gamma son nulos, no hace nada. Esto 
+  ocurre cuando el dispositivo no soporta el control por inclinación*/
+  if (beta === null || gamma === null) return;
+  
+  /*Si los ángulos de tilt son nulos, los inicializa. Esto sirve para 
+  establecer un punto de referencia para el control por inclinación*/
+  if (tiltBeta === null || tiltGamma === null) {
+    tiltBeta = beta;
+    tiltGamma = gamma;
+    pintarFocoTilt();      // Pinta el foco en el elemento focalizado
+    return;
+  }
+  
+  /*Calcula la diferencia entre los ángulos actuales y los ángulos de tilt.
+  Esto sirve para detectar la dirección y magnitud de la inclinación*/
+  let diffBeta = beta - tiltBeta;
+  let diffGamma = gamma - tiltGamma;
+  
+  /*Define los umbrales de inclinación*/
+  const umbralVertical = 25;   // Inclinación vertical (un poco menos)
+  const umbralHorizontal = 55; // Inclinación horizontal (más rígido)
+  const margenRegreso = 20;    // Deberá regresar al menos al umbral de 20 para liberar el bloqueo
+  
+  /*Si la diferencia entre los ángulos actuales y los ángulos de tilt es menor que el margen de regreso,
+  se libera el bloqueo. Esto sirve para evitar cambios bruscos en el control por inclinación*/
+  if (Math.abs(diffGamma) < margenRegreso) bloqueoHorizontal = false; 
+  if (Math.abs(diffBeta) < margenRegreso) bloqueoVertical = false;
+  
+  let accion = null;      // Acción a realizar
+  
+  /*Si el bloqueo horizontal no está activo, se comprueba si la diferencia
+  entre los ángulos actuales y los ángulos de tilt es mayor que el umbral horizontal*/
+  if (!bloqueoHorizontal) {
+    if (diffGamma < -umbralHorizontal) { accion = "izq"; bloqueoHorizontal = true; }
+    else if (diffGamma > umbralHorizontal) { accion = "der"; bloqueoHorizontal = true; }
+  }
+  
+  /*Si no hay acción y el bloqueo vertical no está activo, se comprueba si la diferencia
+  entre los ángulos actuales y los ángulos de tilt es mayor que el umbral vertical*/
+  if (!accion && !bloqueoVertical) {
+    if (diffBeta < -umbralVertical) { accion = "arriba"; bloqueoVertical = true; }
+    else if (diffBeta > umbralVertical) { accion = "abajo"; bloqueoVertical = true; }
+  }
+  
+  /*Si no hay acción, no hace nada*/
+  if (!accion) return;
+  
+  /*Establece un cooldown para evitar cambios bruscos en el control por inclinación*/
+  tiltCooldown = true;
+  setTimeout(() => tiltCooldown = false, 1000);    // 1 segundo de cooldown
+  
+  const opcionesDesplegables = document.getElementById("opcionesDesplegables");
+  /*Para saber si el desplegable de opciones del mapa está abierto*/
+  const desplegableAbierto = opcionesDesplegables && !opcionesDesplegables.classList.contains("oculto");
+  
+  /*Actualiza los elementos que se pueden focalizar con el control por inclinación*/
+  actualizarElementosTilt();
+  
+  /*Si la acción es "izq", se simula un click en el elemento focalizado*/
+  if (accion === "izq") {
+    // OK / ACEPTAR
+    simularClickTilt(tiltElementos[tiltFocusIndex]);
+    setTimeout(() => {
+      actualizarElementosTilt();
+      pintarFocoTilt();
+    }, 1000);             // 1 segundo de cooldown
+    
+  } else if (accion === "der") {
+    // CERRAR MENU
+    if (desplegableAbierto) {
+      const btnDesplegarControles = document.getElementById("btnDesplegarControles");
+      /*Simula el click en el botón de desplegar controles*/
+      if (btnDesplegarControles) btnDesplegarControles.click();
+    }
+    setTimeout(() => {
+      actualizarElementosTilt();
+      pintarFocoTilt();
+    }, 1000);             // 1 segundo de cooldown
+    
+  } else if (accion === "arriba") {
+    // NAVEGAR ARRIBA
+    if (tiltElementos.length > 1) {
+      tiltFocusIndex--;
+      if (tiltFocusIndex < 0) tiltFocusIndex = tiltElementos.length - 1;
+      pintarFocoTilt();
+    }
+  } else if (accion === "abajo") {
+    // NAVEGAR ABAJO
+    if (tiltElementos.length > 1) {
+      tiltFocusIndex++;
+      if (tiltFocusIndex >= tiltElementos.length) tiltFocusIndex = 0;
+      pintarFocoTilt();
+    }
+  }
+}
+
+/* Si se pulsa el botón de activar tilt */
+if (btnActivarTilt) {
+  btnActivarTilt.addEventListener("click", () => {
+    tiltActivo = !tiltActivo;
+    /*Si el control por inclinación está activo*/
+    if (tiltActivo) {
+      btnActivarTilt.classList.add("activo");
+      tiltBeta = null;      // Reinicia el ángulo beta
+      tiltGamma = null;     // Reinicia el ángulo gamma
+      tiltCooldown = false; // Reinicia el cooldown
+      
+      /*Si el control por inclinación está activo*/
+      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission()        // Solicita permiso para el control por inclinación
+          .then(permissionState => {
+            /*Si el permiso es concedido*/
+            if (permissionState === 'granted') {
+              window.addEventListener('deviceorientation', manejarTilt);  // Añade el evento de control por inclinación
+            } else {
+              alert("Permiso denegado para el control por inclinación.");   // Si el permiso es denegado
+              tiltActivo = false;                                           // Desactiva el control por inclinación
+              btnActivarTilt.classList.remove("activo");                    // Elimina la clase activo del botón
+            }
+          })
+          .catch(console.error);  // Si hay un error
+      } else {
+        window.addEventListener('deviceorientation', manejarTilt);  // Añade el evento de control por inclinación si el dispositivo lo soporta
+      }
+      actualizarElementosTilt();  // Actualiza los elementos que se pueden focalizar
+      pintarFocoTilt();           // Pinta el foco en el elemento focalizado
+    /*Si el control por inclinación está desactivado, elimina el foco y el evento*/
+    } else {
+      btnActivarTilt.classList.remove("activo");
+      window.removeEventListener('deviceorientation', manejarTilt);
+      document.querySelectorAll('.tilt-focus, .tilt-focus-menu').forEach(el => {
+        el.classList.remove('tilt-focus', 'tilt-focus-menu');
+      });
+    }
+  });
+}
