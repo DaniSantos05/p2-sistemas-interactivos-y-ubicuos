@@ -681,6 +681,12 @@ async function activarDesactivarAR() {
       "Modo AR activado. Calcula una ruta para mostrar la flecha de navegación.";
   }
 
+  // El control por gestos sin tocar usa la cámara frontal.
+  // Lo apagamos antes de abrir AR para liberar la cámara trasera.
+  if (typeof window.desactivarControlGestosMenu === "function") {
+    window.desactivarControlGestosMenu();
+  }
+
   // En iPhone pedimos permiso para acceder a la orientación del dispositivo.
   if (
     typeof DeviceOrientationEvent !== "undefined" &&
