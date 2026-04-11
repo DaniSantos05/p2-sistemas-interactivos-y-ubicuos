@@ -69,7 +69,7 @@ body {
   top: calc(max(var(--safe-area-top), var(--viewport-offset-top)) + 16px);
   left: calc(var(--viewport-offset-left) + var(--safe-area-left) + 16px);
   right: calc(var(--viewport-offset-right) + var(--safe-area-right) + 16px);
-  z-index: 2000;
+  z-index: 2100;
   display: flex;
   align-items: center;
   gap: 10px;
