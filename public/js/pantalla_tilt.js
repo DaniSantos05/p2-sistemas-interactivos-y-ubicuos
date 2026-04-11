@@ -253,6 +253,10 @@ function desactivarControlTilt() {
   bloqueoVertical = false;    // Bloqueo vertical
   bloqueoHorizontal = false;  // Bloqueo horizontal
   limpiarFocoAsistido();      // Limpia el foco asistido
+
+  /*Cierra el modal de instrucciones de tilt*/
+  const modalTilt = document.getElementById("modalInstruccionesTilt");
+  if (modalTilt) modalTilt.style.display = "none";
 }
 
 /*Si se pulsa el botón de activar tilt*/
@@ -275,6 +279,12 @@ if (btnActivarTilt) {
       tiltGamma = null;     // Reinicia el ángulo gamma
       tiltCooldown = false; // Reinicia el cooldown
       
+      /*Muestra el modal de instrucciones de tilt*/
+      const mostrarModalTilt = () => {
+        const modalTilt = document.getElementById("modalInstruccionesTilt");
+        if (modalTilt) modalTilt.style.display = "flex";
+      };
+      
       /*Si el control por inclinación está activo*/
       if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
         DeviceOrientationEvent.requestPermission()        // Solicita permiso para el control por inclinación
@@ -282,6 +292,7 @@ if (btnActivarTilt) {
             /*Si el permiso es concedido*/
             if (permissionState === 'granted') {
               window.addEventListener('deviceorientation', manejarTilt);  // Añade el evento de control por inclinación
+              mostrarModalTilt();
             } else {
               alert("Permiso denegado para el control por inclinación.");   // Si el permiso es denegado
               tiltActivo = false;                                           // Desactiva el control por inclinación
@@ -291,6 +302,7 @@ if (btnActivarTilt) {
           .catch(console.error);  // Si hay un error
       } else {
         window.addEventListener('deviceorientation', manejarTilt);  // Añade el evento de control por inclinación si el dispositivo lo soporta
+        mostrarModalTilt();
       }
       actualizarElementosTilt();  // Actualiza los elementos que se pueden focalizar
       pintarFocoTilt();           // Pinta el foco en el elemento focalizado
@@ -303,6 +315,15 @@ const btnDesplegarControles = document.getElementById("btnDesplegarControles");
 if (btnDesplegarControles) {
   btnDesplegarControles.addEventListener("click", () => {
     refrescarFocoAsistido();
+  });
+}
+
+/* Event listener para cerrar el modal de tilt */
+const cerrarModalTiltBtn = document.getElementById("cerrarModalTilt");
+if (cerrarModalTiltBtn) {
+  cerrarModalTiltBtn.addEventListener("click", () => {
+    const modalTilt = document.getElementById("modalInstruccionesTilt");
+    if (modalTilt) modalTilt.style.display = "none";
   });
 }
 
