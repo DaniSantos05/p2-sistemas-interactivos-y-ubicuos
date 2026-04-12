@@ -389,6 +389,10 @@ function desactivarControlGestos() {
   /* Se detiene la cámara y se limpia el foco */
   detenerCamaraGestosMenu();
   obtenerNavegacionAsistida()?.limpiarFoco();
+
+  /* Cierra el modal de instrucciones de gestos */
+  const modalGestos = document.getElementById("modalInstruccionesGestos");
+  if (modalGestos) modalGestos.style.display = "none";
 }
 
 /* Event listener para el botón de activación del control por gestos aéreos */
@@ -415,6 +419,9 @@ if (btnActivarGestosMenu) {
       obtenerNavegacionAsistida()?.pintarFoco();
       /* Se activa la cámara */
       await activarCamaraGestosMenu();
+      /* Muestra el modal de instrucciones de gestos */
+      const modalGestos = document.getElementById("modalInstruccionesGestos");
+      if (modalGestos) modalGestos.style.display = "flex";
       /* Se refresca el foco */
       obtenerNavegacionAsistida()?.refrescarFoco();
     } catch (error) {
@@ -423,6 +430,15 @@ if (btnActivarGestosMenu) {
       alert("No se pudo activar el control por gestos con la cámara frontal.");
       desactivarControlGestos();
     }
+  });
+}
+
+/* Event listener para cerrar el modal de gestos */
+const cerrarModalGestosBtn = document.getElementById("cerrarModalGestos");
+if (cerrarModalGestosBtn) {
+  cerrarModalGestosBtn.addEventListener("click", () => {
+    const modalGestos = document.getElementById("modalInstruccionesGestos");
+    if (modalGestos) modalGestos.style.display = "none";
   });
 }
 

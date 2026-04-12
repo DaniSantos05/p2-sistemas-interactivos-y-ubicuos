@@ -86,7 +86,7 @@ function manejarAccionAsistida(accion) {
   actualizarElementosTilt();
 
   if (!desplegableAbierto) {
-    if (accion === "izq" || accion === "abajo") {
+    if (accion === "izq") {
       abrirMenuControlesAsistido();
     }
     return;
