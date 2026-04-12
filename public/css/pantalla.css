@@ -799,6 +799,47 @@ body.modo-ar .btn-tilt-flotante {
   color: #ff6b6b;
 }
 
+/* ============================================= */
+/* MODAL INSTRUCCIONES TILT                      */
+/* ============================================= */
+
+/*Título del modal*/
+#modalInstruccionesTilt h2,
+#modalInstruccionesGestos h2 { 
+  text-align: center;
+  margin-top: 0;
+  color: #fff; /* Usamos blanco para contrastar con el fondo oscuro del modal */
+}
+
+/*Párrafo del modal*/
+#modalInstruccionesTilt p,
+#modalInstruccionesGestos p {
+  text-align: center; 
+  color: rgba(255, 255, 255, 0.85); /* Un tono más suave para el cuerpo del texto */
+  font-size: 17px; 
+}
+
+/*Lista del modal*/
+#modalInstruccionesTilt ul,
+#modalInstruccionesGestos ul {
+  text-align: justify; 
+  color: rgba(255, 255, 255, 0.85); /* Un tono más suave para el cuerpo del texto */
+  font-size: 17px;
+}
+
+/*Interlineado del párrafo del modal*/
+#modalInstruccionesTilt p,
+#modalInstruccionesGestos p {
+  line-height: 1.5;
+}
+
+/*Interlineado de la lista del modal*/
+#modalInstruccionesTilt ul,
+#modalInstruccionesGestos ul {
+  padding-left: 20px;
+  line-height: 1.6;
+}
+
 /*Cabecera del perfil*/
 .profile-header {
   display: flex;

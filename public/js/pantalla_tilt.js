@@ -12,10 +12,13 @@ let tiltElementos = [];                 // Array de elementos focalizables
 let bloqueoVertical = false;            // Bloqueo vertical para evitar cambios bruscos
 let bloqueoHorizontal = false;          // Bloqueo horizontal para evitar cambios bruscos
 
+/*Función que comprueba si hay control asistido activo*/
 function hayControlAsistidoActivo() {
   return tiltActivo || window.gestosMenuActivo === true;
 }
 
+/*Función que limpia el foco asistido. Esto lo que 
+hace es quitar el foco del elemento focalizado*/
 function limpiarFocoAsistido() {
   if (hayControlAsistidoActivo()) {
     actualizarElementosTilt();
@@ -28,11 +31,14 @@ function limpiarFocoAsistido() {
   });
 }
 
+/*Función que obtiene el estado del desplegable*/
 function obtenerEstadoDesplegable() {
   const opcionesDesplegables = document.getElementById("opcionesDesplegables");
   return !!(opcionesDesplegables && !opcionesDesplegables.classList.contains("oculto"));
 }
 
+/*Función que refresca el foco asistido. Esto lo que hace es 
+actualizar los elementos que se pueden focalizar y pintar el foco en el elemento focalizado*/
 function refrescarFocoAsistido() {
   setTimeout(() => {
     if (!hayControlAsistidoActivo()) return;
@@ -41,6 +47,7 @@ function refrescarFocoAsistido() {
   }, 120);
 }
 
+/*Función que abre el menú de controles asistido*/
 function abrirMenuControlesAsistido() {
   const btnDesplegarControles = document.getElementById("btnDesplegarControles");
   if (!btnDesplegarControles || obtenerEstadoDesplegable()) return;
@@ -48,6 +55,7 @@ function abrirMenuControlesAsistido() {
   refrescarFocoAsistido();
 }
 
+/*Función que cierra el menú de controles asistido*/
 function cerrarMenuControlesAsistido() {
   const btnDesplegarControles = document.getElementById("btnDesplegarControles");
   if (!btnDesplegarControles || !obtenerEstadoDesplegable()) return;
@@ -55,6 +63,7 @@ function cerrarMenuControlesAsistido() {
   refrescarFocoAsistido();
 }
 
+/*Función que mueve el foco asistido. Mueve el foco hacia arriba o hacia abajo*/
 function moverFocoAsistido(direccion) {
   actualizarElementosTilt();
   if (tiltElementos.length <= 1) return;
@@ -70,12 +79,14 @@ function moverFocoAsistido(direccion) {
   pintarFocoTilt();
 }
 
+/*Función que maneja la acción asistida. Esto sirve para 
+interactuar con el menú de controles asistido*/
 function manejarAccionAsistida(accion) {
   const desplegableAbierto = obtenerEstadoDesplegable();
   actualizarElementosTilt();
 
   if (!desplegableAbierto) {
-    if (accion === "izq" || accion === "abajo") {
+    if (accion === "izq") {
       abrirMenuControlesAsistido();
     }
     return;
@@ -231,19 +242,24 @@ function manejarTilt(e) {
   }
 }
 
+/*Función que desactiva el control por inclinación*/
 function desactivarControlTilt() {
   tiltActivo = false;
   if (btnActivarTilt) btnActivarTilt.classList.remove("activo");
   window.removeEventListener('deviceorientation', manejarTilt);
-  tiltBeta = null;
-  tiltGamma = null;
-  tiltCooldown = false;
-  bloqueoVertical = false;
-  bloqueoHorizontal = false;
-  limpiarFocoAsistido();
+  tiltBeta = null;            // Ángulo beta
+  tiltGamma = null;           // Ángulo gamma
+  tiltCooldown = false;       // Cooldown
+  bloqueoVertical = false;    // Bloqueo vertical
+  bloqueoHorizontal = false;  // Bloqueo horizontal
+  limpiarFocoAsistido();      // Limpia el foco asistido
+
+  /*Cierra el modal de instrucciones de tilt*/
+  const modalTilt = document.getElementById("modalInstruccionesTilt");
+  if (modalTilt) modalTilt.style.display = "none";
 }
 
-/* Si se pulsa el botón de activar tilt */
+/*Si se pulsa el botón de activar tilt*/
 if (btnActivarTilt) {
   btnActivarTilt.addEventListener("click", () => {
     if (tiltActivo) {
@@ -263,6 +279,12 @@ if (btnActivarTilt) {
       tiltGamma = null;     // Reinicia el ángulo gamma
       tiltCooldown = false; // Reinicia el cooldown
       
+      /*Muestra el modal de instrucciones de tilt*/
+      const mostrarModalTilt = () => {
+        const modalTilt = document.getElementById("modalInstruccionesTilt");
+        if (modalTilt) modalTilt.style.display = "flex";
+      };
+      
       /*Si el control por inclinación está activo*/
       if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
         DeviceOrientationEvent.requestPermission()        // Solicita permiso para el control por inclinación
@@ -270,6 +292,7 @@ if (btnActivarTilt) {
             /*Si el permiso es concedido*/
             if (permissionState === 'granted') {
               window.addEventListener('deviceorientation', manejarTilt);  // Añade el evento de control por inclinación
+              mostrarModalTilt();
             } else {
               alert("Permiso denegado para el control por inclinación.");   // Si el permiso es denegado
               tiltActivo = false;                                           // Desactiva el control por inclinación
@@ -279,6 +302,7 @@ if (btnActivarTilt) {
           .catch(console.error);  // Si hay un error
       } else {
         window.addEventListener('deviceorientation', manejarTilt);  // Añade el evento de control por inclinación si el dispositivo lo soporta
+        mostrarModalTilt();
       }
       actualizarElementosTilt();  // Actualiza los elementos que se pueden focalizar
       pintarFocoTilt();           // Pinta el foco en el elemento focalizado
@@ -286,6 +310,7 @@ if (btnActivarTilt) {
   });
 }
 
+/*Si se pulsa el botón de desplegar controles entonces se refresca el foco asistido*/
 const btnDesplegarControles = document.getElementById("btnDesplegarControles");
 if (btnDesplegarControles) {
   btnDesplegarControles.addEventListener("click", () => {
@@ -293,6 +318,16 @@ if (btnDesplegarControles) {
   });
 }
 
+/* Event listener para cerrar el modal de tilt */
+const cerrarModalTiltBtn = document.getElementById("cerrarModalTilt");
+if (cerrarModalTiltBtn) {
+  cerrarModalTiltBtn.addEventListener("click", () => {
+    const modalTilt = document.getElementById("modalInstruccionesTilt");
+    if (modalTilt) modalTilt.style.display = "none";
+  });
+}
+
+/*Esta sección exporta las funciones para que puedan ser utilizadas por otros módulos*/
 window.desactivarControlTiltMenu = desactivarControlTilt;
 window.navegacionAsistida = {
   actualizarElementos: actualizarElementosTilt,
