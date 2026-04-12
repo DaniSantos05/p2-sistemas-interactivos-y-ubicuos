@@ -91,7 +91,11 @@
      </button>
      <button id="btnActivarVoz" class="btn-tilt-flotante" title="Control por voz" aria-label="Control por voz">
        <span class="material-symbols-outlined">mic</span>
-     </button>   </div>
+     </button>
+     <button id="btnAyudaVoz" class="btn-tilt-flotante" title="Ayuda comandos de voz" aria-label="Ayuda comandos de voz">
+       <span class="material-symbols-outlined">help</span>
+     </button>
+   </div>
  
   <!-- Menú de Pantalla Completa (Estilo Google Maps) -->
   <div id="menuOpciones" class="menu-pantalla-completa oculto">
@@ -231,6 +235,30 @@
       <div id="listaMisAmigos" class="contactos-list" style="max-height: 150px; overflow-y: auto;">
       </div>
 
+    </div>
+  </div>
+
+  <!-- Modal de Guía de Comandos de Voz -->
+  <div id="modalAyudaVoz" class="modal">
+    <div class="modal-content">
+      <span class="close-modal" id="cerrarModalAyudaVoz">&times;</span>
+      <h2 style="margin-top: 0; color: #ffffff; display: flex; align-items: center; gap: 8px;">
+        <span class="material-symbols-outlined">record_voice_over</span> Comandos de Voz
+      </h2>
+      <p style="color: #e0e0e0; font-size: 14px; margin-bottom: 20px;">Habla al dispositivo utilizando los siguientes comandos para controlar la aplicación de forma manual.</p>
+      
+      <div style="max-height: 60vh; overflow-y: auto;">
+        <ul style="list-style: none; padding: 0; margin: 0; color: #e0e0e0; font-size: 14px; line-height: 1.6;">
+          <li style="margin-bottom: 12px;"><strong>"Llévame a [lugar]"</strong> - Busca una ruta hacia el destino indicado y la inicia automáticamente.</li>
+          <li style="margin-bottom: 12px;"><strong>"Ir"</strong> - Inicia la navegación de la ruta previamente calculada.</li>
+          <li style="margin-bottom: 12px;"><strong>"Cancelar ruta"</strong> / <strong>"Cancelar"</strong> - Detiene la navegación actual.</li>
+          <li style="margin-bottom: 12px;"><strong>"Compartir"</strong> / <strong>"Compartir ruta"</strong> - Activa la compartición de tu ubicación con amigos.</li>
+          <li style="margin-bottom: 12px;"><strong>"Dejar de compartir"</strong> - Desactiva la compartición de ubicación.</li>
+          <li style="margin-bottom: 12px;"><strong>"Activar AR"</strong> / <strong>"AR"</strong> - Activa la cámara de Realidad Aumentada (requiere estar en una ruta).</li>
+          <li style="margin-bottom: 12px;"><strong>"Desactivar AR"</strong> - Vuelve a la vista normal del mapa.</li>
+          <li style="margin-bottom: 12px;"><strong>"Desactivar voz"</strong> - Apaga el reconocimiento de voz.</li>
+        </ul>
+      </div>
     </div>
   </div>
 

@@ -88,7 +88,7 @@ if (SpeechRecognition && btnActivarVoz) {
     console.log("Comando de voz reconocido:", transcript);
 
     // Evaluamos si el usuario ha pedido detener la interacción por voz
-    if (transcript.includes("desactivar comandos por voz") || transcript.includes("desactivar comandos de voz") || transcript.includes("desactivar control por voz")) {
+    if (transcript.includes("desactivar voz")) {
       // Marcamos el sistema como inactivo
       isVoiceActive = false;
       
@@ -141,29 +141,21 @@ if (SpeechRecognition && btnActivarVoz) {
     } 
     // Evaluamos si el comando indica compartir la ruta o la ubicación
     else if (transcript === "compartir" || transcript === "compartir ruta" || transcript === "activar compartir ruta") {
-      // Obtenemos el botón de compartir de la tarjeta de ruta
-      const btnCompartir = document.getElementById("compartirTarjetaRuta");
-      
-      // Obtenemos el contenedor de la tarjeta de ruta
-      const tarjetaRuta = document.getElementById("tarjetaRuta");
-      
-      // Obtenemos el interruptor de compartir ubicación del menú general
       const modoCompartirUbicacion = document.getElementById("modoCompartirUbicacion");
-      
-      // Si la tarjeta de ruta está visible, priorizamos compartir desde ahí
-      if (btnCompartir && tarjetaRuta && !tarjetaRuta.classList.contains("oculto")) {
-        // Simulamos el clic en el botón de compartir de la tarjeta
-        btnCompartir.click();
-      } else if (modoCompartirUbicacion) {
-        // Si la tarjeta no es visible, invertimos el estado del interruptor general
-        modoCompartirUbicacion.checked = !modoCompartirUbicacion.checked;
-        
-        // Disparamos el evento change para que el sistema reaccione al nuevo estado
+      if (modoCompartirUbicacion && !modoCompartirUbicacion.checked) {
+        modoCompartirUbicacion.checked = true;
         modoCompartirUbicacion.dispatchEvent(new Event("change"));
       }
-      
-      // Registramos la acción en la consola
       console.log("Comando compartir ejecutado");
+    }
+    // Evaluamos si el comando indica dejar de compartir la ubicación
+    else if (transcript === "dejar de compartir" || transcript === "dejar de compartir ruta") {
+      const modoCompartirUbicacion = document.getElementById("modoCompartirUbicacion");
+      if (modoCompartirUbicacion && modoCompartirUbicacion.checked) {
+        modoCompartirUbicacion.checked = false;
+        modoCompartirUbicacion.dispatchEvent(new Event("change"));
+      }
+      console.log("Comando dejar de compartir ejecutado");
     }
     // Evaluamos si el comando indica iniciar la navegación de la ruta
     else if (transcript === "ir") {
@@ -174,7 +166,7 @@ if (SpeechRecognition && btnActivarVoz) {
       const tarjetaRuta = document.getElementById("tarjetaRuta");
       
       // Verificamos que el botón exista y la tarjeta esté visible
-      if (btnIr && tarjetaRuta && !tarjetaRuta.classList.contains("oculto")) {
+      if (btnIr && tarjetaRuta && !tarjetaRuta.classList.contains("oculto") && (!window.navegacionIniciada && (typeof navegacionIniciada === 'undefined' || !navegacionIniciada))) {
         // Simulamos un clic en el botón de iniciar
         btnIr.click();
         
@@ -182,30 +174,67 @@ if (SpeechRecognition && btnActivarVoz) {
         console.log("Comando ir ejecutado");
       }
     }
-    // Evaluamos si el comando indica activar la realidad aumentada
-    else if (transcript === "ar" || transcript === "activar ar") {
-      // Obtenemos el botón principal de realidad aumentada
-      const btnAR = document.getElementById("btnAR");
-      
-      // Obtenemos el botón de realidad aumentada situado en la tarjeta de ruta
-      const btnARTarjeta = document.getElementById("btnARTarjetaRuta");
-      
-      // Obtenemos el contenedor de la tarjeta de ruta
+    // Evaluamos si el comando indica cancelar la ruta
+    else if (transcript === "cancelar ruta" || transcript === "cancelar") {
+      const btnIr = document.getElementById("irTarjetaRuta");
       const tarjetaRuta = document.getElementById("tarjetaRuta");
       
-      // Priorizamos pulsar el botón principal si está disponible
-      if (btnAR) {
-        btnAR.click();
-      } else if (btnARTarjeta && tarjetaRuta && !tarjetaRuta.classList.contains("oculto")) {
-        // Si no está el principal pero la tarjeta es visible, usamos el de la tarjeta
-        btnARTarjeta.click();
-      } else if (typeof btnARTarjetaRuta !== 'undefined' && btnARTarjetaRuta) {
-        // Como última opción segura, verificamos la referencia global del botón
-        btnARTarjetaRuta.click();
+      if (btnIr && tarjetaRuta && !tarjetaRuta.classList.contains("oculto") && (window.navegacionIniciada || (typeof navegacionIniciada !== 'undefined' && navegacionIniciada))) {
+        btnIr.click();
+        console.log("Comando cancelar ruta ejecutado a través del botón");
+      } else if (typeof eliminarRuta === 'function') {
+        eliminarRuta();
+        console.log("Comando cancelar ruta ejecutado mediante función");
+      } else {
+        console.log("Comando cancelar ruta ignorado: no hay ruta activa");
       }
-      
-      // Registramos la acción en la consola
-      console.log("Comando ar ejecutado");
+    }
+    // Evaluamos si el comando indica activar la realidad aumentada
+    else if (transcript === "ar" || transcript === "activar ar") {
+      // Solo permitimos activar AR si hay una navegación iniciada
+      if (window.navegacionIniciada || (typeof navegacionIniciada !== 'undefined' && navegacionIniciada)) {
+        if (typeof isARMode !== 'undefined' && isARMode) {
+          console.log("AR ya está activo");
+        } else {
+          const btnAR = document.getElementById("btnAR");
+          const btnARTarjeta = document.getElementById("btnARTarjetaRuta");
+          const tarjetaRuta = document.getElementById("tarjetaRuta");
+          
+          if (btnAR) {
+            btnAR.click();
+            console.log("Comando ar ejecutado");
+          } else if (btnARTarjeta && tarjetaRuta && !tarjetaRuta.classList.contains("oculto")) {
+            btnARTarjeta.click();
+            console.log("Comando ar ejecutado");
+          } else if (typeof btnARTarjetaRuta !== 'undefined' && btnARTarjetaRuta) {
+            btnARTarjetaRuta.click();
+            console.log("Comando ar ejecutado");
+          }
+        }
+      } else {
+        console.log("Comando ar ignorado: no hay una ruta activa iniciada");
+      }
+    }
+    // Evaluamos si el comando indica desactivar la realidad aumentada
+    else if (transcript === "desactivar ar") {
+      if (typeof isARMode !== 'undefined' && isARMode) {
+        const btnAR = document.getElementById("btnAR");
+        const btnARTarjeta = document.getElementById("btnARTarjetaRuta");
+        const tarjetaRuta = document.getElementById("tarjetaRuta");
+        
+        if (btnAR) {
+          btnAR.click();
+          console.log("Comando desactivar ar ejecutado");
+        } else if (btnARTarjeta && tarjetaRuta && !tarjetaRuta.classList.contains("oculto")) {
+          btnARTarjeta.click();
+          console.log("Comando desactivar ar ejecutado");
+        } else if (typeof btnARTarjetaRuta !== 'undefined' && btnARTarjetaRuta) {
+          btnARTarjetaRuta.click();
+          console.log("Comando desactivar ar ejecutado");
+        }
+      } else {
+        console.log("Comando desactivar ar ignorado: AR no está activo");
+      }
     } else {
       // Si el comando no coincide con ninguna acción programada, avisamos en consola
       console.log("Comando no reconocido o no soportado:", transcript);
@@ -312,4 +341,30 @@ if (SpeechRecognition && btnActivarVoz) {
   
   // Ocultamos el botón de interacción por voz para evitar confusión
   btnActivarVoz.style.display = 'none';
+}
+
+// ==========================================
+// GUÍA DE COMANDOS DE VOZ
+// ==========================================
+const btnAyudaVoz = document.getElementById('btnAyudaVoz');
+const modalAyudaVoz = document.getElementById('modalAyudaVoz');
+const cerrarModalAyudaVoz = document.getElementById('cerrarModalAyudaVoz');
+
+if (btnAyudaVoz && modalAyudaVoz && cerrarModalAyudaVoz) {
+  // Abrir el modal
+  btnAyudaVoz.addEventListener('click', () => {
+    modalAyudaVoz.style.display = 'block';
+  });
+
+  // Cerrar el modal al pulsar la X
+  cerrarModalAyudaVoz.addEventListener('click', () => {
+    modalAyudaVoz.style.display = 'none';
+  });
+
+  // Cerrar el modal al hacer clic fuera del contenido
+  window.addEventListener('click', (e) => {
+    if (e.target === modalAyudaVoz) {
+      modalAyudaVoz.style.display = 'none';
+    }
+  });
 }
