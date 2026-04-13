@@ -15,7 +15,7 @@ function distanciaEnMetros(lat1, lon1, lat2, lon2) {
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(aRadianes(lat1)) * Math.cos(aRadianes(lat2)) *
     Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  
+
   // Distancia en metros
   const contacto = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * contacto;    // Devuelve el producto del radio de la Tierra y el ángulo central en radianes
@@ -82,27 +82,27 @@ function limpiarRuta() {
 
 // Función que elimina la ruta actual
 function eliminarRuta() {
-    // Si no hay ruta que se esté mostrando, avisamos
-    if (!controlRuta) {
-        cajaPasos.innerHTML = "No puedes eliminar la ruta porque todavía no hay una activa.";
-        return;
-    }
+  // Si no hay ruta que se esté mostrando, avisamos
+  if (!controlRuta) {
+    cajaPasos.innerHTML = "No puedes eliminar la ruta porque todavía no hay una activa.";
+    return;
+  }
 
-    // Usamos limpiarRuta() que quita la línea azul del mapa, el punto de paso y resetea las listas
-    limpiarRuta();
+  // Usamos limpiarRuta() que quita la línea azul del mapa, el punto de paso y resetea las listas
+  limpiarRuta();
 
-    // Quitamos también la chincheta del destino si fue seleccionada con el ratón
-    if (marcadorDestino) {
-        mapa.removeLayer(marcadorDestino);
-        marcadorDestino = null;
-        destinoClickLat = null;
-        destinoClickLon = null;
-    }
+  // Quitamos también la chincheta del destino si fue seleccionada con el ratón
+  if (marcadorDestino) {
+    mapa.removeLayer(marcadorDestino);
+    marcadorDestino = null;
+    destinoClickLat = null;
+    destinoClickLon = null;
+  }
 
-    // Actualizamos el texto de la caja de información
-    cajaPasos.innerHTML = "Ruta eliminada.";
-    estadoRuta.textContent = "Ruta eliminada. Elige un nuevo destino.";
-    sincronizarMapa3D();
+  // Actualizamos el texto de la caja de información
+  cajaPasos.innerHTML = "Ruta eliminada.";
+  estadoRuta.textContent = "Ruta eliminada. Elige un nuevo destino.";
+  sincronizarMapa3D();
 }
 
 
@@ -123,7 +123,7 @@ function eliminarRuta() {
     - 3. Evalúa si de modo contrario, un usuario ha estado marcando una chincheta roja con el dedo 
       al pulsar por el mapa (su 'modoClic.checked' está activo), para dar a esas coordenadas absolutas 
       prioridad abrumadora de destino frente a buscar algo en el propio servidor de mapas en un segundo. */
-async function calcularRuta() {
+async function calcularRuta(origenMotor = "") {
   // Si no se conoce la posición actual, se muestra un mensaje
   if (miLatitud === null || miLongitud === null) {
     estadoRuta.textContent = "Aún no se ha obtenido tu ubicación GPS. Espera unos segundos.";
@@ -131,24 +131,25 @@ async function calcularRuta() {
   }
 
   const destino = inputDestino.value.trim();  // Obtenemos el destino del input
-  const usarClic = modoClic.checked;         // Obtenemos si se está usando el modo clic
+  // Convertimos a string por si se pasa un evento del DOM inadvertidamente
+  let origenModo = typeof origenMotor === "string" ? origenMotor : "texto";
 
   // Variables para almacenar las coordenadas y el nombre del destino
   let destLat;
   let destLon;
   let destNombre;
 
-  // Si el modo clic está activado, exigimos que haya un punto seleccionado.
-  if (usarClic) {
+  // Si se ha seleccionado el modo clic, se da prioridad a las coordenadas del clic aunque haya texto en el input
+  if (origenModo === "clic") {
     if (destinoClickLat === null || destinoClickLon === null) {
-      estadoRuta.textContent = "Activa modo clic y toca el mapa para marcar un destino.";
+      estadoRuta.textContent = "Toca el mapa para marcar un destino.";
       return;
     }
     destLat = destinoClickLat;
     destLon = destinoClickLon;
     destNombre = `Punto: ${destLat.toFixed(5)}, ${destLon.toFixed(5)}`;
   } else if (destino) {
-     // Si se ha escrito un texto, usamos Nominatim
+    // Si se ha escrito un texto, usamos Nominatim
     estadoRuta.textContent = "Buscando el lugar...";
 
     /*Este fragmento es el encargado de buscar el destino en Nominatim
@@ -186,7 +187,7 @@ async function calcularRuta() {
       console.error(error);
       return;
     }
-  // Si no se ha escrito nada y no se ha usado el modo clic, se muestra un mensaje
+    // Si no se ha escrito nada y no se ha usado el modo clic, se muestra un mensaje
   } else {
     estadoRuta.textContent = "Escribe un destino o selecciona uno en el mapa.";
     return;
@@ -218,17 +219,17 @@ async function calcularRuta() {
     }),
     // LineOptions: Son las opciones de estilo de la línea de la ruta
     lineOptions: {
-        // Color azul, grosor 5 y opacidad 0.85
-        styles: [{ color: "#1f6feb", weight: 5, opacity: 0.85 }]
+      // Color azul, grosor 5 y opacidad 0.85
+      styles: [{ color: "#1f6feb", weight: 5, opacity: 0.85 }]
     },
 
     // createMarker: Función que crea clava 2 chinchetas en el mapa
     createMarker: function (i, waypoint) {
-        // Borra la chincheta de inicio porque el usuario ya tiene marcadorUsuario
-        if (i === 0) return null;
+      // Borra la chincheta de inicio porque el usuario ya tiene marcadorUsuario
+      if (i === 0) return null;
 
-        // Creamos el marcador del destino
-        return L.marker(waypoint.latLng).bindPopup(destNombre);
+      // Creamos el marcador del destino
+      return L.marker(waypoint.latLng).bindPopup(destNombre);
     },
     language: "es",           // Idioma de las instrucciones
     show: true,               // Muestra la ruta en el mapa
@@ -273,7 +274,7 @@ async function calcularRuta() {
 
     miETA = `Llega en ${tiempoFormateado} (${distanciaKm} km)`;
     if (modoCompartirUbicacion.checked && miLatitud !== null && miLongitud !== null) {
-        socket.emit("shareLocation", { lat: miLatitud, lng: miLongitud, name: miNombre, avatar: miAvatar, eta: miETA });
+      socket.emit("shareLocation", { lat: miLatitud, lng: miLongitud, name: miNombre, avatar: miAvatar, eta: miETA });
     }
 
     estadoRuta.textContent = `Ruta calculada: ${distanciaKm} km, ~${tiempoFormateado} a pie.`;

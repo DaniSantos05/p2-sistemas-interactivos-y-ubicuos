@@ -242,10 +242,6 @@ app.get("/api/activity", (req, res) => {
 });
 
 
-
-// Actualmente el mando no se usa, se ha sustituido por el boton hamburguesa
-// Pero se deja el codigo por si se quiere volver a usar en el futuro
-
 // Variable para almacenar el estado de las ubicaciones y rutas compartidas
 const sharedData = {};
 
@@ -267,60 +263,6 @@ io.on("connection", (socket) => {
       text: `${data?.role || "cliente"} conectado`,
       socketId: socket.id
     });
-  });
-
-  // Cuando el mando emita "nextStep", lo mostramos por consola y lo reenviamos
-  socket.on("nextStep", () => {
-    console.log("Servidor recibió: nextStep");
-    io.emit("nextStep");
-  });
-
-  // Cuando el mando emita "prevStep", lo mostramos por consola y lo reenviamos
-  socket.on("prevStep", () => {
-    console.log("Servidor recibió: prevStep");
-    io.emit("prevStep");
-  });
-
-  // Cuando el mando emita "zoomIn", lo mostramos por consola y lo reenviamos
-  socket.on("zoomIn", () => {
-    console.log("Servidor recibió: zoomIn");
-    io.emit("zoomIn");
-  });
-
-  // Cuando el mando emita "zoomOut", lo mostramos por consola y lo reenviamos
-  socket.on("zoomOut", () => {
-    console.log("Servidor recibió: zoomOut");
-    io.emit("zoomOut");
-  });
-
-  // Cuando el mando emita "toggleMode", lo mostramos por consola y lo reenviamos
-  socket.on("toggleMode", () => {
-    console.log("Servidor recibió: toggleMode");
-    io.emit("toggleMode");
-  });
-
-  // Cuando el mando emita "recenter", lo mostramos por consola y lo reenviamos
-  socket.on("recenter", () => {
-    console.log("Servidor recibió: recenter");
-    io.emit("recenter");
-  });
-
-  // Cuando el mando emita "confirm", lo mostramos por consola y lo reenviamos
-  socket.on("confirm", () => {
-    console.log("Servidor recibió: confirm");
-    io.emit("confirm");
-  });
-
-  // Cuando el mando emita "exit", lo mostramos por consola y lo reenviamos
-  socket.on("exit", () => {
-    console.log("Servidor recibió: exit");
-    io.emit("exit");
-  });
-
-  // Si el mando envía datos de orientación más detallados, los mostramos y los reenviamos
-  socket.on("orientationData", (data) => {
-    console.log("Servidor recibió orientationData:", data);
-    io.emit("orientationData", data);
   });
 
   // --- NUEVOS EVENTOS: UBICACIÓN Y RUTA COMPARTIDA ---
@@ -378,3 +320,5 @@ server.listen(PORT, () => {
 /*npx localtunnel --port 3000.
 Para que funcione en el móvil hay que poner la ip del ordenador en vez de localhost
 http://localhost:3000*/
+
+/*Otra opción es usar npx untun@latest tunnel http://localhost:3000*/

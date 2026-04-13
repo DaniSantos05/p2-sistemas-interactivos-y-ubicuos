@@ -411,9 +411,10 @@ function actualizarVista3D() {
   controlador.actualizarVista();
 }
 
-// Si el usuario manipula el mapa 2D, pausamos auto-centrado temporalmente.
-mapa.on("movestart", () => pausarAutoCentrado(6000));
-mapa.on("zoomstart", () => pausarAutoCentrado(6000));
+// Si el usuario manipula el mapa 2D, pausamos auto-centrado temporalmente (25 segundos para dar tiempo a explorar).
+mapa.on("movestart", () => pausarAutoCentrado(25000));
+mapa.on("zoomstart", () => pausarAutoCentrado(25000));
+mapa.on("drag", () => pausarAutoCentrado(25000));
 
 // =========================
 // GPS DEL USUARIO
@@ -530,8 +531,8 @@ function seleccionarDestinoEnMapa(lat, lng) {
 
   sincronizarMapa3D();
 
-  // En modo clic, lanzar el cálculo automáticamente para mostrar la tarjeta con "Ir".
-  calcularRuta();
+  // En modo clic, se da prioridad a las coordenadas del clic aunque haya texto en el input.
+  calcularRuta("clic");
 }
 
 // Evento que se ejecuta cuando se hace clic en el mapa
@@ -606,6 +607,10 @@ function cambiarCapa() {
 
 // Función que recentra el mapa en la posición actual
 function recentrarMapa() {
+  // Cancelamos la pausa para que el mapa vuelva a seguir la ubicación del usuario
+  pausaAutoCentrado2DHasta = 0;
+  pausaAutoCentrado3DHasta = 0;
+
   // Si la posición actual es conocida, movemos el mapa hacia ella
   if (miLatitud !== null && miLongitud !== null) {
     if (modoActual === "3D") {
@@ -659,7 +664,7 @@ if (typeof inicializarAutocompletadoDestino === "function") {
     inputDestino,
     btnRuta,
     sugerenciasDestino,
-    alBuscarRuta: calcularRuta
+    alBuscarRuta: () => calcularRuta("texto")
   });
 }
 
