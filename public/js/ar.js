@@ -645,6 +645,11 @@ async function activarDesactivarAR() {
       contenedorARLocal.classList.add("oculto");
     }
 
+    // Actualizamos el panel (ahora lo ocultará porque isARMode es false)
+    if (typeof actualizarPanelPasoAR === "function") {
+      actualizarPanelPasoAR();
+    }
+
     // Reseteamos variables de dibujo.
     rumboObjetivoSuavizadoAR = null;
     anguloFlechaRenderizadoAR = null;
@@ -748,6 +753,11 @@ async function activarDesactivarAR() {
 
     // Añadimos clase visual al body.
     document.body.classList.add("modo-ar");
+
+    // Actualizamos el panel AR para que si estábamos en ruta se dibuje.
+    if (typeof actualizarPanelPasoAR === "function") {
+      actualizarPanelPasoAR();
+    }
 
     // Activamos los listeners de orientación.
     window.addEventListener(

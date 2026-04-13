@@ -45,8 +45,10 @@ try {
 socket.on("connect", () => {
   // Muestra id de socket en UI de diagnóstico.
   estadoConexion.textContent = `Conectado. ID: ${socket.id}`;
-  // Notifica al servidor que este cliente ya está listo.
-  socket.emit("clientReady", { role: "pantalla" });
+  // Notifica al servidor que este cliente ya está listo con un pequeño margen para que se inicie el mapa.
+  setTimeout(() => {
+    socket.emit("clientReady", { role: "pantalla" });
+  }, 250);
 });
 
 // Genera un color estable para cada contacto.
@@ -73,9 +75,16 @@ socket.on("existingSharedData", (data) => {
   for (const id in data) {
     // No nos dibujamos a nosotros mismos.
     if (id === socket.id) continue;
-    // Filtra por lista de amigos si hay nombre disponible.
-    const esAmigo = data[id].location ? misAmigos.includes(data[id].location.name) : true;
-    if (!esAmigo) continue;
+    // Filtra por lista de amigos de forma robusta.
+    let esAmigo = true;
+    if (data[id].location && data[id].location.name) {
+      const friendName = String(data[id].location.name).trim().toLowerCase();
+      esAmigo = misAmigos.some(amigo => String(amigo).trim().toLowerCase() === friendName);
+    }
+    if (!esAmigo) {
+      console.log("[Multiusuario] Ignorando contacto no amigo:", data[id].location.name);
+      continue;
+    }
     // Procesa ubicación inicial del contacto.
     if (data[id].location) procesarUbicacionContacto(id, data[id].location);
     // Procesa ruta inicial del contacto.
@@ -86,16 +95,17 @@ socket.on("existingSharedData", (data) => {
 // Actualización de posición de un contacto.
 // Solo se dibuja si está en la lista de amigos del usuario actual.
 socket.on("updateContactLocation", (data) => {
-  if (misAmigos.includes(data.name)) {
-    procesarUbicacionContacto(data.id, data);
+  if (data.name) {
+    const friendName = String(data.name).trim().toLowerCase();
+    const esAmigo = misAmigos.some(amigo => String(amigo).trim().toLowerCase() === friendName);
+    if (!esAmigo) return;
   }
+  procesarUbicacionContacto(data.id, data);
 });
 
 // Actualización de ruta de un contacto.
 socket.on("updateContactRoute", (data) => {
-  if (contactos[data.id]) {
-    procesarRutaContacto(data.id, data.route);
-  }
+  procesarRutaContacto(data.id, data.route);
 });
 
 // Si un contacto deja de compartir, lo quitamos del mapa y del lateral.

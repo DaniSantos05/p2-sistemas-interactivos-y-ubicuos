@@ -39,20 +39,45 @@ function traducirInstruccionRuta(texto) {
   return t;
 }
 
-// Muestra en AR un panel compacto solo cuando el contador está activo en navegación.
+// Muestra en AR un panel que combina las indicaciones de la ruta y el contador de pasos.
 function actualizarPanelPasoAR() {
   // Si no existe panel, no seguimos.
   if (!panelPasoAR) return;
+  
   // Estado actual de AR.
   const enModoAR = typeof isARMode !== "undefined" && isARMode;
-  // Solo mostrar si AR + contador activo + navegación iniciada.
-  if (enModoAR && modoContadorPasos && modoContadorPasos.checked && navegacionIniciada && sesionPasosActiva) {
-    // Muestra panel.
+  
+  // Solo mostrar el panel si AR está activo y la navegación está iniciada.
+  if (enModoAR && typeof navegacionIniciada !== "undefined" && navegacionIniciada) {
+    let contenidoHTML = "";
+    
+    // 1. Mostrar la instrucción actual de navegación
+    if (typeof instruccionesRuta !== "undefined" && instruccionesRuta.length > 0 && typeof indicePasoActual !== "undefined" && indicePasoActual >= 0 && indicePasoActual < instruccionesRuta.length) {
+      const instruccion = instruccionesRuta[indicePasoActual];
+      const textoIns = traducirInstruccionRuta(instruccion.text || "");
+      const metros = Math.round(instruccion.distance || 0);
+      contenidoHTML += `<div style="margin-bottom: 5px; font-size: 15px;"><strong>Paso ${indicePasoActual + 1}/${instruccionesRuta.length}:</strong> ${textoIns} (~${metros} m)</div>`;
+    }
+    
+    // 2. Mostrar el contador de pasos de forma separada si está habilitado
+    if (typeof modoContadorPasos !== "undefined" && modoContadorPasos && modoContadorPasos.checked && typeof sesionPasosActiva !== "undefined" && sesionPasosActiva) {
+      const p = typeof pasosSesionActual !== "undefined" ? pasosSesionActual : 0;
+      const c = typeof caloriasSesionActual !== "undefined" ? caloriasSesionActual : 0;
+      // Añadimos un pequeño borde superior para separarlo si hay instrucción previa
+      const separator = contenidoHTML ? `<div style="border-top:1px solid rgba(255,255,255,0.2); margin: 5px 0;"></div>` : '';
+      contenidoHTML += `${separator}<div style="font-size: 13px; color: #ccffcc;"><strong>Contador:</strong> ${p} pasos · ${c} kcal</div>`;
+    }
+
+    // Si por algún casual no hay contenido aún (muy raro), ponemos algo genérico
+    if (!contenidoHTML) {
+      contenidoHTML = "Navegación iniciada. Sigue la flecha en el suelo.";
+    }
+
+    // Muestra panel e inserta contenido.
     panelPasoAR.classList.remove("oculto");
-    // Render del resumen compacto.
-    panelPasoAR.innerHTML = `<strong>Contador</strong><br>Pasos: ${pasosSesionActual} · ${caloriasSesionActual} kcal`;
-    return;
+    panelPasoAR.innerHTML = contenidoHTML;
+  } else {
+    // Oculta panel si no estamos en AR o no hay navegación.
+    panelPasoAR.classList.add("oculto");
   }
-  // Oculta panel en cualquier otro caso.
-  panelPasoAR.classList.add("oculto");
 }
