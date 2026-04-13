@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <!-- Indicamos que el documento usa HTML5 -->
 
 <html lang="es">
@@ -91,9 +91,6 @@
      </button>
      <button id="btnActivarVoz" class="btn-tilt-flotante" title="Control por voz" aria-label="Control por voz">
        <span class="material-symbols-outlined">mic</span>
-     </button>
-     <button id="btnAyudaVoz" class="btn-tilt-flotante" title="Ayuda comandos de voz" aria-label="Ayuda comandos de voz">
-       <span class="material-symbols-outlined">help</span>
      </button>
    </div>
  
@@ -213,9 +210,9 @@
       
       <div class="profile-header">
         <img id="avatarMiPerfil" src="" alt="Mi Avatar" class="profile-avatar">
-        <div style="flex: 1;">
-          <h3 id="nombreMiPerfil" style="margin:0 0 10px 0; color:#34495e;"></h3>
-          <input type="file" id="inputArchivoAvatar" accept="image/*" style="font-size: 12px; margin-bottom: 5px;">
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+          <h3 id="nombreMiPerfil" style="margin:0 0 10px 0; color:#34495e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></h3>
+          <input type="file" id="inputArchivoAvatar" accept="image/*" style="font-size: 12px; margin-bottom: 5px; max-width: 100%;">
           <button id="btnCambiarAvatar" class="btn-primario" style="font-size: 12px; padding: 8px;">Guardar Foto</button>
         </div>
       </div>
@@ -309,17 +306,17 @@
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 
   <!-- Nuestros JS -->
-  <script src="/js/pantalla_multiusuario.js?v=7"></script>
-  <script src="/js/pantalla_interfaz.js?v=7"></script>
-  <script src="/js/pantalla_pasos.js?v=7"></script>
-  <script src="/js/pantalla_actividad.js?v=7"></script>
-  <script src="/js/pantalla_mapa3d.js?v=7"></script>
-  <script src="/js/pantalla_rutas.js?v=7"></script>
-  <script src="/js/pantalla_autoavance.js?v=7"></script>
-  <script src="/js/pantalla.js?v=7"></script>
-  <script src="js/pantalla_tilt.js?v=10"></script>
-  <script src="js/pantalla_gestos.js?v=10"></script>
-  <script src="js/pantalla_voz.js?v=10"></script>
-  <script src="js/ar.js?v=8"></script>
+  <script src="/js/pantalla_multiusuario.js?v=11"></script>
+  <script src="/js/pantalla_interfaz.js?v=11"></script>
+  <script src="/js/pantalla_pasos.js?v=11"></script>
+  <script src="/js/pantalla_actividad.js?v=11"></script>
+  <script src="/js/pantalla_mapa3d.js?v=11"></script>
+  <script src="/js/pantalla_rutas.js?v=11"></script>
+  <script src="/js/pantalla_autoavance.js?v=11"></script>
+  <script src="/js/pantalla.js?v=11"></script>
+  <script src="js/pantalla_tilt.js?v=11"></script>
+  <script src="js/pantalla_gestos.js?v=11"></script>
+  <script src="js/pantalla_voz.js?v=11"></script>
+  <script src="js/ar.js?v=11"></script>
 </body>
 </html>

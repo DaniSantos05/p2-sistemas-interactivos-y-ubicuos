@@ -417,17 +417,29 @@ if (btnActivarGestosMenu) {
       /* Se actualizan los elementos y se pinta el foco */
       obtenerNavegacionAsistida()?.actualizarElementos();
       obtenerNavegacionAsistida()?.pintarFoco();
-      /* Se activa la cámara */
-      await activarCamaraGestosMenu();
-      /* Muestra el modal de instrucciones de gestos */
+      /* Muestra el modal de instrucciones de gestos al principio para no hacer esperar */
       const modalGestos = document.getElementById("modalInstruccionesGestos");
       if (modalGestos) modalGestos.style.display = "flex";
-      /* Se refresca el foco */
-      obtenerNavegacionAsistida()?.refrescarFoco();
+
+      /* Garantizamos que el navegador dibuje el modal en pantalla mediante callbacks de renderizado */
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setTimeout(async () => {
+            try {
+              /* Se activa la cámara paralela a que el usuario ya lee las instrucciones */
+              await activarCamaraGestosMenu();
+              /* Se refresca el foco */
+              obtenerNavegacionAsistida()?.refrescarFoco();
+            } catch (error) {
+              console.error("No se pudo activar el control por gestos aéreo:", error);
+              alert("No se pudo activar el control por gestos con la cámara frontal.");
+              desactivarControlGestos();
+            }
+          }, 100);
+        });
+      });
     } catch (error) {
-      /* Si hay un error, se desactiva el control por gestos aéreos */
-      console.error("No se pudo activar el control por gestos aéreo:", error);
-      alert("No se pudo activar el control por gestos con la cámara frontal.");
+      console.error("Error al intentar iniciar la interfaz de gestos:", error);
       desactivarControlGestos();
     }
   });

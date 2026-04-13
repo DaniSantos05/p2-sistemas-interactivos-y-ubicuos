@@ -9,6 +9,17 @@ const btnActivarVoz = document.getElementById('btnActivarVoz');
 // Incluimos ambas variantes por compatibilidad entre distintos navegadores
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
+// Referencias del modal de ayuda de voz.
+const modalAyudaVoz = document.getElementById('modalAyudaVoz');
+const cerrarModalAyudaVoz = document.getElementById('cerrarModalAyudaVoz');
+
+// Función auxiliar para mostrar el modal de instrucciones de voz.
+function mostrarModalAyudaVoz() {
+  if (modalAyudaVoz) {
+    modalAyudaVoz.style.display = "flex";
+  }
+}
+
 // Si la API está soportada y el botón existe en el documento
 if (SpeechRecognition && btnActivarVoz) {
   // Inicializamos el objeto de reconocimiento de voz
@@ -37,6 +48,9 @@ if (SpeechRecognition && btnActivarVoz) {
     // Verificamos si el reconocimiento de voz no está activo actualmente
     if (!isVoiceActive) {
       try {
+        // Mostramos instrucciones al activar voz (igual que en tilt).
+        mostrarModalAyudaVoz();
+
         // Iniciamos la escucha del micrófono
         recognition.start();
         
@@ -346,22 +360,13 @@ if (SpeechRecognition && btnActivarVoz) {
 // ==========================================
 // GUÍA DE COMANDOS DE VOZ
 // ==========================================
-const btnAyudaVoz = document.getElementById('btnAyudaVoz');
-const modalAyudaVoz = document.getElementById('modalAyudaVoz');
-const cerrarModalAyudaVoz = document.getElementById('cerrarModalAyudaVoz');
-
-if (btnAyudaVoz && modalAyudaVoz && cerrarModalAyudaVoz) {
-  // Abrir el modal
-  btnAyudaVoz.addEventListener('click', () => {
-    modalAyudaVoz.style.display = 'block';
-  });
-
-  // Cerrar el modal al pulsar la X
+if (modalAyudaVoz && cerrarModalAyudaVoz) {
+  // Cerrar el modal al pulsar la X.
   cerrarModalAyudaVoz.addEventListener('click', () => {
     modalAyudaVoz.style.display = 'none';
   });
 
-  // Cerrar el modal al hacer clic fuera del contenido
+  // Cerrar el modal al hacer clic fuera del contenido.
   window.addEventListener('click', (e) => {
     if (e.target === modalAyudaVoz) {
       modalAyudaVoz.style.display = 'none';

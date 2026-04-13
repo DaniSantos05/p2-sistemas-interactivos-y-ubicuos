@@ -124,7 +124,7 @@ const listaMisAmigos = document.getElementById("listaMisAmigos");
 const contadorAmigos = document.getElementById("contadorAmigos");
 
 // Pinta la lista de amigos del usuario.
-function mostrarMisAmigos() {
+async function mostrarMisAmigos() {
   // Si no existe contenedor, no renderiza.
   if (!listaMisAmigos) return;
 
@@ -135,15 +135,45 @@ function mostrarMisAmigos() {
   }
 
   if (contadorAmigos) contadorAmigos.textContent = misAmigos.length;
-  listaMisAmigos.innerHTML = "";
+  listaMisAmigos.innerHTML = "<p style='font-size:13px; color:gray;'>Cargando amigos...</p>";
 
-  misAmigos.forEach((nombreAmigo) => {
-    // Fila simple para cada amigo.
-    const div = document.createElement("div");
-    div.className = "contact-item";
-    div.innerHTML = `<span style="font-size: 14px; font-weight: bold; color: #333;">${nombreAmigo}</span>`;
-    listaMisAmigos.appendChild(div);
-  });
+  try {
+    const respuesta = await fetch(`/api/users`);
+    const usuarios = await respuesta.json();
+    listaMisAmigos.innerHTML = "";
+
+    misAmigos.forEach((nombreAmigo) => {
+      const userAmigo = usuarios.find(u => u.username === nombreAmigo);
+      const avatarAmigo = userAmigo ? userAmigo.avatar : `https://ui-avatars.com/api/?name=${encodeURIComponent(nombreAmigo.charAt(0))}&rounded=true&size=128`;
+      
+      const div = document.createElement("div");
+      div.className = "contact-item";
+      div.style.display = "flex";
+      div.style.alignItems = "center";
+      div.style.gap = "10px";
+      div.style.padding = "5px 0";
+      
+      const imagen = document.createElement("img");
+      imagen.src = avatarAmigo;
+      imagen.style.width = "40px";
+      imagen.style.height = "40px";
+      imagen.style.borderRadius = "50%";
+      imagen.style.objectFit = "cover";
+      imagen.style.border = "2px solid #3498db";
+      
+      const spanNombre = document.createElement("span");
+      spanNombre.textContent = nombreAmigo;
+      spanNombre.style.fontSize = "14px";
+      spanNombre.style.fontWeight = "bold";
+      spanNombre.style.color = "#ffffff";
+      
+      div.appendChild(imagen);
+      div.appendChild(spanNombre);
+      listaMisAmigos.appendChild(div);
+    });
+  } catch (e) {
+    listaMisAmigos.innerHTML = "<p style='font-size:13px; color:red;'>Error al cargar amigos.</p>";
+  }
 }
 
 // Abre modal de perfil y sincroniza datos visibles.
@@ -370,7 +400,7 @@ function procesarUbicacionContacto(id, data) {
       </div>
     `;
 
-    const iconoDiv = L.iconoDiv({
+    const iconoDiv = L.divIcon({
       className: "contact-avatar-marker",
       html: htmlIcono,
       iconSize: [40, 60],
@@ -421,7 +451,7 @@ function procesarRutaContacto(id, datosRuta) {
   // Si hay al menos un punto colocamos marcador de destino.
   if (coordenadasLatLng.length > 0) {
     const destino = coordenadasLatLng[coordenadasLatLng.length - 1];
-    const iconoDestino = L.iconoDiv({
+    const iconoDestino = L.divIcon({
       className: "contact-avatar-marker",
       html: `<div style="display:flex; flex-direction:column; align-items:center;">
                <div style="background:${color}; color:white; font-size:11px; font-weight:bold; padding:3px 8px; border-radius:8px; white-space:nowrap;">
