@@ -39,7 +39,7 @@ function traducirInstruccionRuta(texto) {
   return t;
 }
 
-// Muestra en AR un panel que combina las indicaciones de la ruta y el contador de pasos.
+// Muestra en AR el progreso de pasos/calorías de la ruta cuando el contador está activo.
 function actualizarPanelPasoAR() {
   // Si no existe panel, no seguimos.
   if (!panelPasoAR) return;
@@ -50,27 +50,25 @@ function actualizarPanelPasoAR() {
   // Solo mostrar el panel si AR está activo y la navegación está iniciada.
   if (enModoAR && typeof navegacionIniciada !== "undefined" && navegacionIniciada) {
     let contenidoHTML = "";
-    
-    // 1. Mostrar la instrucción actual de navegación
-    if (typeof instruccionesRuta !== "undefined" && instruccionesRuta.length > 0 && typeof indicePasoActual !== "undefined" && indicePasoActual >= 0 && indicePasoActual < instruccionesRuta.length) {
-      const instruccion = instruccionesRuta[indicePasoActual];
-      const textoIns = traducirInstruccionRuta(instruccion.text || "");
-      const metros = Math.round(instruccion.distance || 0);
-      contenidoHTML += `<div style="margin-bottom: 5px; font-size: 15px;"><strong>Paso ${indicePasoActual + 1}/${instruccionesRuta.length}:</strong> ${textoIns} (~${metros} m)</div>`;
-    }
-    
-    // 2. Mostrar el contador de pasos de forma separada si está habilitado
-    if (typeof modoContadorPasos !== "undefined" && modoContadorPasos && modoContadorPasos.checked && typeof sesionPasosActiva !== "undefined" && sesionPasosActiva) {
+
+    // En AR priorizamos el progreso de actividad de la ruta (pasos/calorías).
+    if (
+      typeof modoContadorPasos !== "undefined" &&
+      modoContadorPasos &&
+      modoContadorPasos.checked &&
+      typeof pasosSesionActual !== "undefined" &&
+      typeof caloriasSesionActual !== "undefined"
+    ) {
       const p = typeof pasosSesionActual !== "undefined" ? pasosSesionActual : 0;
       const c = typeof caloriasSesionActual !== "undefined" ? caloriasSesionActual : 0;
-      // Añadimos un pequeño borde superior para separarlo si hay instrucción previa
-      const separator = contenidoHTML ? `<div style="border-top:1px solid rgba(255,255,255,0.2); margin: 5px 0;"></div>` : '';
-      contenidoHTML += `${separator}<div style="font-size: 13px; color: #ccffcc;"><strong>Contador:</strong> ${p} pasos · ${c} kcal</div>`;
+      contenidoHTML = `<div style="font-size: 15px; color: #ccffcc;"><strong>Ruta actual:</strong> ${p} pasos · ${c} kcal</div>`;
     }
 
-    // Si por algún casual no hay contenido aún (muy raro), ponemos algo genérico
+    // Si aún no hay contenido, no mostramos texto extra en AR.
     if (!contenidoHTML) {
-      contenidoHTML = "Navegación iniciada. Sigue la flecha en el suelo.";
+      panelPasoAR.classList.add("oculto");
+      panelPasoAR.innerHTML = "";
+      return;
     }
 
     // Muestra panel e inserta contenido.

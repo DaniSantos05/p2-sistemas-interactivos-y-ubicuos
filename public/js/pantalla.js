@@ -638,6 +638,9 @@ if (modoContadorPasos) {
       posicionAnteriorSesion = null;
       inicioSesionISO = null;
       destinoSesionNombre = "";
+    } else if (navegacionIniciada && !sesionPasosActiva) {
+      // Si se activa durante una navegación ya iniciada, arrancamos sesión al momento.
+      iniciarSesionContadorRuta();
     }
     actualizarResumenContadorRuta();
   });

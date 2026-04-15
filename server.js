@@ -8,8 +8,8 @@ const multer = require("multer");
 // Importamos Express para crear el servidor web
 const express = require("express");
 
-// Importamos 'http' para crear el servidor HTTP manualmente
-const http = require("http");
+// Importamos 'https' para crear el servidor seguro manualmente
+const https = require("https");
 
 // Importamos la clase Server de Socket.IO para la comunicación en tiempo real
 const { Server } = require("socket.io");
@@ -19,10 +19,16 @@ const app = express();
 // Middleware para parsear JSON en el req.body
 app.use(express.json());
 
-// Creamos un servidor HTTP usando la app de Express
-const server = http.createServer(app);
+// Configuración HTTPS (como en el ejemplo del profesor)
+const options = {
+  key: fs.readFileSync("certificados/MiServidorHTTPS.key"),
+  cert: fs.readFileSync("certificados/MiServidorHTTPS.crt")
+};
 
-// Creamos el servidor de Socket.IO asociado al servidor HTTP
+// Creamos un servidor HTTPS usando la app de Express
+const server = https.createServer(options, app);
+
+// Creamos el servidor de Socket.IO asociado al servidor HTTPS
 const io = new Server(server);
 
 // Definimos el puerto donde se ejecutará el servidor
@@ -314,11 +320,11 @@ io.on("connection", (socket) => {
 // Ponemos el servidor a escuchar en el puerto indicado
 server.listen(PORT, () => {
   // Mostramos en consola la URL local del servidor
-  console.log(`Servidor ejecutándose en http://localhost:${PORT}`);
+  console.log(`Servidor ejecutándose en https://localhost:${PORT}`);
 });
 
 /*npx localtunnel --port 3000.
 Para que funcione en el móvil hay que poner la ip del ordenador en vez de localhost
-http://localhost:3000*/
+https://localhost:3000*/
 
-/*Otra opción es usar npx untun@latest tunnel http://localhost:3000*/
+/*Otra opción es usar npx untun@latest tunnel https://localhost:3000*/
